@@ -240,7 +240,7 @@ export const AddContactDialog = ({ onContactAdded }: AddContactDialogProps) => {
                   <SelectValue placeholder="Selecione quem indicou (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {profiles.map((profile) => (
                     <SelectItem key={`profile-${profile.id}`} value={profile.id}>
                       {profile.name} (Usuário)
@@ -261,7 +261,7 @@ export const AddContactDialog = ({ onContactAdded }: AddContactDialogProps) => {
                   <SelectValue placeholder="Selecione a célula (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {cells.map((cell) => (
                     <SelectItem key={cell.id} value={cell.id}>
                       {cell.name}
