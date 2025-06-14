@@ -118,7 +118,9 @@ export const Settings = () => {
 
       if (data?.value) {
         console.log('Configurações carregadas:', data.value);
-        setSettings(data.value as ChurchSettings);
+        // Converter Json para ChurchSettings com type assertion segura
+        const churchSettings = data.value as unknown as ChurchSettings;
+        setSettings(churchSettings);
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
@@ -136,11 +138,14 @@ export const Settings = () => {
       setSaving(true);
       console.log('Salvando configurações:', settings);
       
+      // Converter ChurchSettings para Json com type assertion
+      const settingsAsJson = settings as unknown as any;
+      
       const { error } = await supabase
         .from('system_settings')
         .upsert({
           key: 'church_settings',
-          value: settings
+          value: settingsAsJson
         });
 
       if (error) throw error;
