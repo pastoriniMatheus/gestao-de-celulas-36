@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,16 +21,16 @@ export const PendingContactsManager = () => {
     contact.status === 'pending' && !contact.cell_id
   );
 
-  // Filtrar células ativas de Itajaí
-  const itajaiCells = cells.filter(cell => 
-    cell.active && cell.address.toLowerCase().includes('itajaí')
-  );
+  // Filtrar apenas células ativas
+  const activeCells = cells.filter(cell => cell.active);
 
   const handleAssignCell = async (contactId: string, cellId: string) => {
     if (!cellId || cellId === 'no-cell') return;
 
     setUpdating(contactId);
     try {
+      console.log('Atribuindo célula:', { contactId, cellId });
+      
       const { error } = await supabase
         .from('contacts')
         .update({ 
@@ -43,7 +43,7 @@ export const PendingContactsManager = () => {
         console.error('Erro ao atribuir célula:', error);
         toast({
           title: "Erro",
-          description: "Erro ao atribuir célula ao contato",
+          description: `Erro ao atribuir célula: ${error.message}`,
           variant: "destructive"
         });
         return;
@@ -56,11 +56,11 @@ export const PendingContactsManager = () => {
 
       // Atualizar lista de contatos automaticamente
       await fetchContacts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atribuir célula:', error);
       toast({
         title: "Erro",
-        description: "Erro inesperado ao atribuir célula",
+        description: `Erro inesperado: ${error?.message || 'Tente novamente'}`,
         variant: "destructive"
       });
     } finally {
@@ -78,6 +78,16 @@ export const PendingContactsManager = () => {
     });
   };
 
+  // Agrupar células por cidade/região
+  const groupedCells = activeCells.reduce((acc, cell) => {
+    const location = cell.address.split(',')[0] || 'Outras';
+    if (!acc[location]) {
+      acc[location] = [];
+    }
+    acc[location].push(cell);
+    return acc;
+  }, {} as Record<string, typeof activeCells>);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -87,7 +97,7 @@ export const PendingContactsManager = () => {
             Contatos Pendentes
           </CardTitle>
           <CardDescription>
-            Contatos aguardando atribuição de célula em Itajaí
+            Contatos aguardando atribuição de célula ({pendingContacts.length} pendentes)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -142,17 +152,27 @@ export const PendingContactsManager = () => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="no-cell">Nenhuma</SelectItem>
-                              {itajaiCells.map((cell) => (
-                                <SelectItem key={cell.id} value={cell.id}>
-                                  {cell.name}
-                                </SelectItem>
+                              {Object.entries(groupedCells).map(([location, locationCells]) => (
+                                <div key={location}>
+                                  <div className="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100">
+                                    {location}
+                                  </div>
+                                  {locationCells.map((cell) => (
+                                    <SelectItem key={cell.id} value={cell.id}>
+                                      <span className="ml-2">{cell.name}</span>
+                                    </SelectItem>
+                                  ))}
+                                </div>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
-                        {itajaiCells.length === 0 && (
+                        {updating === contact.id && (
+                          <p className="text-xs text-blue-600">Atualizando...</p>
+                        )}
+                        {activeCells.length === 0 && (
                           <p className="text-xs text-red-600">
-                            Nenhuma célula ativa em Itajaí cadastrada
+                            Nenhuma célula ativa cadastrada
                           </p>
                         )}
                       </div>
