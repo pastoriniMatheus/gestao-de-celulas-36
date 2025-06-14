@@ -29,6 +29,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userProfile, setUserProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const createUserProfile = async (userId: string, email: string, name: string) => {
+    try {
+      console.log('Criando perfil para:', email);
+      
+      // Determinar role baseado no email
+      let role = 'user';
+      if (email.includes('admin')) {
+        role = 'admin';
+      } else if (email.includes('lider')) {
+        role = 'leader';
+      }
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: userId,
+          email: email,
+          name: name,
+          role: role,
+          active: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar perfil:', error);
+        return null;
+      }
+
+      console.log('Perfil criado:', data);
+      return data;
+    } catch (error) {
+      console.error('Erro crítico ao criar perfil:', error);
+      return null;
+    }
+  };
+
   const fetchUserProfile = async (userId: string, userEmail?: string) => {
     try {
       console.log('Buscando perfil para:', userEmail);
@@ -36,12 +73,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('email', userEmail)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (error) {
         console.error('Erro ao buscar perfil:', error);
         return null;
+      }
+
+      if (!data && userEmail) {
+        console.log('Perfil não encontrado, criando...');
+        const name = userEmail.split('@')[0];
+        return await createUserProfile(userId, userEmail, name);
       }
 
       console.log('Perfil encontrado:', data);
@@ -127,7 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -141,9 +184,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) {
         console.error('Erro no registro:', error);
         setLoading(false);
+        return { error };
+      }
+
+      // Se o usuário foi criado, criar o perfil
+      if (data.user) {
+        await createUserProfile(data.user.id, email, name);
       }
       
-      return { error };
+      setLoading(false);
+      return { error: null };
     } catch (error) {
       console.error('Erro crítico no signUp:', error);
       setLoading(false);

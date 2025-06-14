@@ -10,7 +10,7 @@ export const TestLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -43,6 +43,40 @@ export const TestLogin = () => {
     }
   };
 
+  const handleSignUp = async (testEmail: string, testPassword: string, name: string) => {
+    setLoading(true);
+    try {
+      console.log('Registrando usuário de teste:', testEmail);
+      const { error } = await signUp(testEmail, testPassword, name);
+      
+      if (error) {
+        console.error('Erro no registro:', error);
+        toast({
+          title: "Info",
+          description: "Usuário pode já existir. Tente fazer login.",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Sucesso",
+          description: "Usuário registrado! Você pode fazer login agora.",
+        });
+      }
+    } catch (error) {
+      console.error('Erro crítico no registro:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTestAdmin = () => {
+    handleSignUp('admin@sistema.com', '123456', 'Administrador do Sistema');
+  };
+
+  const createTestLeader = () => {
+    handleSignUp('joao@lider.com', '123456', 'João Silva');
+  };
+
   const loginAsAdmin = () => {
     setEmail('admin@sistema.com');
     setPassword('123456');
@@ -56,7 +90,7 @@ export const TestLogin = () => {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Login de Teste</CardTitle>
+        <CardTitle>Sistema de Igreja - Login</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleLogin} className="space-y-4">
@@ -84,7 +118,29 @@ export const TestLogin = () => {
         </form>
 
         <div className="space-y-2">
-          <p className="text-sm text-gray-600 text-center">Contas de teste:</p>
+          <p className="text-sm text-gray-600 text-center">Criar usuários de teste:</p>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={createTestAdmin}
+              className="flex-1"
+              disabled={loading}
+            >
+              Criar Admin
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={createTestLeader}
+              className="flex-1"
+              disabled={loading}
+            >
+              Criar Líder
+            </Button>
+          </div>
+          
+          <p className="text-sm text-gray-600 text-center">Logins rápidos:</p>
           <div className="flex gap-2">
             <Button 
               variant="outline" 
@@ -104,7 +160,16 @@ export const TestLogin = () => {
             </Button>
           </div>
           <p className="text-xs text-gray-500 text-center">
-            Todos usam senha: 123456
+            Senha padrão: 123456
+          </p>
+        </div>
+
+        <div className="bg-blue-50 p-3 rounded-lg">
+          <p className="text-xs text-blue-700">
+            <strong>Instruções:</strong><br/>
+            1. Primeiro, clique em "Criar Admin" ou "Criar Líder"<br/>
+            2. Depois clique em "Admin" ou "Líder" e faça login<br/>
+            3. Use senha: 123456
           </p>
         </div>
       </CardContent>
