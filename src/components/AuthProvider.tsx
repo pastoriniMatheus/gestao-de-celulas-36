@@ -76,72 +76,88 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
+    // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!isMounted) return;
-
         console.log('Auth state changed:', event, session?.user?.email);
         
+        if (!mounted) return;
+
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Buscar ou criar perfil do usuário
+          // Usar setTimeout para evitar loops
+          setTimeout(async () => {
+            if (!mounted) return;
+            
+            let profile = await fetchUserProfile(session.user.id);
+            
+            if (!profile) {
+              profile = await createUserProfile(session.user);
+            }
+            
+            if (mounted) {
+              setUserProfile(profile);
+              setLoading(false);
+            }
+          }, 0);
+        } else {
+          if (mounted) {
+            setUserProfile(null);
+            setLoading(false);
+          }
+        }
+      }
+    );
+
+    // Buscar sessão inicial
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erro ao buscar sessão inicial:', error);
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (!mounted) return;
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
           let profile = await fetchUserProfile(session.user.id);
           
           if (!profile) {
             profile = await createUserProfile(session.user);
           }
           
-          if (isMounted) {
+          if (mounted) {
             setUserProfile(profile);
-          }
-        } else {
-          if (isMounted) {
-            setUserProfile(null);
           }
         }
         
-        if (isMounted) {
+        if (mounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Erro na inicialização:', error);
+        if (mounted) {
           setLoading(false);
         }
       }
-    );
+    };
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id).then(profile => {
-          if (!profile) {
-            createUserProfile(session.user).then(newProfile => {
-              if (isMounted) {
-                setUserProfile(newProfile);
-                setLoading(false);
-              }
-            });
-          } else {
-            if (isMounted) {
-              setUserProfile(profile);
-              setLoading(false);
-            }
-          }
-        });
-      } else {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    });
+    getInitialSession();
 
     return () => {
-      isMounted = false;
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -182,14 +198,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      setLoading(true);
+      console.log('Iniciando logout...');
       
-      // Limpar estados imediatamente
-      setUser(null);
-      setSession(null);
-      setUserProfile(null);
-      
-      // Fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -197,11 +207,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         console.log('Logout realizado com sucesso');
       }
-      
-      setLoading(false);
     } catch (error) {
       console.error('Erro no signOut:', error);
-      setLoading(false);
     }
   };
 
