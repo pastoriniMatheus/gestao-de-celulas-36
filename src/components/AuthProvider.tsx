@@ -76,91 +76,61 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    let mounted = true;
-
+    console.log('AuthProvider: Inicializando...');
+    
     // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
-        if (!mounted) return;
-
         setSession(session);
         setUser(session?.user ?? null);
 
-        if (session?.user) {
-          // Usar setTimeout para evitar loops
-          setTimeout(async () => {
-            if (!mounted) return;
-            
-            let profile = await fetchUserProfile(session.user.id);
-            
+        if (session?.user && !userProfile) {
+          // Buscar perfil apenas se não existe
+          fetchUserProfile(session.user.id).then(profile => {
             if (!profile) {
-              profile = await createUserProfile(session.user);
-            }
-            
-            if (mounted) {
+              createUserProfile(session.user).then(newProfile => {
+                setUserProfile(newProfile);
+              });
+            } else {
               setUserProfile(profile);
-              setLoading(false);
             }
-          }, 0);
-        } else {
-          if (mounted) {
-            setUserProfile(null);
-            setLoading(false);
-          }
+          });
+        } else if (!session?.user) {
+          setUserProfile(null);
         }
+        
+        setLoading(false);
       }
     );
 
     // Buscar sessão inicial
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+        setUser(session.user);
         
-        if (error) {
-          console.error('Erro ao buscar sessão inicial:', error);
-          if (mounted) {
+        fetchUserProfile(session.user.id).then(profile => {
+          if (!profile) {
+            createUserProfile(session.user).then(newProfile => {
+              setUserProfile(newProfile);
+              setLoading(false);
+            });
+          } else {
+            setUserProfile(profile);
             setLoading(false);
           }
-          return;
-        }
-
-        if (!mounted) return;
-
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          let profile = await fetchUserProfile(session.user.id);
-          
-          if (!profile) {
-            profile = await createUserProfile(session.user);
-          }
-          
-          if (mounted) {
-            setUserProfile(profile);
-          }
-        }
-        
-        if (mounted) {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Erro na inicialização:', error);
-        if (mounted) {
-          setLoading(false);
-        }
+        });
+      } else {
+        setLoading(false);
       }
-    };
-
-    getInitialSession();
+    });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Dependency array vazia para evitar loops
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -199,6 +169,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       console.log('Iniciando logout...');
+      
+      // Limpar estados primeiro
+      setUser(null);
+      setSession(null);
+      setUserProfile(null);
       
       const { error } = await supabase.auth.signOut();
       
