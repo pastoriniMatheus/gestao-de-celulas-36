@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ interface Contact {
   name: string;
   whatsapp?: string;
   neighborhood: string;
+  status: string;
 }
 
 interface Attendance {
@@ -65,10 +67,10 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
 
       setCell(cellData);
 
-      // Buscar membros da célula
+      // Buscar membros da célula (incluindo visitantes)
       const { data: membersData, error: membersError } = await supabase
         .from('contacts')
-        .select('id, name, whatsapp, neighborhood')
+        .select('id, name, whatsapp, neighborhood, status')
         .eq('cell_id', cellId);
 
       if (membersError) {
@@ -78,7 +80,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
 
       setMembers(membersData || []);
 
-      // Buscar presenças da célula - including visitor column
+      // Buscar presenças da célula
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendances')
         .select('id, contact_id, attendance_date, present, visitor')
@@ -90,7 +92,6 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
       }
 
       setAttendances(attendanceData || []);
-      setFilteredAttendances(attendanceData || []);
     } catch (error) {
       console.error('Erro ao buscar dados da célula:', error);
     } finally {
@@ -202,6 +203,8 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
     const existing = filteredAttendances.find(att => att.contact_id === contactId);
 
     try {
+      console.log('Marcando presença para contato:', contactId, 'na data:', dateStr);
+      
       if (existing) {
         // Atualizar presença existente
         const { error } = await supabase
@@ -211,6 +214,11 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
 
         if (error) {
           console.error('Erro ao atualizar presença:', error);
+          toast({
+            title: "Erro",
+            description: "Erro ao atualizar presença. Tente novamente.",
+            variant: "destructive"
+          });
           return;
         }
       } else {
@@ -227,6 +235,11 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
 
         if (error) {
           console.error('Erro ao criar presença:', error);
+          toast({
+            title: "Erro",
+            description: "Erro ao marcar presença. Tente novamente.",
+            variant: "destructive"
+          });
           return;
         }
       }
@@ -236,18 +249,33 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
         description: "Presença atualizada com sucesso!"
       });
 
-      // Os dados serão atualizados automaticamente via real-time
+      // Recarregar dados
+      await fetchCellData();
     } catch (error) {
       console.error('Erro ao alterar presença:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao marcar presença.",
+        variant: "destructive"
+      });
     }
   };
 
   const addVisitor = async () => {
-    if (!newVisitorName.trim()) return;
+    if (!newVisitorName.trim()) {
+      toast({
+        title: "Atenção",
+        description: "Por favor, insira o nome do visitante.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
     try {
+      console.log('Adicionando visitante:', newVisitorName);
+      
       // Criar contato visitante
       const { data: visitorData, error: visitorError } = await supabase
         .from('contacts')
@@ -262,6 +290,11 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
 
       if (visitorError) {
         console.error('Erro ao criar visitante:', visitorError);
+        toast({
+          title: "Erro",
+          description: "Erro ao criar visitante. Tente novamente.",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -278,6 +311,11 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
 
       if (attendanceError) {
         console.error('Erro ao marcar presença do visitante:', attendanceError);
+        toast({
+          title: "Erro",
+          description: "Erro ao marcar presença do visitante.",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -287,9 +325,15 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
       });
 
       setNewVisitorName('');
-      // Os dados serão atualizados automaticamente via real-time
+      // Recarregar dados
+      await fetchCellData();
     } catch (error) {
       console.error('Erro ao adicionar visitante:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao adicionar visitante.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -297,15 +341,15 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
     const weeklyData: { [key: string]: { week: string; members: number; visitors: number } } = {};
 
     attendances.forEach(att => {
-      const date = parseISO(att.attendance_date);
-      const weekKey = format(date, 'yyyy-ww', { locale: ptBR });
-      const weekLabel = format(date, "'Semana' w", { locale: ptBR });
-
-      if (!weeklyData[weekKey]) {
-        weeklyData[weekKey] = { week: weekLabel, members: 0, visitors: 0 };
-      }
-
       if (att.present) {
+        const date = parseISO(att.attendance_date);
+        const weekKey = format(date, 'yyyy-ww', { locale: ptBR });
+        const weekLabel = format(date, "'Semana' w/yyyy", { locale: ptBR });
+
+        if (!weeklyData[weekKey]) {
+          weeklyData[weekKey] = { week: weekLabel, members: 0, visitors: 0 };
+        }
+
         if (att.visitor) {
           weeklyData[weekKey].visitors++;
         } else {
@@ -314,7 +358,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
       }
     });
 
-    return Object.values(weeklyData).sort((a, b) => a.week.localeCompare(b.week));
+    return Object.values(weeklyData).sort((a, b) => a.week.localeCompare(b.week)).slice(-8); // Últimas 8 semanas
   };
 
   if (loading) {
@@ -342,7 +386,6 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
     );
   }
 
-  const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const todayAttendances = filteredAttendances;
   const presentCount = todayAttendances.filter(att => att.present).length;
   const visitorCount = todayAttendances.filter(att => att.present && att.visitor).length;
@@ -364,7 +407,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
                   <Users className="h-8 w-8 text-blue-600" />
                   <div>
                     <p className="text-sm text-gray-600">Total de Membros</p>
-                    <p className="text-2xl font-bold">{members.length}</p>
+                    <p className="text-2xl font-bold">{members.filter(m => m.status !== 'visitor').length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -375,7 +418,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
                 <div className="flex items-center gap-3">
                   <UserCheck className="h-8 w-8 text-green-600" />
                   <div>
-                    <p className="text-sm text-gray-600">Presentes Hoje</p>
+                    <p className="text-sm text-gray-600">Presentes na Data</p>
                     <p className="text-2xl font-bold">{presentCount}</p>
                   </div>
                 </div>
@@ -387,7 +430,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
                 <div className="flex items-center gap-3">
                   <UserPlus className="h-8 w-8 text-orange-600" />
                   <div>
-                    <p className="text-sm text-gray-600">Visitantes Hoje</p>
+                    <p className="text-sm text-gray-600">Visitantes na Data</p>
                     <p className="text-2xl font-bold">{visitorCount}</p>
                   </div>
                 </div>
@@ -450,11 +493,11 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
               {/* Lista de Membros */}
               <div className="space-y-2">
                 <h4 className="font-medium">Membros:</h4>
-                {members.length === 0 ? (
+                {members.filter(m => m.status !== 'visitor').length === 0 ? (
                   <p className="text-gray-500">Nenhum membro cadastrado nesta célula.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {members.map((member) => {
+                    {members.filter(member => member.status !== 'visitor').map((member) => {
                       const attendance = todayAttendances.find(att => att.contact_id === member.id);
                       const isPresent = attendance?.present || false;
                       
@@ -495,6 +538,11 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
                     value={newVisitorName}
                     onChange={(e) => setNewVisitorName(e.target.value)}
                     className="flex-1"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        addVisitor();
+                      }
+                    }}
                   />
                   <Button onClick={addVisitor} disabled={!newVisitorName.trim()}>
                     <UserPlus className="h-4 w-4 mr-2" />

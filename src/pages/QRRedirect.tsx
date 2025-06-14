@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 
 export const QRRedirect = () => {
   const { keyword } = useParams();
+  const [searchParams] = useSearchParams();
   const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,56 +24,102 @@ export const QRRedirect = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (keyword) {
-      handleQRCodeScan(keyword);
-    }
-  }, [keyword]);
+    handleRedirect();
+  }, []);
 
-  const handleQRCodeScan = async (keyword: string) => {
+  const handleRedirect = async () => {
     try {
-      console.log('Processando scan do QR code com keyword:', keyword);
+      console.log('Processando redirecionamento...');
+      console.log('URL params:', { keyword, searchParams: Object.fromEntries(searchParams.entries()) });
+      
       setLoading(true);
       setError(null);
 
-      // Primeiro, buscar na tabela de eventos
-      console.log('Buscando evento...');
+      // Verificar se é um link de evento (com parâmetros evento e cod)
+      const eventoId = searchParams.get('evento');
+      const codigo = searchParams.get('cod');
+
+      if (eventoId && codigo) {
+        console.log('Processando link de evento:', { eventoId, codigo });
+        await handleEventRedirect(eventoId, codigo);
+        return;
+      }
+
+      // Se não é link de evento, processar como QR code normal
+      if (keyword) {
+        await handleQRCodeScan(keyword);
+        return;
+      }
+
+      setError('Link inválido - parâmetros não encontrados');
+    } catch (error) {
+      console.error('Erro no redirecionamento:', error);
+      setError('Erro ao processar link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEventRedirect = async (eventoId: string, codigo: string) => {
+    try {
+      console.log('Buscando evento:', { eventoId, codigo });
+      
+      // Buscar evento por ID e verificar se o código confere
       const { data: eventData, error: eventError } = await supabase
         .from('events')
         .select('*')
-        .eq('keyword', keyword.toLowerCase().trim())
+        .eq('id', eventoId)
+        .eq('keyword', codigo.toLowerCase().trim())
         .eq('active', true)
         .maybeSingle();
 
       console.log('Resultado busca evento:', { eventData, eventError });
 
-      if (eventData && !eventError) {
-        console.log('Evento encontrado:', eventData);
-        
-        // Incrementar contador de scan do evento
-        const { error: updateError } = await supabase
-          .from('events')
-          .update({ scan_count: (eventData.scan_count || 0) + 1 })
-          .eq('id', eventData.id);
-
-        if (updateError) {
-          console.error('Erro ao incrementar contador do evento:', updateError);
-        } else {
-          console.log('Contador do evento incrementado com sucesso');
-        }
-
-        setQrData({
-          type: 'event',
-          title: eventData.name,
-          description: `Evento: ${eventData.name}`,
-          data: eventData
-        });
-        setShowForm(true);
-        setLoading(false);
+      if (eventError) {
+        console.error('Erro ao buscar evento:', eventError);
+        setError('Erro ao buscar evento no banco de dados');
         return;
       }
 
-      // Se não encontrou evento, buscar na tabela de QR codes
-      console.log('Buscando QR code...');
+      if (!eventData) {
+        console.log('Evento não encontrado ou inativo');
+        setError('Código não encontrado ou inativo');
+        return;
+      }
+
+      console.log('Evento encontrado:', eventData);
+      
+      // Incrementar contador de scan do evento
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({ scan_count: (eventData.scan_count || 0) + 1 })
+        .eq('id', eventData.id);
+
+      if (updateError) {
+        console.error('Erro ao incrementar contador do evento:', updateError);
+      } else {
+        console.log('Contador do evento incrementado com sucesso');
+      }
+
+      setQrData({
+        type: 'event',
+        title: eventData.name,
+        description: `Evento: ${eventData.name}`,
+        date: eventData.date,
+        data: eventData
+      });
+      setShowForm(true);
+    } catch (error) {
+      console.error('Erro crítico ao processar evento:', error);
+      setError('Erro inesperado ao processar evento');
+    }
+  };
+
+  const handleQRCodeScan = async (keyword: string) => {
+    try {
+      console.log('Processando scan do QR code com keyword:', keyword);
+
+      // Buscar na tabela de QR codes
       const { data: qrCodeData, error: qrError } = await supabase
         .from('qr_codes')
         .select('*')
@@ -105,14 +152,12 @@ export const QRRedirect = () => {
         });
         setShowForm(true);
       } else {
-        console.log('Nenhum QR code ou evento encontrado para keyword:', keyword);
+        console.log('Nenhum QR code encontrado para keyword:', keyword);
         setError('QR code não encontrado ou inativo');
       }
     } catch (error) {
       console.error('Erro crítico ao processar QR code:', error);
       setError('Erro ao processar QR code');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -180,7 +225,7 @@ export const QRRedirect = () => {
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Processando QR code...</p>
+            <p className="text-gray-600">Processando link...</p>
           </CardContent>
         </Card>
       </div>
@@ -195,15 +240,23 @@ export const QRRedirect = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
               <AlertCircle className="w-6 h-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl text-red-600">QR Code Inválido</CardTitle>
+            <CardTitle className="text-xl text-red-600">Código Inválido</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500 mb-4">
-              Keyword procurada: <code className="bg-gray-200 px-2 py-1 rounded">{keyword}</code>
-            </p>
-            <p className="text-sm text-gray-500">
-              Verifique se o QR code é válido ou entre em contato com o organizador.
+            <div className="space-y-2 text-sm text-gray-500">
+              {keyword && (
+                <p>Keyword: <code className="bg-gray-200 px-2 py-1 rounded">{keyword}</code></p>
+              )}
+              {searchParams.get('evento') && (
+                <p>Evento: <code className="bg-gray-200 px-2 py-1 rounded">{searchParams.get('evento')}</code></p>
+              )}
+              {searchParams.get('cod') && (
+                <p>Código: <code className="bg-gray-200 px-2 py-1 rounded">{searchParams.get('cod')}</code></p>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-4">
+              Verifique se o código é válido ou entre em contato com o organizador.
             </p>
           </CardContent>
         </Card>
@@ -223,6 +276,11 @@ export const QRRedirect = () => {
               {qrData?.title || 'Formulário de Contato'}
             </CardTitle>
             <CardDescription>
+              {qrData?.type === 'event' && qrData?.date && (
+                <div className="mb-2">
+                  Data do evento: {new Date(qrData.date).toLocaleDateString('pt-BR')}
+                </div>
+              )}
               Preencha seus dados para nos conectarmos com você
             </CardDescription>
           </CardHeader>
@@ -308,7 +366,7 @@ export const QRRedirect = () => {
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
               <QrCode className="w-4 h-4" />
               <span>
-                {qrData?.type === 'event' ? 'Evento:' : 'QR Code:'} {keyword}
+                {qrData?.type === 'event' ? 'Evento:' : 'QR Code:'} {qrData?.title}
               </span>
             </div>
           </div>
