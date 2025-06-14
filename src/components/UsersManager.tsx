@@ -227,7 +227,7 @@ export const UsersManager = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Select
-                        value={user.role}
+                        value={user.role || "user"}
                         onValueChange={(newRole) => updateUserRole(user.id, newRole)}
                         disabled={user.user_id === userProfile?.user_id} // Não permitir alterar próprio papel
                       >

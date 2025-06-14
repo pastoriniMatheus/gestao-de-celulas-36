@@ -39,14 +39,14 @@ export const ReferralAndCellFields = ({
       <div>
         <Label htmlFor="referred_by">Quem Indicou</Label>
         <Select 
-          value={formData.referred_by} 
-          onValueChange={(value) => onUpdateFormData({ referred_by: value })}
+          value={formData.referred_by || "no-referral"} 
+          onValueChange={(value) => onUpdateFormData({ referred_by: value === "no-referral" ? "" : value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione quem indicou (opcional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Nenhum</SelectItem>
+            <SelectItem value="no-referral">Nenhum</SelectItem>
             {profiles.map((profile) => (
               <SelectItem key={`profile-${profile.id}`} value={profile.id}>
                 {profile.name} (Usuário)
@@ -63,14 +63,14 @@ export const ReferralAndCellFields = ({
       <div>
         <Label htmlFor="cell">Célula</Label>
         <Select 
-          value={formData.cell_id} 
-          onValueChange={(value) => onUpdateFormData({ cell_id: value })}
+          value={formData.cell_id || "no-cell"} 
+          onValueChange={(value) => onUpdateFormData({ cell_id: value === "no-cell" ? "" : value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione a célula (opcional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Nenhuma</SelectItem>
+            <SelectItem value="no-cell">Nenhuma</SelectItem>
             {cells.map((cell) => (
               <SelectItem key={cell.id} value={cell.id}>
                 {cell.name}
