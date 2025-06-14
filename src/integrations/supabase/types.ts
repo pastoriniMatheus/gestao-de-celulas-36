@@ -286,6 +286,80 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_codes: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          keyword: string
+          qr_code_data: string
+          scan_count: number
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          keyword: string
+          qr_code_data: string
+          scan_count?: number
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          keyword?: string
+          qr_code_data?: string
+          scan_count?: number
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      qr_scans: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          qr_code_id: string
+          scanned_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          qr_code_id: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          qr_code_id?: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_scans_qr_code_id_fkey"
+            columns: ["qr_code_id"]
+            isOneToOne: false
+            referencedRelation: "qr_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           created_at: string
@@ -315,7 +389,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_qr_scan_count: {
+        Args: { qr_id: string; user_ip?: unknown; user_agent_string?: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
