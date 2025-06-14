@@ -6,6 +6,7 @@ import { EventsManager } from '@/components/EventsManager';
 import { ContactsManager } from '@/components/ContactsManager';
 import { CellsManager } from '@/components/CellsManager';
 import { MessagingCenter } from '@/components/MessagingCenter';
+import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
@@ -24,6 +25,8 @@ const Index = () => {
         return <CellsManager />;
       case 'messaging':
         return <MessagingCenter />;
+      case 'pipeline':
+        return <Pipeline />;
       case 'settings':
         return <Settings />;
       default:

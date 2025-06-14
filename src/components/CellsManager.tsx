@@ -126,7 +126,7 @@ export const CellsManager = () => {
                 />
               </div>
               <div>
-                <Label html For="leader">Líder</Label>
+                <Label htmlFor="leader">Líder</Label>
                 <Input
                   id="leader"
                   value={formData.leader}

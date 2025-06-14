@@ -5,14 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, QrCode, Edit, Trash2 } from 'lucide-react';
+import { Plus, QrCode, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface Event {
   id: string;
   name: string;
+  keyword: string;
   date: string;
   qrCode: string;
+  qrUrl: string;
   scanCount: number;
   active: boolean;
 }
@@ -22,24 +24,30 @@ export const EventsManager = () => {
     {
       id: '1',
       name: 'Encontro de Células',
+      keyword: 'encontro-celulas',
       date: '2024-06-14',
       qrCode: 'QR123456',
+      qrUrl: `${window.location.origin}/evento/encontro-celulas/qr_123456`,
       scanCount: 45,
       active: true
     },
     {
       id: '2',
       name: 'Culto de Jovens',
+      keyword: 'culto-jovens',
       date: '2024-06-15',
       qrCode: 'QR789012',
+      qrUrl: `${window.location.origin}/evento/culto-jovens/qr_789012`,
       scanCount: 23,
       active: true
     },
     {
       id: '3',
       name: 'Retiro Espiritual',
+      keyword: 'retiro-espiritual',
       date: '2024-06-16',
       qrCode: 'QR345678',
+      qrUrl: `${window.location.origin}/evento/retiro-espiritual/qr_345678`,
       scanCount: 8,
       active: false
     }
@@ -49,11 +57,29 @@ export const EventsManager = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    keyword: '',
     date: ''
   });
 
-  const generateQRCode = () => {
-    return 'QR' + Math.random().toString(36).substr(2, 6).toUpperCase();
+  const generateSecureQRCode = (eventName: string, keyword: string) => {
+    // Usando o sistema de proteção LicenseGuard
+    if (window.generateSecureQR) {
+      return window.generateSecureQR(eventName, keyword);
+    } else {
+      // Fallback caso o script não esteja carregado
+      const eventId = 'qr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const sanitizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      return {
+        eventId,
+        eventName,
+        keyword: sanitizedKeyword,
+        url: `${window.location.origin}/evento/${sanitizedKeyword}/${eventId}`,
+        timestamp: Date.now(),
+        domain: window.location.hostname,
+        scanCount: 0,
+        active: true
+      };
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -66,24 +92,32 @@ export const EventsManager = () => {
           : event
       ));
     } else {
+      const qrData = generateSecureQRCode(formData.name, formData.keyword);
       const newEvent: Event = {
         id: Date.now().toString(),
-        ...formData,
-        qrCode: generateQRCode(),
+        name: formData.name,
+        keyword: formData.keyword,
+        date: formData.date,
+        qrCode: qrData.eventId,
+        qrUrl: qrData.url,
         scanCount: 0,
         active: true
       };
       setEvents([...events, newEvent]);
     }
     
-    setFormData({ name: '', date: '' });
+    setFormData({ name: '', keyword: '', date: '' });
     setEditingEvent(null);
     setIsDialogOpen(false);
   };
 
   const handleEdit = (event: Event) => {
     setEditingEvent(event);
-    setFormData({ name: event.name, date: event.date });
+    setFormData({ 
+      name: event.name, 
+      keyword: event.keyword,
+      date: event.date 
+    });
     setIsDialogOpen(true);
   };
 
@@ -95,6 +129,11 @@ export const EventsManager = () => {
     setEvents(events.map(event => 
       event.id === id ? { ...event, active: !event.active } : event
     ));
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    // Aqui você pode adicionar um toast de confirmação
   };
 
   return (
@@ -124,6 +163,19 @@ export const EventsManager = () => {
                   placeholder="Digite o nome do evento"
                   required
                 />
+              </div>
+              <div>
+                <Label htmlFor="keyword">Palavra-chave/Título</Label>
+                <Input
+                  id="keyword"
+                  value={formData.keyword}
+                  onChange={(e) => setFormData({ ...formData, keyword: e.target.value })}
+                  placeholder="ex: encontro-celulas, culto-jovens"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Esta palavra será parte da URL do QR code
+                </p>
               </div>
               <div>
                 <Label htmlFor="date">Data</Label>
@@ -158,15 +210,33 @@ export const EventsManager = () => {
               <div>
                 <p className="text-sm text-gray-600">Data: {new Date(event.date).toLocaleDateString('pt-BR')}</p>
                 <p className="text-sm text-gray-600">Código QR: {event.qrCode}</p>
+                <p className="text-sm text-gray-600">Palavra-chave: {event.keyword}</p>
               </div>
               
               <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
                 <QrCode size={64} className="text-gray-600" />
               </div>
               
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{event.scanCount}</p>
-                <p className="text-sm text-gray-600">Total de Scans</p>
+              <div className="space-y-2">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">{event.scanCount}</p>
+                  <p className="text-sm text-gray-600">Total de Scans</p>
+                </div>
+                
+                <div className="p-2 bg-blue-50 rounded text-xs">
+                  <p className="font-medium mb-1">URL do QR Code:</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-blue-600 break-all flex-1">{event.qrUrl}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(event.qrUrl)}
+                      className="flex-shrink-0"
+                    >
+                      <ExternalLink size={12} />
+                    </Button>
+                  </div>
+                </div>
               </div>
               
               <div className="flex gap-2">

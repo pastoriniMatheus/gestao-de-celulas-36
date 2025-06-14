@@ -1,5 +1,5 @@
 
-import { Home, QrCode, Users, MessageSquare, Users2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, QrCode, Users, MessageSquare, Users2, Settings, ChevronLeft, ChevronRight, GitBranch } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,7 @@ const menuItems = [
   { id: 'contacts', label: 'Contatos', icon: Users },
   { id: 'cells', label: 'Células', icon: Users2 },
   { id: 'messaging', label: 'Mensagens', icon: MessageSquare },
+  { id: 'pipeline', label: 'Pipeline', icon: GitBranch },
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 
