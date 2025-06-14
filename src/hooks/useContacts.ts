@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -19,6 +18,7 @@ interface Contact {
 export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   const fetchContacts = async () => {
     try {
@@ -135,9 +135,18 @@ export const useContacts = () => {
   useEffect(() => {
     fetchContacts();
 
+    // Clean up existing channel before creating new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Create unique channel name to avoid conflicts
+    const channelName = `contacts-changes-${Date.now()}`;
+
     // Escutar mudanças na tabela contacts
     const channel = supabase
-      .channel('contacts-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -152,8 +161,13 @@ export const useContacts = () => {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, []);
 

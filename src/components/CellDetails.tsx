@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
   const [newVisitorName, setNewVisitorName] = useState('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const channelsRef = useRef<any[]>([]);
 
   const fetchCellData = async () => {
     try {
@@ -102,9 +103,19 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
     if (isOpen) {
       fetchCellData();
 
+      // Clean up existing channels before creating new ones
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      channelsRef.current = [];
+
+      // Create unique channel names to avoid conflicts
+      const attendanceChannelName = `attendance-changes-${cellId}-${Date.now()}`;
+      const contactChannelName = `contact-changes-${cellId}-${Date.now()}`;
+
       // Configurar atualização em tempo real
       const attendanceChannel = supabase
-        .channel('attendance-changes')
+        .channel(attendanceChannelName)
         .on(
           'postgres_changes',
           {
@@ -121,7 +132,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
         .subscribe();
 
       const contactChannel = supabase
-        .channel('contact-changes')
+        .channel(contactChannelName)
         .on(
           'postgres_changes',
           {
@@ -137,9 +148,14 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
         )
         .subscribe();
 
+      // Store channels for cleanup
+      channelsRef.current = [attendanceChannel, contactChannel];
+
       return () => {
-        supabase.removeChannel(attendanceChannel);
-        supabase.removeChannel(contactChannel);
+        channelsRef.current.forEach(channel => {
+          supabase.removeChannel(channel);
+        });
+        channelsRef.current = [];
       };
     }
   }, [cellId, isOpen]);
