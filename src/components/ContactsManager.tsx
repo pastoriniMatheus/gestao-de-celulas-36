@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { User, Phone, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AddContactDialog } from './AddContactDialog';
 
 interface Contact {
   id: string;
@@ -180,13 +181,16 @@ export const ContactsManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Contatos</h1>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-            Pendentes: {contacts.filter(c => c.status === 'pending').length}
-          </Badge>
-          <Badge variant="outline" className="text-green-600 border-green-600">
-            Participando: {contacts.filter(c => c.status === 'participating').length}
-          </Badge>
+        <div className="flex items-center gap-4">
+          <div className="flex gap-2">
+            <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+              Pendentes: {contacts.filter(c => c.status === 'pending').length}
+            </Badge>
+            <Badge variant="outline" className="text-green-600 border-green-600">
+              Participando: {contacts.filter(c => c.status === 'participating').length}
+            </Badge>
+          </div>
+          <AddContactDialog onContactAdded={fetchContacts} />
         </div>
       </div>
 

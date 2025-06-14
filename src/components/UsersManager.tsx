@@ -25,19 +25,25 @@ export const UsersManager = () => {
     active: true
   });
   
-  const { userProfile } = useAuth();
+  const { userProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
   // Verificar se o usuário tem permissão (admin)
   const canManageUsers = userProfile?.role === 'admin';
 
   useEffect(() => {
-    if (canManageUsers) {
-      fetchUsers();
-    } else {
-      setLoading(false);
+    console.log('UsersManager: userProfile:', userProfile);
+    console.log('UsersManager: authLoading:', authLoading);
+    console.log('UsersManager: canManageUsers:', canManageUsers);
+    
+    if (!authLoading) {
+      if (canManageUsers) {
+        fetchUsers();
+      } else {
+        setLoading(false);
+      }
     }
-  }, [canManageUsers]);
+  }, [canManageUsers, authLoading]);
 
   const fetchUsers = async () => {
     try {
@@ -192,6 +198,20 @@ export const UsersManager = () => {
     );
   };
 
+  // Mostrar loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Verificando permissões...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!canManageUsers) {
     return (
       <Card>
@@ -202,6 +222,7 @@ export const UsersManager = () => {
           </CardTitle>
           <CardDescription>
             Você não tem permissão para acessar o gerenciamento de usuários.
+            {userProfile ? `Seu papel atual: ${userProfile.role}` : 'Usuário não identificado'}
           </CardDescription>
         </CardHeader>
       </Card>

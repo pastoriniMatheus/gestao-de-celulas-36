@@ -1,13 +1,14 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings as SettingsIcon, MapPin, Webhook, Palette, Image, Globe, Plus } from 'lucide-react';
+import { Settings as SettingsIcon, MapPin, Webhook, Palette, Image, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AddCityDialog } from './AddCityDialog';
+import { AddNeighborhoodDialog } from './AddNeighborhoodDialog';
 
 interface City {
   id: string;
@@ -126,34 +127,6 @@ export const Settings = () => {
     input.click();
   };
 
-  const addMoreNeighborhoods = async () => {
-    if (!selectedCity) {
-      toast({
-        title: "Aviso",
-        description: "Selecione uma cidade primeiro",
-        variant: "default"
-      });
-      return;
-    }
-
-    try {
-      // Simular busca de novos bairros para a cidade selecionada
-      const newNeighborhoods = [
-        { id: 'temp-1', name: 'Novo Bairro 1', city_id: selectedCity },
-        { id: 'temp-2', name: 'Novo Bairro 2', city_id: selectedCity }
-      ];
-      
-      setSelectedNeighborhoods([...selectedNeighborhoods, ...newNeighborhoods]);
-      
-      toast({
-        title: "Sucesso",
-        description: "Novos bairros adicionados temporariamente para demonstração"
-      });
-    } catch (error) {
-      console.error('Erro ao buscar mais bairros:', error);
-    }
-  };
-
   if (loading) {
     return <div className="flex justify-center items-center h-64">Carregando configurações...</div>;
   }
@@ -191,6 +164,8 @@ export const Settings = () => {
               </Select>
             </div>
 
+            <AddCityDialog onCityAdded={fetchCities} />
+
             {selectedCity && selectedNeighborhoods.length > 0 && (
               <div>
                 <Label>Bairros Cadastrados</Label>
@@ -212,15 +187,7 @@ export const Settings = () => {
               </div>
             )}
 
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={addMoreNeighborhoods}
-              disabled={!selectedCity}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Buscar Mais Bairros
-            </Button>
+            <AddNeighborhoodDialog cities={cities} onNeighborhoodAdded={fetchNeighborhoods} />
           </CardContent>
         </Card>
 
