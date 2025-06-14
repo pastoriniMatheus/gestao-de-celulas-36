@@ -22,7 +22,9 @@ export const ContactsList = () => {
                          contact.neighborhood.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (contact.whatsapp && contact.whatsapp.includes(searchTerm));
     
-    const matchesCell = selectedCell === 'all' || contact.cell_id === selectedCell;
+    const matchesCell = selectedCell === 'all' || 
+                       (selectedCell === 'no-cell' && !contact.cell_id) ||
+                       contact.cell_id === selectedCell;
     const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
     
     return matchesSearch && matchesCell && matchesStatus;
@@ -92,7 +94,7 @@ export const ContactsList = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as células</SelectItem>
-              <SelectItem value="">Sem célula</SelectItem>
+              <SelectItem value="no-cell">Sem célula</SelectItem>
               {cells.map((cell) => (
                 <SelectItem key={cell.id} value={cell.id}>
                   {cell.name}

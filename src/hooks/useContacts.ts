@@ -37,9 +37,22 @@ export const useContacts = () => {
       }
 
       console.log('Contatos encontrados:', data);
-      setContacts(data || []);
+      // Garantir que os dados estejam bem formatados
+      const formattedContacts = (data || []).map(contact => ({
+        ...contact,
+        status: contact.status || 'pending',
+        neighborhood: contact.neighborhood || '',
+        name: contact.name || ''
+      }));
+      
+      setContacts(formattedContacts);
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar contatos. Tente recarregar a página.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

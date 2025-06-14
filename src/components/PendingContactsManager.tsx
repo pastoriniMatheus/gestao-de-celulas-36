@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ export const PendingContactsManager = () => {
   );
 
   const handleAssignCell = async (contactId: string, cellId: string) => {
-    if (!cellId || cellId === 'none') return;
+    if (!cellId || cellId === 'no-cell') return;
 
     setUpdating(contactId);
     try {
@@ -140,7 +141,7 @@ export const PendingContactsManager = () => {
                               <SelectValue placeholder="Selecione uma célula" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">Nenhuma</SelectItem>
+                              <SelectItem value="no-cell">Nenhuma</SelectItem>
                               {itajaiCells.map((cell) => (
                                 <SelectItem key={cell.id} value={cell.id}>
                                   {cell.name}
