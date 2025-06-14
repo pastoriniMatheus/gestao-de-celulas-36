@@ -1,14 +1,37 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, QrCode, Eye, Edit, Trash2, Plus } from 'lucide-react';
+import { Calendar, QrCode, Eye, Edit, Trash2 } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { useToast } from '@/hooks/use-toast';
+import { AddEventDialog } from './AddEventDialog';
+import { EditEventDialog } from './EditEventDialog';
+
+interface Event {
+  id: string;
+  name: string;
+  date: string;
+  keyword: string;
+  qr_code: string;
+  qr_url: string;
+  scan_count: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const EventsManager = () => {
   const { events, loading, deleteEvent } = useEvents();
   const { toast } = useToast();
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEdit = (event: Event) => {
+    setEditingEvent(event);
+    setIsEditDialogOpen(true);
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o evento "${name}"?`)) {
@@ -58,10 +81,7 @@ export const EventsManager = () => {
                 Organize eventos e monitore QR codes
               </CardDescription>
             </div>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Evento
-            </Button>
+            <AddEventDialog />
           </div>
         </CardHeader>
         <CardContent>
@@ -130,7 +150,11 @@ export const EventsManager = () => {
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEdit(event)}
+                  >
                     <Edit className="h-4 w-4 mr-1" />
                     Editar
                   </Button>
@@ -148,6 +172,14 @@ export const EventsManager = () => {
             </Card>
           ))}
         </div>
+      )}
+
+      {editingEvent && (
+        <EditEventDialog
+          event={editingEvent}
+          isOpen={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+        />
       )}
     </div>
   );
