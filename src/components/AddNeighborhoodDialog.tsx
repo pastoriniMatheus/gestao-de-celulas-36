@@ -22,51 +22,51 @@ interface AddNeighborhoodDialogProps {
 
 export const AddNeighborhoodDialog = ({ cities, onNeighborhoodAdded }: AddNeighborhoodDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [neighborhoodName, setNeighborhoodName] = useState('');
-  const [selectedCityId, setSelectedCityId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    city_id: ''
+  });
+  
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!neighborhoodName.trim() || !selectedCityId) {
+    if (!formData.name || !formData.city_id) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos",
-        variant: "destructive"
+        description: "Por favor, preencha todos os campos.",
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-
     try {
       const { error } = await supabase
         .from('neighborhoods')
-        .insert({
-          name: neighborhoodName.trim(),
-          city_id: selectedCityId,
-          active: true
-        });
+        .insert([{
+          name: formData.name,
+          city_id: formData.city_id
+        }]);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Bairro adicionado com sucesso!"
+        description: "Bairro adicionado com sucesso!",
       });
 
-      setNeighborhoodName('');
-      setSelectedCityId('');
+      setFormData({ name: '', city_id: '' });
       setIsOpen(false);
       onNeighborhoodAdded();
     } catch (error) {
-      console.error('Erro ao adicionar bairro:', error);
+      console.error('Erro ao criar bairro:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar o bairro",
-        variant: "destructive"
+        description: "Erro ao criar bairro. Tente novamente.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -76,21 +76,32 @@ export const AddNeighborhoodDialog = ({ cities, onNeighborhoodAdded }: AddNeighb
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
-          <Plus className="w-4 h-4 mr-2" />
-          Adicionar Bairro
+        <Button variant="outline">
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Bairro
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Adicionar Novo Bairro</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="citySelect">Cidade</Label>
-            <Select value={selectedCityId} onValueChange={setSelectedCityId}>
+            <Label htmlFor="neighborhood-name">Nome do Bairro *</Label>
+            <Input
+              id="neighborhood-name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Ex: Centro"
+              required
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="city">Cidade *</Label>
+            <Select value={formData.city_id} onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value }))}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione a cidade" />
+                <SelectValue placeholder="Selecione uma cidade" />
               </SelectTrigger>
               <SelectContent>
                 {cities.map((city) => (
@@ -101,22 +112,18 @@ export const AddNeighborhoodDialog = ({ cities, onNeighborhoodAdded }: AddNeighb
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label htmlFor="neighborhoodName">Nome do Bairro</Label>
-            <Input
-              id="neighborhoodName"
-              value={neighborhoodName}
-              onChange={(e) => setNeighborhoodName(e.target.value)}
-              placeholder="Digite o nome do bairro"
-              required
-            />
-          </div>
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={loading}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Salvando...' : 'Salvar'}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Criando...' : 'Criar Bairro'}
             </Button>
           </div>
         </form>

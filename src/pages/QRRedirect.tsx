@@ -1,88 +1,103 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { QrCode, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { QrCode, ExternalLink } from 'lucide-react';
 
 export const QRRedirect = () => {
-  const { keyword } = useParams<{ keyword: string }>();
-  const [loading, setLoading] = useState(true);
+  const { keyword } = useParams();
   const [qrData, setQrData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const trackAndRedirect = async () => {
-      if (!keyword) {
-        setError('QR code inválido');
+    if (keyword) {
+      handleQRCodeScan(keyword);
+    }
+  }, [keyword]);
+
+  const handleQRCodeScan = async (keyword: string) => {
+    try {
+      console.log('Processando scan do QR code:', keyword);
+
+      // Primeiro, buscar na tabela de eventos
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('keyword', keyword)
+        .eq('active', true)
+        .single();
+
+      if (eventData && !eventError) {
+        console.log('Evento encontrado:', eventData);
+        
+        // Incrementar contador de scan do evento
+        await supabase
+          .from('events')
+          .update({ scan_count: eventData.scan_count + 1 })
+          .eq('id', eventData.id);
+
+        setQrData({
+          type: 'event',
+          title: eventData.name,
+          description: `Evento: ${eventData.name}`,
+          data: eventData
+        });
         setLoading(false);
         return;
       }
 
-      try {
-        // Buscar dados do QR code
-        const { data: qrCode, error: fetchError } = await supabase
-          .from('qr_codes')
-          .select('*')
-          .eq('keyword', keyword)
-          .eq('active', true)
-          .single();
+      // Se não encontrou evento, buscar na tabela de QR codes
+      const { data: qrCodeData, error: qrError } = await supabase
+        .from('qr_codes')
+        .select('*')
+        .eq('keyword', keyword)
+        .eq('active', true)
+        .single();
 
-        if (fetchError || !qrCode) {
-          setError('QR code não encontrado ou inativo');
-          setLoading(false);
-          return;
-        }
-
-        setQrData(qrCode);
-
-        // Registrar o scan via edge function
-        try {
-          const response = await fetch('/api/track-qr-scan', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ keyword }),
-          });
-
-          if (!response.ok) {
-            console.warn('Falha ao registrar scan, mas continuando...');
+      if (qrCodeData && !qrError) {
+        console.log('QR code encontrado:', qrCodeData);
+        
+        // Usar a função do banco para incrementar contador
+        const { error: incrementError } = await supabase.rpc(
+          'increment_qr_scan_count',
+          {
+            qr_id: qrCodeData.id,
+            user_ip: null, // Pode ser implementado para capturar IP
+            user_agent_string: navigator.userAgent
           }
-        } catch (scanError) {
-          console.warn('Erro ao registrar scan:', scanError);
-          // Continua mesmo se o tracking falhar
+        );
+
+        if (incrementError) {
+          console.error('Erro ao incrementar contador:', incrementError);
         }
 
-        // Aguardar um pouco para mostrar a página antes de redirecionar
-        setTimeout(() => {
-          // Redirecionar para a página principal da aplicação
-          window.location.href = '/';
-        }, 2000);
-
-      } catch (error) {
-        console.error('Erro ao processar QR code:', error);
-        setError('Erro ao processar QR code');
-      } finally {
-        setLoading(false);
+        setQrData({
+          type: 'qrcode',
+          title: qrCodeData.title,
+          description: 'QR Code escaneado com sucesso!',
+          data: qrCodeData
+        });
+      } else {
+        setError('QR code não encontrado ou inativo');
       }
-    };
-
-    trackAndRedirect();
-  }, [keyword]);
+    } catch (error) {
+      console.error('Erro ao processar QR code:', error);
+      setError('Erro ao processar QR code');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Processando QR Code...
-            </h2>
-            <p className="text-gray-600 text-center">
-              Aguarde enquanto validamos o código
-            </p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="p-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Processando QR code...</p>
           </CardContent>
         </Card>
       </div>
@@ -91,23 +106,19 @@ export const QRRedirect = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-100">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <QrCode className="h-12 w-12 text-red-500 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              QR Code Inválido
-            </h2>
-            <p className="text-gray-600 text-center mb-4">
-              {error}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <CardTitle className="text-xl text-red-600">QR Code Inválido</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500">
+              Verifique se o QR code é válido ou entre em contato com o organizador.
             </p>
-            <a 
-              href="/"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Ir para o site
-            </a>
           </CardContent>
         </Card>
       </div>
@@ -115,21 +126,49 @@ export const QRRedirect = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <QrCode className="h-8 w-8 text-green-600" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <div className="mx-auto w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+            <CheckCircle className="w-6 h-6 text-green-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {qrData?.title}
-          </h2>
-          <p className="text-gray-600 text-center mb-4">
-            QR Code escaneado com sucesso! Redirecionando...
-          </p>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-green-600 h-2 rounded-full animate-pulse w-full"></div>
+          <CardTitle className="text-xl text-green-600">
+            {qrData?.title || 'QR Code Escaneado!'}
+          </CardTitle>
+          <CardDescription>
+            {qrData?.description || 'QR code processado com sucesso'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+              <QrCode className="w-4 h-4" />
+              <span>
+                {qrData?.type === 'event' ? 'Evento:' : 'QR Code:'} {keyword}
+              </span>
+            </div>
           </div>
+
+          {qrData?.type === 'event' && (
+            <div className="text-left space-y-2">
+              <p><strong>Data:</strong> {new Date(qrData.data.date).toLocaleDateString('pt-BR')}</p>
+              <p><strong>Status:</strong> {qrData.data.active ? 'Ativo' : 'Inativo'}</p>
+            </div>
+          )}
+
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
+              Obrigado por escanear este QR code!
+            </p>
+          </div>
+
+          <Button
+            className="w-full"
+            onClick={() => window.close()}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Fechar
+          </Button>
         </CardContent>
       </Card>
     </div>

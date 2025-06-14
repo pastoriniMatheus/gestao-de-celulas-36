@@ -1,44 +1,54 @@
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User, Shield } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from './AuthProvider';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 export const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
 
-  if (!user) return null;
-
   const handleSignOut = async () => {
     try {
-      console.log('Iniciando logout...');
       await signOut();
-      console.log('Logout completado');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
   };
 
-  const getRoleDisplay = (role: string) => {
+  const getUserInitials = () => {
+    if (userProfile?.name) {
+      return userProfile.name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getRoleLabel = (role: string) => {
     switch (role) {
       case 'admin':
         return 'Administrador';
       case 'leader':
         return 'Líder';
+      case 'user':
+        return 'Usuário';
       default:
         return 'Usuário';
-    }
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Shield className="mr-2 h-4 w-4 text-red-600" />;
-      case 'leader':
-        return <Shield className="mr-2 h-4 w-4 text-blue-600" />;
-      default:
-        return <User className="mr-2 h-4 w-4" />;
     }
   };
 
@@ -47,32 +57,38 @@ export const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarFallback>
-              {userProfile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-            </AvatarFallback>
+            <AvatarImage src={userProfile?.photo_url} alt={userProfile?.name || 'User'} />
+            <AvatarFallback>{getUserInitials()}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuItem className="flex flex-col items-start space-y-1">
-          <div className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
               {userProfile?.name || 'Usuário'}
             </p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user?.email}
+            </p>
+            <div className="flex items-center gap-1 pt-1">
+              <Shield className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {getRoleLabel(userProfile?.role || 'user')}
+              </span>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">{user.email}</p>
-        </DropdownMenuItem>
-        
-        {userProfile?.role && (
-          <DropdownMenuItem className="flex items-center">
-            {getRoleIcon(userProfile.role)}
-            <span className="text-sm">{getRoleDisplay(userProfile.role)}</span>
-          </DropdownMenuItem>
-        )}
-        
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+        <DropdownMenuItem>
+          <User className="mr-2 h-4 w-4" />
+          <span>Perfil</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Configurações</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sair</span>

@@ -2,210 +2,132 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Shield, User, Crown } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UserCog, Shield, User, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './AuthProvider';
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const UsersManager = () => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'user',
-    active: true
-  });
-  
-  const { userProfile, loading: authLoading } = useAuth();
+  const { userProfile } = useAuth();
   const { toast } = useToast();
 
-  const canManageUsers = userProfile?.role === 'admin';
-
   useEffect(() => {
-    console.log('UsersManager: userProfile:', userProfile);
-    console.log('UsersManager: canManageUsers:', canManageUsers);
-    
-    if (!authLoading) {
-      if (canManageUsers) {
-        fetchUsers();
-      } else {
-        setLoading(false);
-      }
-    }
-  }, [canManageUsers, authLoading]);
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
-      console.log('Buscando usuários...');
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao buscar usuários:', error);
-        toast({
-          title: "Erro ao carregar usuários",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Usuários encontrados:', data);
+      if (error) throw error;
       setUsers(data || []);
     } catch (error) {
-      console.error('Erro na consulta de usuários:', error);
+      console.error('Erro ao buscar usuários:', error);
       toast({
-        title: "Erro ao carregar usuários",
-        description: "Erro inesperado ao buscar usuários",
-        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar os usuários",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      if (editingUser) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            name: formData.name,
-            role: formData.role,
-            active: formData.active
-          })
-          .eq('id', editingUser.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Usuário atualizado com sucesso!",
-        });
-      } else {
-        const { error } = await supabase
-          .from('profiles')
-          .insert({
-            name: formData.name,
-            email: formData.email,
-            role: formData.role,
-            active: formData.active
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: "Perfil de usuário criado!",
-          description: "O usuário deve se registrar no sistema para ativar a conta.",
-        });
-      }
-
-      setIsDialogOpen(false);
-      setEditingUser(null);
-      setFormData({ name: '', email: '', role: 'user', active: true });
-      fetchUsers();
-    } catch (error: any) {
-      toast({
-        title: "Erro ao salvar usuário",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEdit = (user: any) => {
-    setEditingUser(user);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      active: user.active
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (userId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
-
+  const updateUserRole = async (userId: string, newRole: string) => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .delete()
+        .update({ role: newRole })
         .eq('id', userId);
 
       if (error) throw error;
 
       toast({
-        title: "Usuário excluído com sucesso!",
+        title: "Sucesso",
+        description: "Papel do usuário atualizado com sucesso!"
       });
-      
+
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Erro ao atualizar papel:', error);
       toast({
-        title: "Erro ao excluir usuário",
-        description: error.message,
-        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o papel do usuário",
+        variant: "destructive"
       });
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Crown className="h-4 w-4 text-red-600" />;
-      case 'leader':
-        return <Shield className="h-4 w-4 text-blue-600" />;
-      default:
-        return <User className="h-4 w-4 text-gray-600" />;
+  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ active: !currentStatus })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Usuário ${!currentStatus ? 'ativado' : 'desativado'} com sucesso!`
+      });
+
+      fetchUsers();
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível alterar o status do usuário",
+        variant: "destructive"
+      });
     }
   };
 
   const getRoleBadge = (role: string) => {
-    const variants: any = {
-      admin: 'destructive',
-      leader: 'default',
-      user: 'secondary'
+    const variants = {
+      admin: 'bg-red-100 text-red-800',
+      leader: 'bg-blue-100 text-blue-800',
+      user: 'bg-gray-100 text-gray-800'
     };
-    
+
     const labels = {
-      admin: 'Admin',
+      admin: 'Administrador',
       leader: 'Líder',
       user: 'Usuário'
     };
 
     return (
-      <Badge variant={variants[role] || 'secondary'}>
+      <Badge className={variants[role as keyof typeof variants] || variants.user}>
         {labels[role as keyof typeof labels] || role}
       </Badge>
     );
   };
 
-  if (authLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2">Verificando permissões...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  // Verificar se o usuário atual tem permissão para gerenciar usuários
+  const canManageUsers = userProfile?.role === 'admin';
 
   if (!canManageUsers) {
     return (
@@ -216,8 +138,8 @@ export const UsersManager = () => {
             Acesso Negado
           </CardTitle>
           <CardDescription>
-            Você não tem permissão para acessar o gerenciamento de usuários.
-            {userProfile ? ` Seu papel atual: ${userProfile.role}` : ' Usuário não identificado'}
+            Você não tem permissão para gerenciar usuários do sistema.
+            Apenas administradores podem acessar esta seção.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -226,143 +148,114 @@ export const UsersManager = () => {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2">Carregando usuários...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Carregando usuários...</p>
+        </div>
+      </div>
     );
   }
+
+  const activeUsers = users.filter(user => user.active).length;
+  const adminUsers = users.filter(user => user.role === 'admin').length;
+  const leaderUsers = users.filter(user => user.role === 'leader').length;
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-blue-600" />
-                Gerenciamento de Usuários
-              </CardTitle>
-              <CardDescription>
-                Gerencie usuários, roles e permissões do sistema
-              </CardDescription>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => {
-                  setEditingUser(null);
-                  setFormData({ name: '', email: '', role: 'user', active: true });
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Usuário
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Nome</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      required
-                      disabled={!!editingUser}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">Usuário</SelectItem>
-                        <SelectItem value="leader">Líder</SelectItem>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="active"
-                      checked={formData.active}
-                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    />
-                    <Label htmlFor="active">Ativo</Label>
-                  </div>
-                  <Button type="submit" className="w-full">
-                    {editingUser ? 'Atualizar' : 'Criar'} Usuário
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <UserCog className="h-5 w-5 text-blue-600" />
+            Gerenciamento de Usuários
+          </CardTitle>
+          <CardDescription>
+            Gerencie usuários, papéis e permissões do sistema
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {users.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Nenhum usuário encontrado.</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-blue-800">Total de Usuários</h3>
+              <p className="text-2xl font-bold text-blue-600">{users.length}</p>
             </div>
-          ) : (
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-green-800">Usuários Ativos</h3>
+              <p className="text-2xl font-bold text-green-600">{activeUsers}</p>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-red-800">Administradores</h3>
+              <p className="text-2xl font-bold text-red-600">{adminUsers}</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-purple-800">Líderes</h3>
+              <p className="text-2xl font-bold text-purple-600">{leaderUsers}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Usuários</CardTitle>
+          <CardDescription>
+            Visualize e gerencie todos os usuários do sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Papel</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
+                  <TableHead>Data de Criação</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="flex items-center gap-2">
-                      {getRoleIcon(user.role)}
-                      {user.name}
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-500" />
+                        {user.name}
+                      </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
                     <TableCell>
-                      <Badge variant={user.active ? 'default' : 'secondary'}>
-                        {user.active ? 'Ativo' : 'Inativo'}
-                      </Badge>
+                      <Select
+                        value={user.role}
+                        onValueChange={(newRole) => updateUserRole(user.id, newRole)}
+                        disabled={user.user_id === userProfile?.user_id} // Não permitir alterar próprio papel
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">Usuário</SelectItem>
+                          <SelectItem value="leader">Líder</SelectItem>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <Badge variant={user.active ? "default" : "secondary"}>
+                        {user.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(user.created_at)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <Button
-                          variant="outline"
                           size="sm"
-                          onClick={() => handleEdit(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
                           variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => toggleUserStatus(user.id, user.active)}
+                          disabled={user.user_id === userProfile?.user_id} // Não permitir desativar próprio usuário
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {user.active ? 'Desativar' : 'Ativar'}
                         </Button>
                       </div>
                     </TableCell>
@@ -370,6 +263,16 @@ export const UsersManager = () => {
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {users.length === 0 && (
+            <div className="text-center py-8">
+              <UserCog className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum usuário encontrado</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Os usuários aparecerão aqui quando se registrarem no sistema.
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -1,212 +1,184 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Download, 
-  Eye, 
-  EyeOff, 
-  Trash2, 
-  Copy,
-  ExternalLink,
-  QrCode
-} from 'lucide-react';
+import { QrCode, Eye, Download, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { useQRCodes } from '@/hooks/useQRCodes';
+import { useToast } from '@/hooks/use-toast';
 import { CreateQRCodeDialog } from './CreateQRCodeDialog';
-import { toast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 
 export const QRCodeManager = () => {
   const { qrCodes, loading, toggleQRCodeStatus, deleteQRCode } = useQRCodes();
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const copyToClipboard = async (text: string) => {
+  const handleDownloadQR = (qrCode: any) => {
     try {
-      await navigator.clipboard.writeText(text);
-      toast({
-        title: "Copiado!",
-        description: "URL copiada para a área de transferência"
-      });
-    } catch (err) {
-      console.error('Erro ao copiar:', err);
-    }
-  };
-
-  const downloadQRCode = async (qrCode: any) => {
-    try {
-      setDownloadingId(qrCode.id);
-      
-      // Criar um link para download da imagem
       const link = document.createElement('a');
-      link.download = `qr-code-${qrCode.keyword}.png`;
       link.href = qrCode.qr_code_data;
+      link.download = `qr-${qrCode.keyword}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       toast({
-        title: "Download iniciado",
-        description: "QR code baixado com sucesso!"
+        title: "Sucesso",
+        description: "QR Code baixado com sucesso!"
       });
     } catch (error) {
-      console.error('Erro ao baixar QR code:', error);
       toast({
         title: "Erro",
-        description: "Erro ao baixar QR code",
+        description: "Erro ao baixar QR Code",
         variant: "destructive"
       });
-    } finally {
-      setDownloadingId(null);
     }
   };
 
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+    await toggleQRCodeStatus(id, !currentStatus);
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o QR code "${title}"?`)) {
+      await deleteQRCode(id);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const activeQRCodes = qrCodes.filter(qr => qr.active).length;
+  const totalScans = qrCodes.reduce((sum, qr) => sum + qr.scan_count, 0);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Carregando QR codes...</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gerenciamento de QR Codes</h2>
-          <p className="text-gray-600">Crie e gerencie QR codes para eventos e campanhas</p>
-        </div>
-        <CreateQRCodeDialog />
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="h-5 w-5 text-blue-600" />
+                Gerenciamento de QR Codes
+              </CardTitle>
+              <CardDescription>
+                Crie e gerencie QR codes para campanhas e eventos
+              </CardDescription>
+            </div>
+            <CreateQRCodeDialog />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-blue-800">Total de QR Codes</h3>
+              <p className="text-2xl font-bold text-blue-600">{qrCodes.length}</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-green-800">QR Codes Ativos</h3>
+              <p className="text-2xl font-bold text-green-600">{activeQRCodes}</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-purple-800">Total de Scans</h3>
+              <p className="text-2xl font-bold text-purple-600">{totalScans}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {qrCodes.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <QrCode className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhum QR Code criado
-            </h3>
-            <p className="text-gray-500 text-center mb-4">
-              Comece criando seu primeiro QR code para eventos ou campanhas
+          <CardContent className="text-center py-8">
+            <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">Nenhum QR code criado ainda.</p>
+            <p className="text-sm text-gray-400 mt-2">
+              Comece criando seu primeiro QR code!
             </p>
-            <CreateQRCodeDialog />
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {qrCodes.map((qrCode) => (
-            <Card key={qrCode.id} className="relative">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{qrCode.title}</CardTitle>
-                    <p className="text-sm text-gray-500 break-all">
-                      /{qrCode.keyword}
-                    </p>
+            <Card key={qrCode.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-blue-600" />
+                    <span className="truncate">{qrCode.title}</span>
                   </div>
                   <Badge variant={qrCode.active ? "default" : "secondary"}>
-                    {qrCode.active ? 'Ativo' : 'Inativo'}
+                    {qrCode.active ? "Ativo" : "Inativo"}
                   </Badge>
-                </div>
+                </CardTitle>
               </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {/* QR Code Image */}
+              <CardContent className="space-y-3">
                 <div className="flex justify-center">
                   <img 
                     src={qrCode.qr_code_data} 
-                    alt={`QR Code para ${qrCode.title}`}
+                    alt={`QR Code ${qrCode.title}`}
                     className="w-32 h-32 border rounded"
                   />
                 </div>
-
-                {/* Stats */}
+                
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {qrCode.scan_count}
+                  <p className="text-sm text-gray-600">
+                    Palavra-chave: <span className="font-mono">{qrCode.keyword}</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    URL: {qrCode.url}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-4 w-4" />
+                    <span>{qrCode.scan_count} scans</span>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    scan{qrCode.scan_count !== 1 ? 's' : ''}
-                  </div>
                 </div>
 
-                {/* URL */}
-                <div className="p-2 bg-gray-50 rounded text-sm break-all">
-                  {qrCode.url}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 flex-wrap">
-                  <Button
+                <div className="flex justify-center gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
                     size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(qrCode.url)}
-                    className="flex-1"
+                    onClick={() => handleDownloadQR(qrCode)}
                   >
-                    <Copy className="h-3 w-3 mr-1" />
-                    Copiar
+                    <Download className="h-4 w-4 mr-1" />
+                    Baixar
                   </Button>
-                  
-                  <Button
+                  <Button 
+                    variant="outline" 
                     size="sm"
-                    variant="outline"
-                    onClick={() => downloadQRCode(qrCode)}
-                    disabled={downloadingId === qrCode.id}
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    {downloadingId === qrCode.id ? 'Baixando...' : 'Baixar'}
-                  </Button>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => toggleQRCodeStatus(qrCode.id, !qrCode.active)}
-                    className="flex-1"
+                    onClick={() => handleToggleStatus(qrCode.id, qrCode.active)}
                   >
                     {qrCode.active ? (
-                      <><EyeOff className="h-3 w-3 mr-1" /> Desativar</>
+                      <ToggleRight className="h-4 w-4 mr-1" />
                     ) : (
-                      <><Eye className="h-3 w-3 mr-1" /> Ativar</>
+                      <ToggleLeft className="h-4 w-4 mr-1" />
                     )}
+                    {qrCode.active ? 'Desativar' : 'Ativar'}
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDelete(qrCode.id, qrCode.title)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir
+                  </Button>
+                </div>
 
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tem certeza que deseja excluir o QR code "{qrCode.title}"? 
-                          Esta ação não pode ser desfeita.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => deleteQRCode(qrCode.id)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                <div className="text-xs text-gray-400 text-center">
+                  Criado em {formatDate(qrCode.created_at)}
                 </div>
               </CardContent>
             </Card>

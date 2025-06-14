@@ -14,51 +14,51 @@ interface AddCityDialogProps {
 
 export const AddCityDialog = ({ onCityAdded }: AddCityDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [cityName, setCityName] = useState('');
-  const [stateName, setStateName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    state: ''
+  });
+  
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!cityName.trim() || !stateName.trim()) {
+    if (!formData.name || !formData.state) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos",
-        variant: "destructive"
+        description: "Por favor, preencha todos os campos.",
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-
     try {
       const { error } = await supabase
         .from('cities')
-        .insert({
-          name: cityName.trim(),
-          state: stateName.trim(),
-          active: true
-        });
+        .insert([{
+          name: formData.name,
+          state: formData.state.toUpperCase()
+        }]);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Cidade adicionada com sucesso!"
+        description: "Cidade adicionada com sucesso!",
       });
 
-      setCityName('');
-      setStateName('');
+      setFormData({ name: '', state: '' });
       setIsOpen(false);
       onCityAdded();
     } catch (error) {
-      console.error('Erro ao adicionar cidade:', error);
+      console.error('Erro ao criar cidade:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar a cidade",
-        variant: "destructive"
+        description: "Erro ao criar cidade. Tente novamente.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -68,42 +68,50 @@ export const AddCityDialog = ({ onCityAdded }: AddCityDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
-          <Plus className="w-4 h-4 mr-2" />
-          Adicionar Cidade
+        <Button variant="outline">
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Cidade
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Adicionar Nova Cidade</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="cityName">Nome da Cidade</Label>
+            <Label htmlFor="city-name">Nome da Cidade *</Label>
             <Input
-              id="cityName"
-              value={cityName}
-              onChange={(e) => setCityName(e.target.value)}
-              placeholder="Digite o nome da cidade"
+              id="city-name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Ex: São Paulo"
               required
             />
           </div>
+          
           <div>
-            <Label htmlFor="stateName">Estado</Label>
+            <Label htmlFor="state">Estado (UF) *</Label>
             <Input
-              id="stateName"
-              value={stateName}
-              onChange={(e) => setStateName(e.target.value)}
-              placeholder="Digite o estado (ex: SP, RJ)"
+              id="state"
+              value={formData.state}
+              onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value.toUpperCase() }))}
+              placeholder="Ex: SP"
+              maxLength={2}
               required
             />
           </div>
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={loading}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Salvando...' : 'Salvar'}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Criando...' : 'Criar Cidade'}
             </Button>
           </div>
         </form>
