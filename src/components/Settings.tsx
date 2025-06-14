@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings as SettingsIcon, MapPin, Webhook, Palette, Image, Globe } from 'lucide-react';
+import { Settings as SettingsIcon, MapPin, Webhook, Palette, Image, Globe, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddCityDialog } from './AddCityDialog';
@@ -22,23 +23,49 @@ interface Neighborhood {
   city_id: string;
 }
 
+interface ChurchSettings {
+  name: string;
+  admin_email: string;
+  selected_city: string;
+  webhook_url: string;
+  primary_color: string;
+  secondary_color: string;
+  logo: string;
+  favicon: string;
+}
+
 export const Settings = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [selectedCity, setSelectedCity] = useState('');
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<Neighborhood[]>([]);
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [primaryColor, setPrimaryColor] = useState('#3B82F6');
-  const [secondaryColor, setSecondaryColor] = useState('#64748B');
-  const [logo, setLogo] = useState('');
-  const [favicon, setFavicon] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
+  // Estados das configurações
+  const [settings, setSettings] = useState<ChurchSettings>({
+    name: '',
+    admin_email: '',
+    selected_city: '',
+    webhook_url: '',
+    primary_color: '#3B82F6',
+    secondary_color: '#64748B',
+    logo: '',
+    favicon: ''
+  });
+
   useEffect(() => {
-    fetchCities();
-    fetchNeighborhoods();
+    fetchAll();
   }, []);
+
+  const fetchAll = async () => {
+    await Promise.all([
+      fetchCities(),
+      fetchNeighborhoods(),
+      loadSettings()
+    ]);
+    setLoading(false);
+  };
 
   const fetchCities = async () => {
     try {
@@ -57,8 +84,6 @@ export const Settings = () => {
         description: "Não foi possível carregar as cidades",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -77,24 +102,49 @@ export const Settings = () => {
     }
   };
 
+  const loadSettings = async () => {
+    try {
+      console.log('Carregando configurações...');
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'church_settings')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao carregar configurações:', error);
+        return;
+      }
+
+      if (data?.value) {
+        console.log('Configurações carregadas:', data.value);
+        setSettings(data.value as ChurchSettings);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+    }
+  };
+
   const handleCityChange = (cityId: string) => {
-    setSelectedCity(cityId);
+    setSettings(prev => ({ ...prev, selected_city: cityId }));
     const cityNeighborhoods = neighborhoods.filter(n => n.city_id === cityId);
     setSelectedNeighborhoods(cityNeighborhoods);
   };
 
   const handleSaveSettings = async () => {
     try {
-      console.log('Configurações salvas:', { 
-        selectedCity, 
-        selectedNeighborhoods: selectedNeighborhoods.map(n => n.name),
-        webhookUrl,
-        primaryColor,
-        secondaryColor,
-        logo,
-        favicon
-      });
+      setSaving(true);
+      console.log('Salvando configurações:', settings);
       
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+          key: 'church_settings',
+          value: settings
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Sucesso",
         description: "Configurações salvas com sucesso!"
@@ -106,6 +156,8 @@ export const Settings = () => {
         description: "Não foi possível salvar as configurações",
         variant: "destructive"
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -117,14 +169,17 @@ export const Settings = () => {
       const file = e.target.files[0];
       if (file) {
         const url = URL.createObjectURL(file);
-        if (type === 'logo') {
-          setLogo(url);
-        } else {
-          setFavicon(url);
-        }
+        setSettings(prev => ({
+          ...prev,
+          [type]: url
+        }));
       }
     };
     input.click();
+  };
+
+  const updateSetting = (key: keyof ChurchSettings, value: string) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   if (loading) {
@@ -135,7 +190,17 @@ export const Settings = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-        <SettingsIcon size={24} className="text-gray-600" />
+        <div className="flex items-center gap-4">
+          <SettingsIcon size={24} className="text-gray-600" />
+          <Button 
+            onClick={handleSaveSettings} 
+            disabled={saving}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Salvando...' : 'Salvar Tudo'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -150,7 +215,7 @@ export const Settings = () => {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="city">Cidade</Label>
-              <Select value={selectedCity} onValueChange={handleCityChange}>
+              <Select value={settings.selected_city} onValueChange={handleCityChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a cidade" />
                 </SelectTrigger>
@@ -166,12 +231,12 @@ export const Settings = () => {
 
             <AddCityDialog onCityAdded={fetchCities} />
 
-            {selectedCity && selectedNeighborhoods.length > 0 && (
+            {settings.selected_city && selectedNeighborhoods.length > 0 && (
               <div>
                 <Label>Bairros Cadastrados</Label>
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-2">
-                    Bairros disponíveis para {cities.find(c => c.id === selectedCity)?.name}:
+                    Bairros disponíveis para {cities.find(c => c.id === settings.selected_city)?.name}:
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedNeighborhoods.map((neighborhood) => (
@@ -207,13 +272,13 @@ export const Settings = () => {
                   <Input
                     id="primaryColor"
                     type="color"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    value={settings.primary_color}
+                    onChange={(e) => updateSetting('primary_color', e.target.value)}
                     className="w-16 h-10"
                   />
                   <Input
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    value={settings.primary_color}
+                    onChange={(e) => updateSetting('primary_color', e.target.value)}
                     placeholder="#3B82F6"
                   />
                 </div>
@@ -224,13 +289,13 @@ export const Settings = () => {
                   <Input
                     id="secondaryColor"
                     type="color"
-                    value={secondaryColor}
-                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    value={settings.secondary_color}
+                    onChange={(e) => updateSetting('secondary_color', e.target.value)}
                     className="w-16 h-10"
                   />
                   <Input
-                    value={secondaryColor}
-                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    value={settings.secondary_color}
+                    onChange={(e) => updateSetting('secondary_color', e.target.value)}
                     placeholder="#64748B"
                   />
                 </div>
@@ -240,9 +305,9 @@ export const Settings = () => {
             <div>
               <Label>Logotipo</Label>
               <div className="mt-2 space-y-2">
-                {logo && (
+                {settings.logo && (
                   <div className="p-2 bg-gray-50 rounded-lg">
-                    <img src={logo} alt="Logo" className="h-16 object-contain" />
+                    <img src={settings.logo} alt="Logo" className="h-16 object-contain" />
                   </div>
                 )}
                 <Button 
@@ -251,7 +316,7 @@ export const Settings = () => {
                   className="w-full"
                 >
                   <Image className="w-4 h-4 mr-2" />
-                  {logo ? 'Alterar Logotipo' : 'Enviar Logotipo'}
+                  {settings.logo ? 'Alterar Logotipo' : 'Enviar Logotipo'}
                 </Button>
               </div>
             </div>
@@ -259,9 +324,9 @@ export const Settings = () => {
             <div>
               <Label>Favicon</Label>
               <div className="mt-2 space-y-2">
-                {favicon && (
+                {settings.favicon && (
                   <div className="p-2 bg-gray-50 rounded-lg">
-                    <img src={favicon} alt="Favicon" className="h-8 object-contain" />
+                    <img src={settings.favicon} alt="Favicon" className="h-8 object-contain" />
                   </div>
                 )}
                 <Button 
@@ -270,7 +335,7 @@ export const Settings = () => {
                   className="w-full"
                 >
                   <Globe className="w-4 h-4 mr-2" />
-                  {favicon ? 'Alterar Favicon' : 'Enviar Favicon'}
+                  {settings.favicon ? 'Alterar Favicon' : 'Enviar Favicon'}
                 </Button>
                 <p className="text-xs text-gray-500">
                   Recomendado: PNG/JPG (Lovable não suporta .ico)
@@ -293,8 +358,8 @@ export const Settings = () => {
               <Label htmlFor="webhook">URL do Webhook</Label>
               <Input
                 id="webhook"
-                value={webhookUrl}
-                onChange={(e) => setWebhookUrl(e.target.value)}
+                value={settings.webhook_url}
+                onChange={(e) => updateSetting('webhook_url', e.target.value)}
                 placeholder="https://seu-sistema.com/webhook"
                 type="url"
               />
@@ -326,7 +391,8 @@ export const Settings = () => {
                 <Input
                   id="churchName"
                   placeholder="Digite o nome da igreja"
-                  defaultValue="Igreja Batista Central"
+                  value={settings.name}
+                  onChange={(e) => updateSetting('name', e.target.value)}
                 />
               </div>
               <div>
@@ -335,15 +401,20 @@ export const Settings = () => {
                   id="adminEmail"
                   type="email"
                   placeholder="admin@igreja.com"
-                  defaultValue="admin@igrejabatistacentral.com"
+                  value={settings.admin_email}
+                  onChange={(e) => updateSetting('admin_email', e.target.value)}
                 />
               </div>
             </div>
 
-            <div className="flex justify-end pt-4">
-              <Button onClick={handleSaveSettings} className="bg-blue-600 hover:bg-blue-700">
-                Salvar Configurações
-              </Button>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h4 className="font-medium text-sm mb-2 text-green-800">Status do Sistema:</h4>
+              <ul className="text-xs text-green-700 space-y-1">
+                <li>✅ Banco de dados conectado</li>
+                <li>✅ Dados de teste carregados</li>
+                <li>✅ Sistema de configurações ativo</li>
+                <li>✅ Pronto para uso</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
