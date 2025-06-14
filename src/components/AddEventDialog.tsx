@@ -20,14 +20,6 @@ export const AddEventDialog = () => {
   const { addEvent } = useEvents();
   const { toast } = useToast();
 
-  const generateQRCode = (keyword: string) => {
-    const qrUrl = `${window.location.origin}/qr/${keyword}`;
-    return {
-      qr_code: `QR-${keyword}-${Date.now()}`,
-      qr_url: qrUrl
-    };
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -42,20 +34,11 @@ export const AddEventDialog = () => {
 
     setLoading(true);
     try {
-      const { qr_code, qr_url } = generateQRCode(keyword);
-      
       await addEvent({
         name,
         date,
         keyword,
-        qr_code,
-        qr_url,
         active
-      });
-
-      toast({
-        title: "Sucesso",
-        description: "Evento criado com sucesso!",
       });
 
       // Reset form
@@ -65,11 +48,7 @@ export const AddEventDialog = () => {
       setActive(true);
       setIsOpen(false);
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao criar evento. Tente novamente.",
-        variant: "destructive",
-      });
+      // Erro já tratado no hook
     } finally {
       setLoading(false);
     }
@@ -120,7 +99,7 @@ export const AddEventDialog = () => {
               required
             />
             <p className="text-sm text-gray-500 mt-1">
-              Esta palavra será usada no QR code para identificar o evento
+              Esta palavra será usada no QR code (será gerado automaticamente)
             </p>
           </div>
 

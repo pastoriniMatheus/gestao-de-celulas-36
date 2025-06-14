@@ -6,7 +6,6 @@ import {
   Calendar, 
   Users, 
   Home, 
-  QrCode, 
   MessageCircle, 
   GitBranch,
   Settings,
@@ -27,9 +26,9 @@ const menuItems = [
   },
   {
     id: 'events',
-    label: 'Eventos',
+    label: 'Eventos & QR Codes',
     icon: Calendar,
-    description: 'Gerenciar eventos'
+    description: 'Gerenciar eventos e QR codes'
   },
   {
     id: 'contacts',
@@ -42,12 +41,6 @@ const menuItems = [
     label: 'Células',
     icon: Home,
     description: 'Células domiciliares'
-  },
-  {
-    id: 'qrcodes',
-    label: 'QR Codes',
-    icon: QrCode,
-    description: 'Códigos QR'
   },
   {
     id: 'messaging',
