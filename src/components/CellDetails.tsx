@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +44,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [newVisitorName, setNewVisitorName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const { toast } = useToast();
   const channelsRef = useRef<any[]>([]);
   const isSubscribedRef = useRef(false);
@@ -199,18 +199,24 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
   }, [selectedDate, attendances]);
 
   const toggleAttendance = async (contactId: string) => {
+    if (isUpdating === contactId) return;
+    
+    setIsUpdating(contactId);
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const existing = filteredAttendances.find(att => att.contact_id === contactId);
+    const existing = attendances.find(att => 
+      att.contact_id === contactId && att.attendance_date === dateStr
+    );
 
     try {
       console.log('Marcando presença para contato:', contactId, 'na data:', dateStr);
       
       if (existing) {
         // Atualizar presença existente
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('attendances')
           .update({ present: !existing.present })
-          .eq('id', existing.id);
+          .eq('id', existing.id)
+          .select();
 
         if (error) {
           console.error('Erro ao atualizar presença:', error);
@@ -221,9 +227,11 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
           });
           return;
         }
+
+        console.log('Presença atualizada:', data);
       } else {
         // Criar nova presença
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('attendances')
           .insert([{
             cell_id: cellId,
@@ -231,7 +239,8 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
             attendance_date: dateStr,
             present: true,
             visitor: false
-          }]);
+          }])
+          .select();
 
         if (error) {
           console.error('Erro ao criar presença:', error);
@@ -242,6 +251,8 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
           });
           return;
         }
+
+        console.log('Presença criada:', data);
       }
 
       toast({
@@ -258,6 +269,8 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
         description: "Erro inesperado ao marcar presença.",
         variant: "destructive"
       });
+    } finally {
+      setIsUpdating(null);
     }
   };
 
@@ -299,7 +312,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
       }
 
       // Marcar presença do visitante
-      const { error: attendanceError } = await supabase
+      const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendances')
         .insert([{
           cell_id: cellId,
@@ -307,7 +320,8 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
           attendance_date: dateStr,
           present: true,
           visitor: true
-        }]);
+        }])
+        .select();
 
       if (attendanceError) {
         console.error('Erro ao marcar presença do visitante:', attendanceError);
@@ -319,13 +333,14 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
         return;
       }
 
+      console.log('Visitante adicionado e presença marcada:', { visitorData, attendanceData });
+
       toast({
         title: "Sucesso",
         description: "Visitante adicionado com sucesso!"
       });
 
       setNewVisitorName('');
-      // Recarregar dados
       await fetchCellData();
     } catch (error) {
       console.error('Erro ao adicionar visitante:', error);
@@ -500,6 +515,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
                     {members.filter(member => member.status !== 'visitor').map((member) => {
                       const attendance = todayAttendances.find(att => att.contact_id === member.id);
                       const isPresent = attendance?.present || false;
+                      const isLoading = isUpdating === member.id;
                       
                       return (
                         <div
@@ -518,9 +534,16 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
                             size="sm"
                             variant={isPresent ? "default" : "outline"}
                             onClick={() => toggleAttendance(member.id)}
+                            disabled={isLoading}
                             className={isPresent ? "bg-green-600 hover:bg-green-700" : ""}
                           >
-                            {isPresent ? <UserCheck className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                            {isLoading ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : isPresent ? (
+                              <UserCheck className="h-4 w-4" />
+                            ) : (
+                              <Users className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       );
