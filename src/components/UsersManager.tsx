@@ -28,12 +28,11 @@ export const UsersManager = () => {
   const { userProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  // Verificar se o usuário tem permissão (admin)
+  // Verificar se o usuário tem permissão (admin) - simplificado
   const canManageUsers = userProfile?.role === 'admin';
 
   useEffect(() => {
     console.log('UsersManager: userProfile:', userProfile);
-    console.log('UsersManager: authLoading:', authLoading);
     console.log('UsersManager: canManageUsers:', canManageUsers);
     
     if (!authLoading) {
@@ -380,4 +379,92 @@ export const UsersManager = () => {
       </Card>
     </div>
   );
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    
+    try {
+      if (editingUser) {
+        // Atualizar usuário existente
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            name: formData.name,
+            role: formData.role,
+            active: formData.active
+          })
+          .eq('id', editingUser.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Usuário atualizado com sucesso!",
+        });
+      } else {
+        // Criar novo usuário (apenas perfil, pois não podemos criar usuários auth via API)
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            name: formData.name,
+            email: formData.email,
+            role: formData.role,
+            active: formData.active
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Perfil de usuário criado!",
+          description: "O usuário deve se registrar no sistema para ativar a conta.",
+        });
+      }
+
+      setIsDialogOpen(false);
+      setEditingUser(null);
+      setFormData({ name: '', email: '', role: 'user', active: true });
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar usuário",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }
+
+  function handleEdit(user: any) {
+    setEditingUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      active: user.active
+    });
+    setIsDialogOpen(true);
+  }
+
+  async function handleDelete(userId: string) {
+    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Usuário excluído com sucesso!",
+      });
+      
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir usuário",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }
 };

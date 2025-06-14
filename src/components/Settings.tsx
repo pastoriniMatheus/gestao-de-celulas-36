@@ -49,20 +49,25 @@ export const Settings = () => {
   const [leaders, setLeaders] = useState<any[]>([]);
   
   const { toast } = useToast();
-  const { userProfile } = useAuth();
+  const { userProfile, loading: authLoading } = useAuth();
 
-  // Verificar se o usuário é admin
+  // Verificar se o usuário é admin - simplificado
   const isAdmin = userProfile?.role === 'admin';
 
   useEffect(() => {
-    if (isAdmin) {
-      loadSettings();
-      loadCities();
-      loadLeaders();
-    } else {
-      setLoading(false);
+    console.log('Settings: userProfile:', userProfile);
+    console.log('Settings: isAdmin:', isAdmin);
+    
+    if (!authLoading) {
+      if (isAdmin) {
+        loadSettings();
+        loadCities();
+        loadLeaders();
+      } else {
+        setLoading(false);
+      }
     }
-  }, [isAdmin]);
+  }, [isAdmin, authLoading]);
 
   const loadSettings = async () => {
     try {
@@ -214,6 +219,19 @@ export const Settings = () => {
     return days[day] || `Dia ${day}`;
   };
 
+  if (authLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Verificando permissões...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <Card>
@@ -224,6 +242,7 @@ export const Settings = () => {
           </CardTitle>
           <CardDescription>
             Você não tem permissão para acessar as configurações do sistema.
+            {userProfile ? ` Seu papel atual: ${userProfile.role}` : ' Usuário não identificado'}
           </CardDescription>
         </CardHeader>
       </Card>
