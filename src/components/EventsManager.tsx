@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,33 +33,24 @@ export const EventsManager = () => {
   });
   const { toast } = useToast();
 
-  // Check if license guard is loaded
-  const [isLicenseGuardReady, setIsLicenseGuardReady] = useState(false);
-
-  useEffect(() => {
-    const checkLicenseGuard = () => {
-      if (window.generateSecureQR && window.LicenseGuard) {
-        setIsLicenseGuardReady(true);
-      } else {
-        setTimeout(checkLicenseGuard, 100);
-      }
-    };
-    checkLicenseGuard();
-  }, []);
-
   useEffect(() => {
     fetchEvents();
   }, []);
 
   const fetchEvents = async () => {
     try {
+      console.log('Buscando eventos...');
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro na consulta:', error);
+        throw error;
+      }
 
+      console.log('Eventos encontrados:', data);
       setEvents(data || []);
     } catch (error) {
       console.error('Erro ao buscar eventos:', error);
@@ -73,29 +65,36 @@ export const EventsManager = () => {
   };
 
   const generateSecureQRCode = (eventName: string, keyword: string) => {
-    if (isLicenseGuardReady && window.generateSecureQR) {
-      return window.generateSecureQR(eventName, keyword);
-    } else {
-      const eventId = 'qr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      const sanitizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      return {
-        eventId,
-        eventName,
-        keyword: sanitizedKeyword,
-        url: `${window.location.origin}/evento/${sanitizedKeyword}/${eventId}`,
-        timestamp: Date.now(),
-        domain: window.location.hostname,
-        scanCount: 0,
-        active: true
-      };
-    }
+    console.log('Gerando QR code para:', eventName, keyword);
+    
+    // Sempre gerar um QR code simples, independente do license guard
+    const eventId = 'qr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const sanitizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const qrUrl = `${window.location.origin}/evento/${sanitizedKeyword}/${eventId}`;
+    
+    const qrData = {
+      eventId,
+      eventName,
+      keyword: sanitizedKeyword,
+      url: qrUrl,
+      timestamp: Date.now(),
+      domain: window.location.hostname,
+      scanCount: 0,
+      active: true
+    };
+    
+    console.log('QR code gerado:', qrData);
+    return qrData;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Salvando evento:', formData);
+    
     try {
       if (editingEvent) {
+        console.log('Atualizando evento existente:', editingEvent.id);
         const { error } = await supabase
           .from('events')
           .update({
@@ -105,28 +104,42 @@ export const EventsManager = () => {
           })
           .eq('id', editingEvent.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao atualizar:', error);
+          throw error;
+        }
 
         toast({
           title: "Sucesso",
           description: "Evento atualizado com sucesso"
         });
       } else {
+        console.log('Criando novo evento...');
         const qrData = generateSecureQRCode(formData.name, formData.keyword);
         
-        const { error } = await supabase
+        const eventData = {
+          name: formData.name,
+          keyword: formData.keyword,
+          date: formData.date,
+          qr_code: qrData.eventId,
+          qr_url: qrData.url,
+          scan_count: 0,
+          active: true
+        };
+        
+        console.log('Dados do evento para inserir:', eventData);
+        
+        const { data, error } = await supabase
           .from('events')
-          .insert({
-            name: formData.name,
-            keyword: formData.keyword,
-            date: formData.date,
-            qr_code: qrData.eventId,
-            qr_url: qrData.url,
-            scan_count: 0,
-            active: true
-          });
+          .insert(eventData)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao inserir:', error);
+          throw error;
+        }
+
+        console.log('Evento criado com sucesso:', data);
 
         toast({
           title: "Sucesso",
@@ -134,7 +147,10 @@ export const EventsManager = () => {
         });
       }
       
-      fetchEvents();
+      // Recarregar eventos
+      await fetchEvents();
+      
+      // Limpar formulário
       setFormData({ name: '', keyword: '', date: '' });
       setEditingEvent(null);
       setIsDialogOpen(false);
@@ -142,7 +158,7 @@ export const EventsManager = () => {
       console.error('Erro ao salvar evento:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível salvar o evento",
+        description: `Não foi possível salvar o evento: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -160,6 +176,7 @@ export const EventsManager = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      console.log('Deletando evento:', id);
       const { error } = await supabase
         .from('events')
         .delete()
