@@ -87,21 +87,13 @@ export const AddNeighborhoodDialog = ({ cities, onNeighborhoodAdded }: AddNeighb
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="neighborhood-name">Nome do Bairro *</Label>
-            <Input
-              id="neighborhood-name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Ex: Centro"
-              required
-            />
-          </div>
-          
-          <div>
             <Label htmlFor="city">Cidade *</Label>
-            <Select value={formData.city_id} onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value }))}>
+            <Select 
+              value={formData.city_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value }))}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione uma cidade" />
+                <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
                 {cities.map((city) => (
@@ -111,6 +103,17 @@ export const AddNeighborhoodDialog = ({ cities, onNeighborhoodAdded }: AddNeighb
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="neighborhood-name">Nome do Bairro *</Label>
+            <Input
+              id="neighborhood-name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Ex: Centro"
+              required
+            />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

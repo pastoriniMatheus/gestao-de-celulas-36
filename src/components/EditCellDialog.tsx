@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Edit } from 'lucide-react';
 import { useCells } from '@/hooks/useCells';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,45 +24,27 @@ interface Cell {
 
 interface EditCellDialogProps {
   cell: Cell;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
-const DAYS_OF_WEEK = [
-  { value: 1, label: 'Segunda-feira' },
-  { value: 2, label: 'Terça-feira' },
-  { value: 3, label: 'Quarta-feira' },
-  { value: 4, label: 'Quinta-feira' },
-  { value: 5, label: 'Sexta-feira' },
-  { value: 6, label: 'Sábado' },
-  { value: 0, label: 'Domingo' }
-];
-
-export const EditCellDialog = ({ cell, isOpen, onOpenChange }: EditCellDialogProps) => {
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [meetingDay, setMeetingDay] = useState<number | null>(null);
-  const [meetingTime, setMeetingTime] = useState('');
-  const [active, setActive] = useState(true);
+export const EditCellDialog = ({ cell }: EditCellDialogProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: cell.name,
+    address: cell.address,
+    meeting_day: cell.meeting_day.toString(),
+    meeting_time: cell.meeting_time,
+    leader_id: cell.leader_id || '',
+    active: cell.active
+  });
   
   const { updateCell } = useCells();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (cell) {
-      setName(cell.name);
-      setAddress(cell.address);
-      setMeetingDay(cell.meeting_day);
-      setMeetingTime(cell.meeting_time);
-      setActive(cell.active);
-    }
-  }, [cell]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !address || meetingDay === null || !meetingTime) {
+    if (!formData.name || !formData.address || !formData.meeting_day || !formData.meeting_time) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -73,11 +56,12 @@ export const EditCellDialog = ({ cell, isOpen, onOpenChange }: EditCellDialogPro
     setLoading(true);
     try {
       await updateCell(cell.id, {
-        name,
-        address,
-        meeting_day: meetingDay,
-        meeting_time: meetingTime,
-        active
+        name: formData.name,
+        address: formData.address,
+        meeting_day: parseInt(formData.meeting_day),
+        meeting_time: formData.meeting_time,
+        leader_id: formData.leader_id || undefined,
+        active: formData.active
       });
 
       toast({
@@ -85,8 +69,9 @@ export const EditCellDialog = ({ cell, isOpen, onOpenChange }: EditCellDialogPro
         description: "Célula atualizada com sucesso!",
       });
 
-      onOpenChange(false);
+      setIsOpen(false);
     } catch (error) {
+      console.error('Erro ao atualizar célula:', error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar célula. Tente novamente.",
@@ -97,44 +82,62 @@ export const EditCellDialog = ({ cell, isOpen, onOpenChange }: EditCellDialogPro
     }
   };
 
+  const weekDays = [
+    { value: '0', label: 'Domingo' },
+    { value: '1', label: 'Segunda-feira' },
+    { value: '2', label: 'Terça-feira' },
+    { value: '3', label: 'Quarta-feira' },
+    { value: '4', label: 'Quinta-feira' },
+    { value: '5', label: 'Sexta-feira' },
+    { value: '6', label: 'Sábado' }
+  ];
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Edit className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Editar Célula</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="edit-name">Nome da Célula *</Label>
+            <Label htmlFor="name">Nome da Célula *</Label>
             <Input
-              id="edit-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Célula Centro"
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Ex: Célula Esperança"
               required
             />
           </div>
           
           <div>
-            <Label htmlFor="edit-address">Endereço *</Label>
+            <Label htmlFor="address">Endereço *</Label>
             <Input
-              id="edit-address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Rua, número, bairro"
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+              placeholder="Endereço completo"
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="edit-meeting-day">Dia da Reunião *</Label>
-            <Select onValueChange={(value) => setMeetingDay(parseInt(value))} value={meetingDay?.toString()}>
+            <Label htmlFor="meeting_day">Dia da Reunião *</Label>
+            <Select 
+              value={formData.meeting_day} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value }))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o dia da semana" />
               </SelectTrigger>
               <SelectContent>
-                {DAYS_OF_WEEK.map((day) => (
-                  <SelectItem key={day.value} value={day.value.toString()}>
+                {weekDays.map((day) => (
+                  <SelectItem key={day.value} value={day.value}>
                     {day.label}
                   </SelectItem>
                 ))}
@@ -143,30 +146,30 @@ export const EditCellDialog = ({ cell, isOpen, onOpenChange }: EditCellDialogPro
           </div>
 
           <div>
-            <Label htmlFor="edit-meeting-time">Horário da Reunião *</Label>
+            <Label htmlFor="meeting_time">Horário da Reunião *</Label>
             <Input
-              id="edit-meeting-time"
+              id="meeting_time"
               type="time"
-              value={meetingTime}
-              onChange={(e) => setMeetingTime(e.target.value)}
+              value={formData.meeting_time}
+              onChange={(e) => setFormData(prev => ({ ...prev, meeting_time: e.target.value }))}
               required
             />
           </div>
 
           <div className="flex items-center space-x-2">
             <Switch
-              id="edit-active"
-              checked={active}
-              onCheckedChange={setActive}
+              id="active"
+              checked={formData.active}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
             />
-            <Label htmlFor="edit-active">Célula ativa</Label>
+            <Label htmlFor="active">Célula ativa</Label>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => setIsOpen(false)}
               disabled={loading}
             >
               Cancelar

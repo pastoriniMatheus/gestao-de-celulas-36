@@ -9,23 +9,16 @@ import { Plus } from 'lucide-react';
 import { useCells } from '@/hooks/useCells';
 import { useToast } from '@/hooks/use-toast';
 
-const DAYS_OF_WEEK = [
-  { value: 1, label: 'Segunda-feira' },
-  { value: 2, label: 'Terça-feira' },
-  { value: 3, label: 'Quarta-feira' },
-  { value: 4, label: 'Quinta-feira' },
-  { value: 5, label: 'Sexta-feira' },
-  { value: 6, label: 'Sábado' },
-  { value: 0, label: 'Domingo' }
-];
-
 export const AddCellDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [meetingDay, setMeetingDay] = useState<number | null>(null);
-  const [meetingTime, setMeetingTime] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    meeting_day: '',
+    meeting_time: '',
+    leader_id: ''
+  });
   
   const { addCell } = useCells();
   const { toast } = useToast();
@@ -33,7 +26,7 @@ export const AddCellDialog = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !address || meetingDay === null || !meetingTime) {
+    if (!formData.name || !formData.address || !formData.meeting_day || !formData.meeting_time) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -45,10 +38,11 @@ export const AddCellDialog = () => {
     setLoading(true);
     try {
       await addCell({
-        name,
-        address,
-        meeting_day: meetingDay,
-        meeting_time: meetingTime,
+        name: formData.name,
+        address: formData.address,
+        meeting_day: parseInt(formData.meeting_day),
+        meeting_time: formData.meeting_time,
+        leader_id: formData.leader_id || undefined,
         active: true
       });
 
@@ -57,13 +51,16 @@ export const AddCellDialog = () => {
         description: "Célula criada com sucesso!",
       });
 
-      // Reset form
-      setName('');
-      setAddress('');
-      setMeetingDay(null);
-      setMeetingTime('');
+      setFormData({
+        name: '',
+        address: '',
+        meeting_day: '',
+        meeting_time: '',
+        leader_id: ''
+      });
       setIsOpen(false);
     } catch (error) {
+      console.error('Erro ao criar célula:', error);
       toast({
         title: "Erro",
         description: "Erro ao criar célula. Tente novamente.",
@@ -73,6 +70,16 @@ export const AddCellDialog = () => {
       setLoading(false);
     }
   };
+
+  const weekDays = [
+    { value: '0', label: 'Domingo' },
+    { value: '1', label: 'Segunda-feira' },
+    { value: '2', label: 'Terça-feira' },
+    { value: '3', label: 'Quarta-feira' },
+    { value: '4', label: 'Quinta-feira' },
+    { value: '5', label: 'Sexta-feira' },
+    { value: '6', label: 'Sábado' }
+  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -84,16 +91,16 @@ export const AddCellDialog = () => {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Nova Célula</DialogTitle>
+          <DialogTitle>Criar Nova Célula</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="name">Nome da Célula *</Label>
             <Input
               id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Célula Centro"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Ex: Célula Esperança"
               required
             />
           </div>
@@ -102,22 +109,25 @@ export const AddCellDialog = () => {
             <Label htmlFor="address">Endereço *</Label>
             <Input
               id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Rua, número, bairro"
+              value={formData.address}
+              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+              placeholder="Endereço completo"
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="meeting-day">Dia da Reunião *</Label>
-            <Select onValueChange={(value) => setMeetingDay(parseInt(value))}>
+            <Label htmlFor="meeting_day">Dia da Reunião *</Label>
+            <Select 
+              value={formData.meeting_day} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value }))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o dia da semana" />
               </SelectTrigger>
               <SelectContent>
-                {DAYS_OF_WEEK.map((day) => (
-                  <SelectItem key={day.value} value={day.value.toString()}>
+                {weekDays.map((day) => (
+                  <SelectItem key={day.value} value={day.value}>
                     {day.label}
                   </SelectItem>
                 ))}
@@ -126,12 +136,12 @@ export const AddCellDialog = () => {
           </div>
 
           <div>
-            <Label htmlFor="meeting-time">Horário da Reunião *</Label>
+            <Label htmlFor="meeting_time">Horário da Reunião *</Label>
             <Input
-              id="meeting-time"
+              id="meeting_time"
               type="time"
-              value={meetingTime}
-              onChange={(e) => setMeetingTime(e.target.value)}
+              value={formData.meeting_time}
+              onChange={(e) => setFormData(prev => ({ ...prev, meeting_time: e.target.value }))}
               required
             />
           </div>
