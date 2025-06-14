@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +15,10 @@ export const PendingContactsManager = () => {
   const { toast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
 
-  // Filtrar contatos pendentes
-  const pendingContacts = contacts.filter(contact => contact.status === 'pending');
+  // Filtrar contatos pendentes (sem célula atribuída)
+  const pendingContacts = contacts.filter(contact => 
+    contact.status === 'pending' && !contact.cell_id
+  );
 
   // Filtrar células ativas de Itajaí
   const itajaiCells = cells.filter(cell => 
@@ -52,7 +53,7 @@ export const PendingContactsManager = () => {
         description: "Contato atribuído à célula com sucesso!"
       });
 
-      // Atualizar lista de contatos
+      // Atualizar lista de contatos automaticamente
       await fetchContacts();
     } catch (error) {
       console.error('Erro ao atribuir célula:', error);

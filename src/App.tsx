@@ -19,6 +19,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/form" element={<FormPage />} />
           <Route path="/form/:keyword" element={<FormPage />} />
           <Route path="/qr/:keyword" element={<QRRedirect />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
