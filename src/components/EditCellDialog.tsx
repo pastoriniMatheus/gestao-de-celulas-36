@@ -34,7 +34,7 @@ export const EditCellDialog = ({ cell }: EditCellDialogProps) => {
     address: cell.address,
     meeting_day: cell.meeting_day.toString(),
     meeting_time: cell.meeting_time,
-    leader_id: cell.leader_id || '',
+    leader_id: cell.leader_id || 'no-leader',
     active: cell.active
   });
   
@@ -60,7 +60,7 @@ export const EditCellDialog = ({ cell }: EditCellDialogProps) => {
         address: formData.address,
         meeting_day: parseInt(formData.meeting_day),
         meeting_time: formData.meeting_time,
-        leader_id: formData.leader_id || undefined,
+        leader_id: formData.leader_id === 'no-leader' ? undefined : formData.leader_id,
         active: formData.active
       });
 
@@ -154,6 +154,22 @@ export const EditCellDialog = ({ cell }: EditCellDialogProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, meeting_time: e.target.value }))}
               required
             />
+          </div>
+
+          <div>
+            <Label htmlFor="leader_id">Líder (Opcional)</Label>
+            <Select 
+              value={formData.leader_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um líder (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no-leader">Nenhum líder</SelectItem>
+                {/* Note: You would need to add leaders data here when available */}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center space-x-2">
