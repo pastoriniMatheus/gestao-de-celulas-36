@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +71,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
 
       setMembers(membersData || []);
 
-      // Buscar presenças da célula
+      // Buscar presenças da célula - now including visitor column
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendances')
         .select('*')

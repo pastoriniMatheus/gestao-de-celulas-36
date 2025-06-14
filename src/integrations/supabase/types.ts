@@ -17,6 +17,7 @@ export type Database = {
           created_at: string
           id: string
           present: boolean
+          visitor: boolean
         }
         Insert: {
           attendance_date: string
@@ -25,6 +26,7 @@ export type Database = {
           created_at?: string
           id?: string
           present?: boolean
+          visitor?: boolean
         }
         Update: {
           attendance_date?: string
@@ -33,6 +35,7 @@ export type Database = {
           created_at?: string
           id?: string
           present?: boolean
+          visitor?: boolean
         }
         Relationships: [
           {
