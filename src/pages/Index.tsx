@@ -8,7 +8,11 @@ import { CellsManager } from '@/components/CellsManager';
 import { MessagingCenter } from '@/components/MessagingCenter';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
+import { LoginSystem } from '@/components/LoginSystem';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { AuthProvider } from '@/components/AuthProvider';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { UserMenu } from '@/components/UserMenu';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -29,22 +33,31 @@ const Index = () => {
         return <Pipeline />;
       case 'settings':
         return <Settings />;
+      case 'users':
+        return <LoginSystem />;
       default:
         return <Dashboard />;
     }
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
+    <AuthProvider>
+      <ProtectedRoute>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
+            <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+            <main className="flex-1 p-6 overflow-auto">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex justify-end mb-4">
+                  <UserMenu />
+                </div>
+                {renderContent()}
+              </div>
+            </main>
           </div>
-        </main>
-      </div>
-    </SidebarProvider>
+        </SidebarProvider>
+      </ProtectedRoute>
+    </AuthProvider>
   );
 };
 
