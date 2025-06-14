@@ -29,43 +29,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userProfile, setUserProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const createUserProfile = async (userId: string, email: string, name: string) => {
-    try {
-      console.log('Criando perfil para:', email);
-      
-      // Determinar role baseado no email
-      let role = 'user';
-      if (email.includes('admin')) {
-        role = 'admin';
-      } else if (email.includes('lider')) {
-        role = 'leader';
-      }
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .upsert({
-          user_id: userId,
-          email: email,
-          name: name,
-          role: role,
-          active: true
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Erro ao criar perfil:', error);
-        return null;
-      }
-
-      console.log('Perfil criado:', data);
-      return data;
-    } catch (error) {
-      console.error('Erro crítico ao criar perfil:', error);
-      return null;
-    }
-  };
-
   const fetchUserProfile = async (userId: string, userEmail?: string) => {
     try {
       console.log('Buscando perfil para:', userEmail);
@@ -84,7 +47,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!data && userEmail) {
         console.log('Perfil não encontrado, criando...');
         const name = userEmail.split('@')[0];
-        return await createUserProfile(userId, userEmail, name);
+        
+        let role = 'user';
+        if (userEmail.includes('admin')) {
+          role = 'admin';
+        } else if (userEmail.includes('lider')) {
+          role = 'leader';
+        }
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .upsert({
+            user_id: userId,
+            email: userEmail,
+            name: name,
+            role: role,
+            active: true
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Erro ao criar perfil:', createError);
+          return null;
+        }
+
+        return newProfile;
       }
 
       console.log('Perfil encontrado:', data);
@@ -123,10 +111,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Buscar sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       
@@ -187,9 +173,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error };
       }
 
-      // Se o usuário foi criado, criar o perfil
       if (data.user) {
-        await createUserProfile(data.user.id, email, name);
+        await fetchUserProfile(data.user.id, email);
       }
       
       setLoading(false);
