@@ -116,8 +116,8 @@ export const useEvents = () => {
         description: "Evento criado com sucesso!"
       });
 
-      // Adicionar o novo evento no início da lista
-      setEvents(prev => [data, ...prev]);
+      // Recarregar a lista completa para garantir atualização
+      await fetchEvents();
       return data;
     } catch (error) {
       console.error('Erro ao criar evento:', error);
@@ -164,8 +164,8 @@ export const useEvents = () => {
         description: "Evento atualizado com sucesso!"
       });
 
-      // Atualizar o evento na lista local
-      setEvents(prev => prev.map(event => event.id === id ? data : event));
+      // Recarregar a lista completa para garantir atualização
+      await fetchEvents();
       return data;
     } catch (error) {
       console.error('Erro ao atualizar evento:', error);
@@ -197,8 +197,8 @@ export const useEvents = () => {
         description: `Evento ${active ? 'ativado' : 'desativado'} com sucesso!`
       });
 
-      // Atualizar automaticamente
-      setEvents(prev => prev.map(event => event.id === id ? data : event));
+      // Recarregar a lista completa para garantir atualização
+      await fetchEvents();
     } catch (error) {
       console.error('Erro crítico ao atualizar status:', error);
     }
@@ -221,8 +221,8 @@ export const useEvents = () => {
         description: "Evento excluído com sucesso!"
       });
 
-      // Remover o evento da lista local
-      setEvents(prev => prev.filter(event => event.id !== id));
+      // Recarregar a lista completa para garantir atualização
+      await fetchEvents();
     } catch (error) {
       console.error('Erro ao deletar evento:', error);
       throw error;

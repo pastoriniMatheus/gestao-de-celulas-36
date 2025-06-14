@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { QrCode, Calendar, Eye, Download, ToggleLeft, ToggleRight, Trash2, Edit } from 'lucide-react';
+import { QrCode, Calendar, Eye, Download, ToggleLeft, ToggleRight, Trash2, Edit, Copy, ExternalLink } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { useToast } from '@/hooks/use-toast';
 import { AddEventDialog } from './AddEventDialog';
@@ -35,6 +35,26 @@ export const EventsManager = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleCopyLink = (event: any) => {
+    try {
+      navigator.clipboard.writeText(event.qr_url);
+      toast({
+        title: "Sucesso",
+        description: "Link copiado para a área de transferência!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao copiar link",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleOpenLink = (event: any) => {
+    window.open(event.qr_url, '_blank');
   };
 
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
@@ -159,6 +179,36 @@ export const EventsManager = () => {
                         <span className="text-gray-600">
                           {event.scan_count} scans
                         </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1">
+                          <ExternalLink className="h-4 w-4 text-gray-500" />
+                          <span className="text-xs text-gray-500">Link do formulário:</span>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded text-xs break-all">
+                          {event.qr_url}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleCopyLink(event)}
+                            className="flex-1"
+                          >
+                            <Copy className="h-4 w-4 mr-1" />
+                            Copiar
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleOpenLink(event)}
+                            className="flex-1"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Abrir
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
