@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from '@/hooks/use-toast';
+import QRCode from 'qrcode';
 
 export interface QRCode {
   id: string;
@@ -24,6 +25,8 @@ export const useQRCodes = () => {
   const fetchQRCodes = async () => {
     try {
       setLoading(true);
+      console.log('Buscando QR codes...');
+      
       const { data, error } = await supabase
         .from('qr_codes')
         .select('*')
@@ -39,6 +42,7 @@ export const useQRCodes = () => {
         return;
       }
 
+      console.log('QR codes encontrados:', data);
       setQRCodes(data || []);
     } catch (error) {
       console.error('Erro crítico ao buscar QR codes:', error);
@@ -49,12 +53,15 @@ export const useQRCodes = () => {
 
   const createQRCode = async (keyword: string, title: string) => {
     try {
+      console.log('Criando QR code:', { keyword, title });
+      
       // Gerar URL baseada no domínio atual
       const baseUrl = window.location.origin;
       const redirectUrl = `${baseUrl}/qr/${keyword}`;
       
-      // Gerar QR code data (será o SVG em base64)
-      const QRCode = require('qrcode');
+      console.log('URL do QR code:', redirectUrl);
+      
+      // Gerar QR code data usando a importação correta
       const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
         width: 300,
         margin: 2,
@@ -63,6 +70,8 @@ export const useQRCodes = () => {
           light: '#FFFFFF'
         }
       });
+
+      console.log('QR code gerado, inserindo no banco...');
 
       const { data, error } = await supabase
         .from('qr_codes')
@@ -77,7 +86,7 @@ export const useQRCodes = () => {
         .single();
 
       if (error) {
-        console.error('Erro ao criar QR code:', error);
+        console.error('Erro ao criar QR code no banco:', error);
         if (error.code === '23505') {
           toast({
             title: "Erro",
@@ -87,13 +96,15 @@ export const useQRCodes = () => {
         } else {
           toast({
             title: "Erro",
-            description: "Erro ao criar QR code",
+            description: `Erro ao criar QR code: ${error.message}`,
             variant: "destructive"
           });
         }
         return null;
       }
 
+      console.log('QR code criado com sucesso:', data);
+      
       toast({
         title: "Sucesso",
         description: "QR code criado com sucesso!"
@@ -101,11 +112,11 @@ export const useQRCodes = () => {
 
       await fetchQRCodes();
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro crítico ao criar QR code:', error);
       toast({
         title: "Erro",
-        description: "Erro inesperado ao criar QR code",
+        description: `Erro inesperado: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive"
       });
       return null;

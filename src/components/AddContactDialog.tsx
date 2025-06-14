@@ -29,7 +29,7 @@ export const AddContactDialog = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Dados do formulário:', formData);
+    console.log('Dados do formulário antes da validação:', formData);
     
     if (!formData.name || !formData.whatsapp || !formData.neighborhood) {
       toast({
@@ -48,17 +48,17 @@ export const AddContactDialog = () => {
         neighborhood: formData.neighborhood,
         city_id: formData.city_id || null,
         cell_id: formData.cell_id === 'none' ? null : formData.cell_id || null,
-        status: 'pending',
+        status: 'pending', // GARANTINDO que sempre seja 'pending'
         age: formData.age || null
       };
 
-      console.log('Enviando contato:', contactToAdd);
+      console.log('Contato sendo criado com status pending:', contactToAdd);
 
       await addContact(contactToAdd);
 
       toast({
         title: "Sucesso",
-        description: "Contato adicionado com sucesso!",
+        description: "Contato adicionado com sucesso com status pendente!",
       });
 
       resetForm();
