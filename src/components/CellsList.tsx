@@ -1,16 +1,37 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Home, Clock, MapPin, Edit, Trash2 } from 'lucide-react';
 import { useCells } from '@/hooks/useCells';
 import { useToast } from '@/hooks/use-toast';
+import { EditCellDialog } from './EditCellDialog';
 
 const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+interface Cell {
+  id: string;
+  name: string;
+  address: string;
+  meeting_day: number;
+  meeting_time: string;
+  leader_id?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const CellsList = () => {
   const { cells, loading, deleteCell } = useCells();
   const { toast } = useToast();
+  const [editingCell, setEditingCell] = useState<Cell | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEdit = (cell: Cell) => {
+    setEditingCell(cell);
+    setIsEditDialogOpen(true);
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Tem certeza que deseja excluir a célula "${name}"?`)) {
@@ -58,51 +79,65 @@ export const CellsList = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {cells.map((cell) => (
-        <Card key={cell.id} className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Home className="h-5 w-5 text-blue-600" />
-                <span className="truncate">{cell.name}</span>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {cells.map((cell) => (
+          <Card key={cell.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Home className="h-5 w-5 text-blue-600" />
+                  <span className="truncate">{cell.name}</span>
+                </div>
+                <Badge variant={cell.active ? "default" : "secondary"}>
+                  {cell.active ? "Ativa" : "Inativa"}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-gray-600">{cell.address}</span>
               </div>
-              <Badge variant={cell.active ? "default" : "secondary"}>
-                {cell.active ? "Ativa" : "Inativa"}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-              <span className="text-sm text-gray-600">{cell.address}</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">
-                {DAYS_OF_WEEK[cell.meeting_day]} às {formatTime(cell.meeting_time)}
-              </span>
-            </div>
+              
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600">
+                  {DAYS_OF_WEEK[cell.meeting_day]} às {formatTime(cell.meeting_time)}
+                </span>
+              </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-1" />
-                Editar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDelete(cell.id, cell.name)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Excluir
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleEdit(cell)}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDelete(cell.id, cell.name)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {editingCell && (
+        <EditCellDialog
+          cell={editingCell}
+          isOpen={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+        />
+      )}
+    </>
   );
 };
