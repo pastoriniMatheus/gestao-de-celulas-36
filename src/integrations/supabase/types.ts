@@ -95,10 +95,38 @@ export type Database = {
           },
         ]
       }
+      cities: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           age: number | null
           cell_id: string | null
+          city_id: string | null
           created_at: string
           id: string
           name: string
@@ -110,6 +138,7 @@ export type Database = {
         Insert: {
           age?: number | null
           cell_id?: string | null
+          city_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -121,6 +150,7 @@ export type Database = {
         Update: {
           age?: number | null
           cell_id?: string | null
+          city_id?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -135,6 +165,13 @@ export type Database = {
             columns: ["cell_id"]
             isOneToOne: false
             referencedRelation: "cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
             referencedColumns: ["id"]
           },
         ]
@@ -177,6 +214,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      neighborhoods: {
+        Row: {
+          active: boolean
+          city_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          city_id: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          city_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "neighborhoods_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

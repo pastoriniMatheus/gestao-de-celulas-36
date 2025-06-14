@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Phone } from 'lucide-react';
+import { User, Phone, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,30 +16,57 @@ interface Contact {
   whatsapp: string | null;
   status: string;
   cell_id: string | null;
-  cell?: {
+  city_id: string | null;
+  cells?: {
     name: string;
+  };
+  cities?: {
+    name: string;
+    state: string;
   };
 }
 
 interface Cell {
   id: string;
   name: string;
-  leader_id: string;
+  leader_id: string | null;
   profiles?: {
     name: string;
   };
 }
 
+interface City {
+  id: string;
+  name: string;
+  state: string;
+}
+
+interface Neighborhood {
+  id: string;
+  name: string;
+  city_id: string;
+}
+
 export const ContactsManager = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchContacts();
-    fetchCells();
+    fetchAll();
   }, []);
+
+  const fetchAll = async () => {
+    await Promise.all([
+      fetchContacts(),
+      fetchCells(),
+      fetchCities(),
+      fetchNeighborhoods()
+    ]);
+  };
 
   const fetchContacts = async () => {
     try {
@@ -47,14 +74,12 @@ export const ContactsManager = () => {
         .from('contacts')
         .select(`
           *,
-          cells (
-            name
-          )
+          cells (name),
+          cities (name, state)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
       setContacts(data || []);
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
@@ -74,28 +99,53 @@ export const ContactsManager = () => {
         .from('cells')
         .select(`
           *,
-          profiles (
-            name
-          )
+          profiles (name)
         `)
         .eq('active', true)
         .order('name');
 
       if (error) throw error;
-
       setCells(data || []);
     } catch (error) {
       console.error('Erro ao buscar células:', error);
     }
   };
 
-  const neighborhoods = [...new Set(contacts.map(contact => contact.neighborhood))];
+  const fetchCities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('*')
+        .eq('active', true)
+        .order('name');
 
-  const groupContactsByNeighborhood = () => {
-    return neighborhoods.map(neighborhood => ({
-      neighborhood,
-      contacts: contacts.filter(contact => contact.neighborhood === neighborhood)
-    }));
+      if (error) throw error;
+      setCities(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar cidades:', error);
+    }
+  };
+
+  const fetchNeighborhoods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      setNeighborhoods(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar bairros:', error);
+    }
+  };
+
+  const groupContactsByCity = () => {
+    return cities.map(city => ({
+      city,
+      contacts: contacts.filter(contact => contact.city_id === city.id)
+    })).filter(group => group.contacts.length > 0);
   };
 
   const handleAssignToCell = async (contactId: string, cellId: string) => {
@@ -145,19 +195,19 @@ export const ContactsManager = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {groupContactsByNeighborhood().map(({ neighborhood, contacts: neighborhoodContacts }) => (
-          <Card key={neighborhood}>
+        {groupContactsByCity().map(({ city, contacts: cityContacts }) => (
+          <Card key={city.id}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                {neighborhood}
+                <MapPin size={16} className="text-blue-500" />
+                {city.name} - {city.state}
                 <Badge variant="secondary" className="ml-auto">
-                  {neighborhoodContacts.length}
+                  {cityContacts.length}
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {neighborhoodContacts.map((contact) => (
+              {cityContacts.map((contact) => (
                 <div
                   key={contact.id}
                   className="p-3 border rounded-lg hover:shadow-sm transition-shadow"
@@ -176,16 +226,17 @@ export const ContactsManager = () => {
                   </div>
                   
                   <div className="space-y-1 text-sm text-gray-600">
-                    {contact.age && <p>Idade: {contact.age} anos</p>}
+                    <p><strong>Bairro:</strong> {contact.neighborhood}</p>
+                    {contact.age && <p><strong>Idade:</strong> {contact.age} anos</p>}
                     {contact.whatsapp && (
                       <div className="flex items-center gap-1">
                         <Phone size={12} />
                         <span>{contact.whatsapp}</span>
                       </div>
                     )}
-                    {contact.cell && (
+                    {contact.cells && (
                       <p className="text-blue-600 font-medium">
-                        Célula: {contact.cell.name}
+                        <strong>Célula:</strong> {contact.cells.name}
                       </p>
                     )}
                   </div>
