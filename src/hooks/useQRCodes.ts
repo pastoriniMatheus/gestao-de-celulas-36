@@ -110,6 +110,7 @@ export const useQRCodes = () => {
         description: "QR code criado com sucesso!"
       });
 
+      // Atualizar a lista automaticamente
       await fetchQRCodes();
       return data;
     } catch (error: any) {
@@ -145,6 +146,7 @@ export const useQRCodes = () => {
         description: `QR code ${active ? 'ativado' : 'desativado'} com sucesso!`
       });
 
+      // Atualizar a lista automaticamente
       await fetchQRCodes();
     } catch (error) {
       console.error('Erro crítico ao atualizar status:', error);
@@ -173,6 +175,7 @@ export const useQRCodes = () => {
         description: "QR code deletado com sucesso!"
       });
 
+      // Atualizar a lista automaticamente
       await fetchQRCodes();
     } catch (error) {
       console.error('Erro crítico ao deletar QR code:', error);

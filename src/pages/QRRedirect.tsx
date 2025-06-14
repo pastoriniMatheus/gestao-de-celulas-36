@@ -28,16 +28,20 @@ export const QRRedirect = () => {
         .select('*')
         .eq('keyword', keyword)
         .eq('active', true)
-        .single();
+        .maybeSingle(); // Usar maybeSingle ao invés de single
 
       if (eventData && !eventError) {
         console.log('Evento encontrado:', eventData);
         
         // Incrementar contador de scan do evento
-        await supabase
+        const { error: updateError } = await supabase
           .from('events')
           .update({ scan_count: eventData.scan_count + 1 })
           .eq('id', eventData.id);
+
+        if (updateError) {
+          console.error('Erro ao incrementar contador do evento:', updateError);
+        }
 
         setQrData({
           type: 'event',
@@ -55,23 +59,37 @@ export const QRRedirect = () => {
         .select('*')
         .eq('keyword', keyword)
         .eq('active', true)
-        .single();
+        .maybeSingle(); // Usar maybeSingle ao invés de single
 
       if (qrCodeData && !qrError) {
         console.log('QR code encontrado:', qrCodeData);
         
-        // Usar a função do banco para incrementar contador
-        const { error: incrementError } = await supabase.rpc(
-          'increment_qr_scan_count',
-          {
-            qr_id: qrCodeData.id,
-            user_ip: null, // Pode ser implementado para capturar IP
-            user_agent_string: navigator.userAgent
-          }
-        );
+        // Incrementar contador manualmente se a função falhar
+        try {
+          const { error: incrementError } = await supabase.rpc(
+            'increment_qr_scan_count',
+            {
+              qr_id: qrCodeData.id,
+              user_ip: null,
+              user_agent_string: navigator.userAgent
+            }
+          );
 
-        if (incrementError) {
-          console.error('Erro ao incrementar contador:', incrementError);
+          if (incrementError) {
+            console.error('Erro ao usar função RPC, incrementando manualmente:', incrementError);
+            // Fallback: incrementar manualmente
+            await supabase
+              .from('qr_codes')
+              .update({ scan_count: qrCodeData.scan_count + 1 })
+              .eq('id', qrCodeData.id);
+          }
+        } catch (rpcError) {
+          console.error('Erro na função RPC:', rpcError);
+          // Fallback: incrementar manualmente
+          await supabase
+            .from('qr_codes')
+            .update({ scan_count: qrCodeData.scan_count + 1 })
+            .eq('id', qrCodeData.id);
         }
 
         setQrData({
@@ -81,6 +99,7 @@ export const QRRedirect = () => {
           data: qrCodeData
         });
       } else {
+        console.log('Nenhum QR code ou evento encontrado para:', keyword);
         setError('QR code não encontrado ou inativo');
       }
     } catch (error) {
@@ -166,7 +185,7 @@ export const QRRedirect = () => {
             className="w-full"
             onClick={() => window.close()}
           >
-            <ExternalLink className="w-4 h-4 mr-2" />
+            <ExternalLink className="w-4 w-4 mr-2" />
             Fechar
           </Button>
         </CardContent>
