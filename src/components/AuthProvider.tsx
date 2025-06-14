@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   const fetchUserProfile = async (userId: string, userEmail?: string) => {
     try {
@@ -88,41 +89,87 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     let mounted = true;
 
-    const handleAuthStateChange = async (event: string, session: Session | null) => {
-      if (!mounted) return;
-
-      console.log('Auth state changed:', event, session?.user?.email);
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        console.log('Usuário logado, buscando perfil...');
-        const profile = await fetchUserProfile(session.user.id, session.user.email);
-        if (mounted) {
-          setUserProfile(profile);
+    const initializeAuth = async () => {
+      try {
+        // Primeiro, verificar sessão existente
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erro ao obter sessão inicial:', error);
         }
-      } else {
-        setUserProfile(null);
-      }
-      
-      if (mounted) {
-        setLoading(false);
+
+        if (mounted) {
+          console.log('Sessão inicial:', initialSession?.user?.email || 'nenhuma');
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+
+          if (initialSession?.user) {
+            // Buscar perfil usando setTimeout para evitar loop
+            setTimeout(async () => {
+              if (mounted) {
+                const profile = await fetchUserProfile(initialSession.user.id, initialSession.user.email);
+                if (mounted) {
+                  setUserProfile(profile);
+                }
+              }
+            }, 0);
+          }
+
+          setLoading(false);
+          setInitialized(true);
+        }
+      } catch (error) {
+        console.error('Erro na inicialização auth:', error);
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    // Configurar listener APENAS após inicialização
+    const setupAuthListener = () => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          if (!mounted) return;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('Sessão inicial encontrada:', session?.user?.email || 'nenhuma');
-      handleAuthStateChange('INITIAL_SESSION', session);
+          console.log('Auth state changed:', event, session?.user?.email);
+          
+          setSession(session);
+          setUser(session?.user ?? null);
+
+          if (session?.user && event !== 'TOKEN_REFRESHED') {
+            // Usar setTimeout para evitar loops
+            setTimeout(async () => {
+              if (mounted) {
+                const profile = await fetchUserProfile(session.user.id, session.user.email);
+                if (mounted) {
+                  setUserProfile(profile);
+                }
+              }
+            }, 0);
+          } else if (!session?.user) {
+            setUserProfile(null);
+          }
+        }
+      );
+
+      return subscription;
+    };
+
+    initializeAuth().then(() => {
+      if (mounted) {
+        const subscription = setupAuthListener();
+        
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
+      }
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
@@ -174,7 +221,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        await fetchUserProfile(data.user.id, email);
+        setTimeout(async () => {
+          await fetchUserProfile(data.user.id, email);
+        }, 0);
       }
       
       setLoading(false);
@@ -197,6 +246,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Erro no signOut:', error);
       } else {
         console.log('Logout realizado com sucesso');
+        setUserProfile(null);
       }
     } catch (error) {
       console.error('Erro crítico no signOut:', error);

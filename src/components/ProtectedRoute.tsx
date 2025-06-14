@@ -9,6 +9,8 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
 
+  console.log('ProtectedRoute - loading:', loading, 'user:', !!user);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -21,8 +23,10 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
+    console.log('Usuário não autenticado, redirecionando para login');
     return <AuthPage />;
   }
 
+  console.log('Usuário autenticado, renderizando aplicação');
   return <>{children}</>;
 };
