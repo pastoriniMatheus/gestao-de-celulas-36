@@ -28,7 +28,6 @@ export const UsersManager = () => {
   const { userProfile, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  // Verificar se o usuário tem permissão (admin) - simplificado
   const canManageUsers = userProfile?.role === 'admin';
 
   useEffect(() => {
@@ -83,7 +82,6 @@ export const UsersManager = () => {
     
     try {
       if (editingUser) {
-        // Atualizar usuário existente
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -99,7 +97,6 @@ export const UsersManager = () => {
           title: "Usuário atualizado com sucesso!",
         });
       } else {
-        // Criar novo usuário (apenas perfil, pois não podemos criar usuários auth via API)
         const { error } = await supabase
           .from('profiles')
           .insert({
@@ -197,7 +194,6 @@ export const UsersManager = () => {
     );
   };
 
-  // Mostrar loading enquanto verifica autenticação
   if (authLoading) {
     return (
       <Card>
