@@ -29,10 +29,12 @@ export const AddContactDialog = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Dados do formulário:', formData);
+    
     if (!formData.name || !formData.whatsapp || !formData.neighborhood) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: "Por favor, preencha todos os campos obrigatórios (Nome, WhatsApp e Bairro).",
         variant: "destructive",
       });
       return;
@@ -40,14 +42,19 @@ export const AddContactDialog = () => {
 
     setLoading(true);
     try {
-      await addContact({
+      const contactToAdd = {
         name: formData.name,
         whatsapp: formData.whatsapp,
         neighborhood: formData.neighborhood,
-        city_id: formData.city_id || undefined,
-        cell_id: formData.cell_id === 'none' ? undefined : formData.cell_id,
-        status: 'pending'
-      });
+        city_id: formData.city_id || null,
+        cell_id: formData.cell_id === 'none' ? null : formData.cell_id || null,
+        status: 'pending',
+        age: formData.age || null
+      };
+
+      console.log('Enviando contato:', contactToAdd);
+
+      await addContact(contactToAdd);
 
       toast({
         title: "Sucesso",
@@ -56,11 +63,11 @@ export const AddContactDialog = () => {
 
       resetForm();
       setIsOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar contato:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar contato. Tente novamente.",
+        description: error?.message || "Erro ao criar contato. Tente novamente.",
         variant: "destructive",
       });
     } finally {

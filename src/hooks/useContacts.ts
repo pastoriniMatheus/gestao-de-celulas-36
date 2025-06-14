@@ -22,6 +22,8 @@ export const useContacts = () => {
   const fetchContacts = async () => {
     try {
       setLoading(true);
+      console.log('Buscando contatos...');
+      
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
@@ -29,9 +31,10 @@ export const useContacts = () => {
 
       if (error) {
         console.error('Erro ao buscar contatos:', error);
-        return;
+        throw error;
       }
 
+      console.log('Contatos encontrados:', data);
       setContacts(data || []);
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
@@ -42,6 +45,8 @@ export const useContacts = () => {
 
   const addContact = async (contactData: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('Adicionando contato:', contactData);
+      
       const { data, error } = await supabase
         .from('contacts')
         .insert([contactData])
@@ -53,6 +58,7 @@ export const useContacts = () => {
         throw error;
       }
 
+      console.log('Contato criado com sucesso:', data);
       setContacts(prev => [...prev, data]);
       return data;
     } catch (error) {
