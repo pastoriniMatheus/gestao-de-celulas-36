@@ -55,13 +55,29 @@ export const useQRCodes = () => {
     try {
       console.log('Criando QR code:', { keyword, title });
       
+      // Verificar se keyword já existe
+      const { data: existingQR } = await supabase
+        .from('qr_codes')
+        .select('keyword')
+        .eq('keyword', keyword)
+        .maybeSingle();
+
+      if (existingQR) {
+        toast({
+          title: "Erro",
+          description: "Esta palavra-chave já existe. Escolha outra.",
+          variant: "destructive"
+        });
+        return null;
+      }
+
       // Gerar URL baseada no domínio atual
       const baseUrl = window.location.origin;
       const redirectUrl = `${baseUrl}/qr/${keyword}`;
       
       console.log('URL do QR code:', redirectUrl);
       
-      // Gerar QR code data usando a importação correta
+      // Gerar QR code data
       const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
         width: 300,
         margin: 2,
@@ -80,26 +96,20 @@ export const useQRCodes = () => {
           title,
           url: redirectUrl,
           qr_code_data: qrCodeDataUrl,
-          created_by: user?.id
+          created_by: user?.id,
+          scan_count: 0,
+          active: true
         }])
         .select()
         .single();
 
       if (error) {
         console.error('Erro ao criar QR code no banco:', error);
-        if (error.code === '23505') {
-          toast({
-            title: "Erro",
-            description: "Esta palavra-chave já existe. Escolha outra.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Erro",
-            description: `Erro ao criar QR code: ${error.message}`,
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Erro",
+          description: `Erro ao criar QR code: ${error.message}`,
+          variant: "destructive"
+        });
         return null;
       }
 
@@ -111,7 +121,7 @@ export const useQRCodes = () => {
       });
 
       // Atualizar a lista automaticamente
-      await fetchQRCodes();
+      setQRCodes(prev => [data, ...prev]);
       return data;
     } catch (error: any) {
       console.error('Erro crítico ao criar QR code:', error);
@@ -126,10 +136,12 @@ export const useQRCodes = () => {
 
   const toggleQRCodeStatus = async (id: string, active: boolean) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('qr_codes')
         .update({ active })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) {
         console.error('Erro ao atualizar status:', error);
@@ -146,8 +158,8 @@ export const useQRCodes = () => {
         description: `QR code ${active ? 'ativado' : 'desativado'} com sucesso!`
       });
 
-      // Atualizar a lista automaticamente
-      await fetchQRCodes();
+      // Atualizar o item na lista local
+      setQRCodes(prev => prev.map(qr => qr.id === id ? data : qr));
     } catch (error) {
       console.error('Erro crítico ao atualizar status:', error);
     }
@@ -175,8 +187,8 @@ export const useQRCodes = () => {
         description: "QR code deletado com sucesso!"
       });
 
-      // Atualizar a lista automaticamente
-      await fetchQRCodes();
+      // Remover o item da lista local
+      setQRCodes(prev => prev.filter(qr => qr.id !== id));
     } catch (error) {
       console.error('Erro crítico ao deletar QR code:', error);
     }

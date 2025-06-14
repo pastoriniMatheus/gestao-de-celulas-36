@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface Contact {
   id: string;
@@ -59,7 +60,14 @@ export const useContacts = () => {
       }
 
       console.log('Contato criado com sucesso:', data);
-      setContacts(prev => [...prev, data]);
+      
+      toast({
+        title: "Sucesso",
+        description: "Contato adicionado com sucesso!",
+      });
+
+      // Adicionar o novo contato à lista local
+      setContacts(prev => [data, ...prev]);
       return data;
     } catch (error) {
       console.error('Erro ao criar contato:', error);

@@ -53,6 +53,22 @@ export const useEvents = () => {
     try {
       console.log('Criando evento:', eventData);
       
+      // Verificar se keyword já existe
+      const { data: existingEvent } = await supabase
+        .from('events')
+        .select('keyword')
+        .eq('keyword', eventData.keyword)
+        .maybeSingle();
+
+      if (existingEvent) {
+        toast({
+          title: "Erro",
+          description: "Esta palavra-chave já existe. Escolha outra.",
+          variant: "destructive"
+        });
+        throw new Error('Keyword já existe');
+      }
+
       const { data, error } = await supabase
         .from('events')
         .insert([{ ...eventData, scan_count: 0 }])
@@ -61,19 +77,11 @@ export const useEvents = () => {
 
       if (error) {
         console.error('Erro ao criar evento:', error);
-        if (error.code === '23505') {
-          toast({
-            title: "Erro",
-            description: "Esta palavra-chave já existe. Escolha outra.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Erro",
-            description: `Erro ao criar evento: ${error.message}`,
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Erro",
+          description: `Erro ao criar evento: ${error.message}`,
+          variant: "destructive"
+        });
         throw error;
       }
 
@@ -84,8 +92,8 @@ export const useEvents = () => {
         description: "Evento criado com sucesso!"
       });
 
-      // Atualizar a lista automaticamente
-      await fetchEvents();
+      // Adicionar o novo evento no início da lista
+      setEvents(prev => [data, ...prev]);
       return data;
     } catch (error) {
       console.error('Erro ao criar evento:', error);
@@ -107,8 +115,8 @@ export const useEvents = () => {
         throw error;
       }
 
-      // Atualizar a lista automaticamente
-      await fetchEvents();
+      // Atualizar o evento na lista local
+      setEvents(prev => prev.map(event => event.id === id ? data : event));
       return data;
     } catch (error) {
       console.error('Erro ao atualizar evento:', error);
@@ -128,8 +136,8 @@ export const useEvents = () => {
         throw error;
       }
 
-      // Atualizar a lista automaticamente
-      await fetchEvents();
+      // Remover o evento da lista local
+      setEvents(prev => prev.filter(event => event.id !== id));
     } catch (error) {
       console.error('Erro ao deletar evento:', error);
       throw error;
