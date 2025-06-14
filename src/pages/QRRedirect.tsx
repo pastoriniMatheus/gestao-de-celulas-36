@@ -30,15 +30,20 @@ export const QRRedirect = () => {
 
   const handleQRCodeScan = async (keyword: string) => {
     try {
-      console.log('Processando scan do QR code:', keyword);
+      console.log('Processando scan do QR code com keyword:', keyword);
+      setLoading(true);
+      setError(null);
 
       // Primeiro, buscar na tabela de eventos
+      console.log('Buscando evento...');
       const { data: eventData, error: eventError } = await supabase
         .from('events')
         .select('*')
-        .eq('keyword', keyword)
+        .eq('keyword', keyword.toLowerCase().trim())
         .eq('active', true)
         .maybeSingle();
+
+      console.log('Resultado busca evento:', { eventData, eventError });
 
       if (eventData && !eventError) {
         console.log('Evento encontrado:', eventData);
@@ -46,11 +51,13 @@ export const QRRedirect = () => {
         // Incrementar contador de scan do evento
         const { error: updateError } = await supabase
           .from('events')
-          .update({ scan_count: eventData.scan_count + 1 })
+          .update({ scan_count: (eventData.scan_count || 0) + 1 })
           .eq('id', eventData.id);
 
         if (updateError) {
           console.error('Erro ao incrementar contador do evento:', updateError);
+        } else {
+          console.log('Contador do evento incrementado com sucesso');
         }
 
         setQrData({
@@ -65,12 +72,15 @@ export const QRRedirect = () => {
       }
 
       // Se não encontrou evento, buscar na tabela de QR codes
+      console.log('Buscando QR code...');
       const { data: qrCodeData, error: qrError } = await supabase
         .from('qr_codes')
         .select('*')
-        .eq('keyword', keyword)
+        .eq('keyword', keyword.toLowerCase().trim())
         .eq('active', true)
         .maybeSingle();
+
+      console.log('Resultado busca QR code:', { qrCodeData, qrError });
 
       if (qrCodeData && !qrError) {
         console.log('QR code encontrado:', qrCodeData);
@@ -78,11 +88,13 @@ export const QRRedirect = () => {
         // Incrementar contador de scan
         const { error: updateError } = await supabase
           .from('qr_codes')
-          .update({ scan_count: qrCodeData.scan_count + 1 })
+          .update({ scan_count: (qrCodeData.scan_count || 0) + 1 })
           .eq('id', qrCodeData.id);
 
         if (updateError) {
-          console.error('Erro ao incrementar contador:', updateError);
+          console.error('Erro ao incrementar contador do QR code:', updateError);
+        } else {
+          console.log('Contador do QR code incrementado com sucesso');
         }
 
         setQrData({
@@ -93,11 +105,11 @@ export const QRRedirect = () => {
         });
         setShowForm(true);
       } else {
-        console.log('Nenhum QR code ou evento encontrado para:', keyword);
+        console.log('Nenhum QR code ou evento encontrado para keyword:', keyword);
         setError('QR code não encontrado ou inativo');
       }
     } catch (error) {
-      console.error('Erro ao processar QR code:', error);
+      console.error('Erro crítico ao processar QR code:', error);
       setError('Erro ao processar QR code');
     } finally {
       setLoading(false);
@@ -107,7 +119,7 @@ export const QRRedirect = () => {
   const handleSubmitContact = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.whatsapp || !formData.neighborhood) {
+    if (!formData.name.trim() || !formData.whatsapp.trim() || !formData.neighborhood.trim()) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos.",
@@ -118,12 +130,14 @@ export const QRRedirect = () => {
 
     setSubmitting(true);
     try {
+      console.log('Enviando dados do contato:', formData);
+      
       const { data, error } = await supabase
         .from('contacts')
         .insert([{
-          name: formData.name,
-          whatsapp: formData.whatsapp,
-          neighborhood: formData.neighborhood,
+          name: formData.name.trim(),
+          whatsapp: formData.whatsapp.trim(),
+          neighborhood: formData.neighborhood.trim(),
           status: 'pending'
         }])
         .select()
@@ -139,7 +153,7 @@ export const QRRedirect = () => {
         return;
       }
 
-      console.log('Contato criado:', data);
+      console.log('Contato criado com sucesso:', data);
       toast({
         title: "Sucesso",
         description: "Seus dados foram enviados com sucesso!",
@@ -149,7 +163,7 @@ export const QRRedirect = () => {
       setFormData({ name: '', whatsapp: '', neighborhood: '' });
       setShowForm(false);
     } catch (error) {
-      console.error('Erro ao enviar contato:', error);
+      console.error('Erro crítico ao enviar contato:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado. Tente novamente.",
@@ -185,6 +199,9 @@ export const QRRedirect = () => {
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
+            <p className="text-sm text-gray-500 mb-4">
+              Keyword procurada: <code className="bg-gray-200 px-2 py-1 rounded">{keyword}</code>
+            </p>
             <p className="text-sm text-gray-500">
               Verifique se o QR code é válido ou entre em contato com o organizador.
             </p>
