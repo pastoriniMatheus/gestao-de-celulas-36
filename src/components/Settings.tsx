@@ -1,28 +1,16 @@
-
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings as SettingsIcon, MapPin, Webhook, Palette, Image, Globe, Save } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Settings as SettingsIcon, Save, Palette, Plus, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AddCityDialog } from './AddCityDialog';
-import { AddNeighborhoodDialog } from './AddNeighborhoodDialog';
+import { useAuth } from './AuthProvider';
 
-interface City {
-  id: string;
-  name: string;
-  state: string;
-}
-
-interface Neighborhood {
-  id: string;
-  name: string;
-  city_id: string;
-}
-
+// Interface para as configurações da igreja
 interface ChurchSettings {
   name: string;
   admin_email: string;
@@ -35,14 +23,6 @@ interface ChurchSettings {
 }
 
 export const Settings = () => {
-  const [cities, setCities] = useState<City[]>([]);
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<Neighborhood[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
-
-  // Estados das configurações
   const [settings, setSettings] = useState<ChurchSettings>({
     name: '',
     admin_email: '',
@@ -53,21 +33,76 @@ export const Settings = () => {
     logo: '',
     favicon: ''
   });
+  
+  const [cities, setCities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [isAddCellDialogOpen, setIsAddCellDialogOpen] = useState(false);
+  const [cellFormData, setCellFormData] = useState({
+    name: '',
+    address: '',
+    meeting_day: 1,
+    meeting_time: '19:00',
+    leader_id: '',
+    active: true
+  });
+  const [leaders, setLeaders] = useState<any[]>([]);
+  
+  const { toast } = useToast();
+  const { userProfile } = useAuth();
+
+  // Verificar se o usuário é admin
+  const isAdmin = userProfile?.role === 'admin';
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    if (isAdmin) {
+      loadSettings();
+      loadCities();
+      loadLeaders();
+    } else {
+      setLoading(false);
+    }
+  }, [isAdmin]);
 
-  const fetchAll = async () => {
-    await Promise.all([
-      fetchCities(),
-      fetchNeighborhoods(),
-      loadSettings()
-    ]);
-    setLoading(false);
+  const loadSettings = async () => {
+    try {
+      console.log('Carregando configurações...');
+      
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'church_settings')
+        .single();
+
+      if (error) {
+        console.error('Erro ao carregar configurações:', error);
+        if (error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          toast({
+            title: "Erro ao carregar configurações",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (data?.value) {
+        console.log('Configurações carregadas:', data.value);
+        setSettings(data.value as unknown as ChurchSettings);
+      }
+    } catch (error) {
+      console.error('Erro na consulta de configurações:', error);
+      toast({
+        title: "Erro ao carregar configurações",
+        description: "Erro inesperado",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const fetchCities = async () => {
+  const loadCities = async () => {
     try {
       const { data, error } = await supabase
         .from('cities')
@@ -75,154 +110,293 @@ export const Settings = () => {
         .eq('active', true)
         .order('name');
 
-      if (error) throw error;
-      setCities(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar cidades:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as cidades",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const fetchNeighborhoods = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('neighborhoods')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-
-      if (error) throw error;
-      setNeighborhoods(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar bairros:', error);
-    }
-  };
-
-  const loadSettings = async () => {
-    try {
-      console.log('Carregando configurações...');
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'church_settings')
-        .maybeSingle();
-
       if (error) {
-        console.error('Erro ao carregar configurações:', error);
+        console.error('Erro ao carregar cidades:', error);
         return;
       }
 
-      if (data?.value) {
-        console.log('Configurações carregadas:', data.value);
-        // Converter Json para ChurchSettings com type assertion segura
-        const churchSettings = data.value as unknown as ChurchSettings;
-        setSettings(churchSettings);
-      }
+      setCities(data || []);
     } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
+      console.error('Erro na consulta de cidades:', error);
     }
   };
 
-  const handleCityChange = (cityId: string) => {
-    setSettings(prev => ({ ...prev, selected_city: cityId }));
-    const cityNeighborhoods = neighborhoods.filter(n => n.city_id === cityId);
-    setSelectedNeighborhoods(cityNeighborhoods);
+  const loadLeaders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('role', ['admin', 'leader'])
+        .eq('active', true)
+        .order('name');
+
+      if (error) {
+        console.error('Erro ao buscar líderes:', error);
+        return;
+      }
+
+      setLeaders(data || []);
+    } catch (error) {
+      console.error('Erro na consulta de líderes:', error);
+    }
   };
 
-  const handleSaveSettings = async () => {
+  const handleSave = async () => {
+    setSaving(true);
+    
     try {
-      setSaving(true);
-      console.log('Salvando configurações:', settings);
-      
-      // Converter ChurchSettings para Json com type assertion
-      const settingsAsJson = settings as unknown as any;
-      
       const { error } = await supabase
         .from('system_settings')
         .upsert({
           key: 'church_settings',
-          value: settingsAsJson
+          value: settings as unknown as any
         });
 
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: "Configurações salvas com sucesso!"
+        title: "Configurações salvas com sucesso!",
       });
-    } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Não foi possível salvar as configurações",
-        variant: "destructive"
+        title: "Erro ao salvar configurações",
+        description: error.message,
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleFileUpload = (type: 'logo' | 'favicon') => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = type === 'favicon' ? 'image/png,image/jpg,image/jpeg' : 'image/*';
-    input.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        setSettings(prev => ({
-          ...prev,
-          [type]: url
-        }));
-      }
-    };
-    input.click();
+  const handleCellSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const cellData = {
+        name: cellFormData.name,
+        address: cellFormData.address,
+        meeting_day: cellFormData.meeting_day,
+        meeting_time: cellFormData.meeting_time,
+        leader_id: cellFormData.leader_id || null,
+        active: cellFormData.active
+      };
+
+      const { error } = await supabase
+        .from('cells')
+        .insert([cellData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Célula criada com sucesso!",
+      });
+
+      setIsAddCellDialogOpen(false);
+      setCellFormData({
+        name: '',
+        address: '',
+        meeting_day: 1,
+        meeting_time: '19:00',
+        leader_id: '',
+        active: true
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar célula",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateSetting = (key: keyof ChurchSettings, value: string) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  const getDayName = (day: number) => {
+    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    return days[day] || `Dia ${day}`;
   };
+
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SettingsIcon className="h-5 w-5 text-red-600" />
+            Acesso Negado
+          </CardTitle>
+          <CardDescription>
+            Você não tem permissão para acessar as configurações do sistema.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Carregando configurações...</div>;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Carregando configurações...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-        <div className="flex items-center gap-4">
-          <SettingsIcon size={24} className="text-gray-600" />
-          <Button 
-            onClick={handleSaveSettings} 
-            disabled={saving}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Salvando...' : 'Salvar Tudo'}
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Configurações de Localização */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin size={20} />
-              Localização da Igreja
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Select value={settings.selected_city} onValueChange={handleCityChange}>
+              <CardTitle className="flex items-center gap-2">
+                <SettingsIcon className="h-5 w-5 text-blue-600" />
+                Configurações da Igreja
+              </CardTitle>
+              <CardDescription>
+                Configure as informações gerais da igreja
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Dialog open={isAddCellDialogOpen} onOpenChange={setIsAddCellDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" onClick={() => {
+                    setCellFormData({
+                      name: '',
+                      address: '',
+                      meeting_day: 1,
+                      meeting_time: '19:00',
+                      leader_id: '',
+                      active: true
+                    });
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    <Home className="h-4 w-4 mr-2" />
+                    Adicionar Célula
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Nova Célula</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleCellSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="cell_name">Nome da Célula</Label>
+                      <Input
+                        id="cell_name"
+                        value={cellFormData.name}
+                        onChange={(e) => setCellFormData({ ...cellFormData, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cell_address">Endereço</Label>
+                      <Input
+                        id="cell_address"
+                        value={cellFormData.address}
+                        onChange={(e) => setCellFormData({ ...cellFormData, address: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cell_meeting_day">Dia da Reunião</Label>
+                      <Select value={cellFormData.meeting_day.toString()} onValueChange={(value) => setCellFormData({ ...cellFormData, meeting_day: parseInt(value) })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Domingo</SelectItem>
+                          <SelectItem value="1">Segunda-feira</SelectItem>
+                          <SelectItem value="2">Terça-feira</SelectItem>
+                          <SelectItem value="3">Quarta-feira</SelectItem>
+                          <SelectItem value="4">Quinta-feira</SelectItem>
+                          <SelectItem value="5">Sexta-feira</SelectItem>
+                          <SelectItem value="6">Sábado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="cell_meeting_time">Horário</Label>
+                      <Input
+                        id="cell_meeting_time"
+                        type="time"
+                        value={cellFormData.meeting_time}
+                        onChange={(e) => setCellFormData({ ...cellFormData, meeting_time: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cell_leader_id">Líder</Label>
+                      <Select value={cellFormData.leader_id} onValueChange={(value) => setCellFormData({ ...cellFormData, leader_id: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um líder" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sem líder</SelectItem>
+                          {leaders.map((leader) => (
+                            <SelectItem key={leader.id} value={leader.id}>
+                              {leader.name} ({leader.role === 'admin' ? 'Admin' : 'Líder'})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="cell_active"
+                        checked={cellFormData.active}
+                        onChange={(e) => setCellFormData({ ...cellFormData, active: e.target.checked })}
+                      />
+                      <Label htmlFor="cell_active">Ativa</Label>
+                    </div>
+                    <Button type="submit" className="w-full">
+                      Criar Célula
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Nome da Igreja</Label>
+              <Input
+                id="name"
+                value={settings.name}
+                onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+                placeholder="Nome da Igreja"
+              />
+            </div>
+            <div>
+              <Label htmlFor="admin_email">Email do Administrador</Label>
+              <Input
+                id="admin_email"
+                type="email"
+                value={settings.admin_email}
+                onChange={(e) => setSettings({ ...settings, admin_email: e.target.value })}
+                placeholder="admin@igreja.com"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="selected_city">Cidade Principal</Label>
+              <Select value={settings.selected_city} onValueChange={(value) => setSettings({ ...settings, selected_city: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a cidade" />
+                  <SelectValue placeholder="Selecione uma cidade" />
                 </SelectTrigger>
                 <SelectContent>
                   {cities.map((city) => (
@@ -233,197 +407,85 @@ export const Settings = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <AddCityDialog onCityAdded={fetchCities} />
-
-            {settings.selected_city && selectedNeighborhoods.length > 0 && (
-              <div>
-                <Label>Bairros Cadastrados</Label>
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-2">
-                    Bairros disponíveis para {cities.find(c => c.id === settings.selected_city)?.name}:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedNeighborhoods.map((neighborhood) => (
-                      <span
-                        key={neighborhood.id}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-                      >
-                        {neighborhood.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <AddNeighborhoodDialog cities={cities} onNeighborhoodAdded={fetchNeighborhoods} />
-          </CardContent>
-        </Card>
-
-        {/* Personalização Visual */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette size={20} />
-              Personalização Visual
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="primaryColor">Cor Primária</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="primaryColor"
-                    type="color"
-                    value={settings.primary_color}
-                    onChange={(e) => updateSetting('primary_color', e.target.value)}
-                    className="w-16 h-10"
-                  />
-                  <Input
-                    value={settings.primary_color}
-                    onChange={(e) => updateSetting('primary_color', e.target.value)}
-                    placeholder="#3B82F6"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="secondaryColor">Cor Secundária</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="secondaryColor"
-                    type="color"
-                    value={settings.secondary_color}
-                    onChange={(e) => updateSetting('secondary_color', e.target.value)}
-                    className="w-16 h-10"
-                  />
-                  <Input
-                    value={settings.secondary_color}
-                    onChange={(e) => updateSetting('secondary_color', e.target.value)}
-                    placeholder="#64748B"
-                  />
-                </div>
-              </div>
-            </div>
-
             <div>
-              <Label>Logotipo</Label>
-              <div className="mt-2 space-y-2">
-                {settings.logo && (
-                  <div className="p-2 bg-gray-50 rounded-lg">
-                    <img src={settings.logo} alt="Logo" className="h-16 object-contain" />
-                  </div>
-                )}
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFileUpload('logo')}
-                  className="w-full"
-                >
-                  <Image className="w-4 h-4 mr-2" />
-                  {settings.logo ? 'Alterar Logotipo' : 'Enviar Logotipo'}
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label>Favicon</Label>
-              <div className="mt-2 space-y-2">
-                {settings.favicon && (
-                  <div className="p-2 bg-gray-50 rounded-lg">
-                    <img src={settings.favicon} alt="Favicon" className="h-8 object-contain" />
-                  </div>
-                )}
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFileUpload('favicon')}
-                  className="w-full"
-                >
-                  <Globe className="w-4 h-4 mr-2" />
-                  {settings.favicon ? 'Alterar Favicon' : 'Enviar Favicon'}
-                </Button>
-                <p className="text-xs text-gray-500">
-                  Recomendado: PNG/JPG (Lovable não suporta .ico)
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Configurações de Integração */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Webhook size={20} />
-              Integração de Mensagens
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="webhook">URL do Webhook</Label>
+              <Label htmlFor="webhook_url">URL do Webhook</Label>
               <Input
-                id="webhook"
+                id="webhook_url"
                 value={settings.webhook_url}
-                onChange={(e) => updateSetting('webhook_url', e.target.value)}
-                placeholder="https://seu-sistema.com/webhook"
-                type="url"
+                onChange={(e) => setSettings({ ...settings, webhook_url: e.target.value })}
+                placeholder="https://exemplo.com/webhook"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                URL para envio das mensagens de nutrição automática
-              </p>
             </div>
+          </div>
 
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-sm mb-2">Como funciona:</h4>
-              <ul className="text-xs text-gray-600 space-y-1">
-                <li>• As mensagens do pipeline são enviadas para este webhook</li>
-                <li>• O webhook receberá dados do contato e mensagem</li>
-                <li>• Configure seu sistema para processar as mensagens</li>
-              </ul>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Palette className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-semibold">Personalização Visual</h3>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Configurações Gerais */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Configurações do Sistema</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="churchName">Nome da Igreja</Label>
-                <Input
-                  id="churchName"
-                  placeholder="Digite o nome da igreja"
-                  value={settings.name}
-                  onChange={(e) => updateSetting('name', e.target.value)}
-                />
+                <Label htmlFor="primary_color">Cor Primária</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="primary_color"
+                    type="color"
+                    value={settings.primary_color}
+                    onChange={(e) => setSettings({ ...settings, primary_color: e.target.value })}
+                    className="w-16 h-10"
+                  />
+                  <Input
+                    value={settings.primary_color}
+                    onChange={(e) => setSettings({ ...settings, primary_color: e.target.value })}
+                    placeholder="#3B82F6"
+                    className="flex-1"
+                  />
+                </div>
               </div>
               <div>
-                <Label htmlFor="adminEmail">Email do Administrador</Label>
-                <Input
-                  id="adminEmail"
-                  type="email"
-                  placeholder="admin@igreja.com"
-                  value={settings.admin_email}
-                  onChange={(e) => updateSetting('admin_email', e.target.value)}
-                />
+                <Label htmlFor="secondary_color">Cor Secundária</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="secondary_color"
+                    type="color"
+                    value={settings.secondary_color}
+                    onChange={(e) => setSettings({ ...settings, secondary_color: e.target.value })}
+                    className="w-16 h-10"
+                  />
+                  <Input
+                    value={settings.secondary_color}
+                    onChange={(e) => setSettings({ ...settings, secondary_color: e.target.value })}
+                    placeholder="#64748B"
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-medium text-sm mb-2 text-green-800">Status do Sistema:</h4>
-              <ul className="text-xs text-green-700 space-y-1">
-                <li>✅ Banco de dados conectado</li>
-                <li>✅ Dados de teste carregados</li>
-                <li>✅ Sistema de configurações ativo</li>
-                <li>✅ Pronto para uso</li>
-              </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="logo">URL do Logo</Label>
+                <Input
+                  id="logo"
+                  value={settings.logo}
+                  onChange={(e) => setSettings({ ...settings, logo: e.target.value })}
+                  placeholder="https://exemplo.com/logo.png"
+                />
+              </div>
+              <div>
+                <Label htmlFor="favicon">URL do Favicon</Label>
+                <Input
+                  id="favicon"
+                  value={settings.favicon}
+                  onChange={(e) => setSettings({ ...settings, favicon: e.target.value })}
+                  placeholder="https://exemplo.com/favicon.ico"
+                />
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
