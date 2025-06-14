@@ -35,7 +35,30 @@ export const EventsManager = () => {
 
   useEffect(() => {
     fetchEvents();
+    testDatabaseConnection();
   }, []);
+
+  const testDatabaseConnection = async () => {
+    try {
+      console.log('Testando conexão com o banco de dados...');
+      const { data, error } = await supabase
+        .from('events')
+        .select('count', { count: 'exact', head: true });
+
+      if (error) {
+        console.error('Erro na conexão:', error);
+        toast({
+          title: "Erro de Conexão",
+          description: "Não foi possível conectar ao banco de dados",
+          variant: "destructive"
+        });
+      } else {
+        console.log('Conexão com banco de dados estabelecida com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao testar conexão:', error);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -64,10 +87,9 @@ export const EventsManager = () => {
     }
   };
 
-  const generateSecureQRCode = (eventName: string, keyword: string) => {
+  const generateQRCode = (eventName: string, keyword: string) => {
     console.log('Gerando QR code para:', eventName, keyword);
     
-    // Sempre gerar um QR code simples, independente do license guard
     const eventId = 'qr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     const sanitizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, '-');
     const qrUrl = `${window.location.origin}/evento/${sanitizedKeyword}/${eventId}`;
@@ -115,7 +137,7 @@ export const EventsManager = () => {
         });
       } else {
         console.log('Criando novo evento...');
-        const qrData = generateSecureQRCode(formData.name, formData.keyword);
+        const qrData = generateQRCode(formData.name, formData.keyword);
         
         const eventData = {
           name: formData.name,
@@ -154,11 +176,11 @@ export const EventsManager = () => {
       setFormData({ name: '', keyword: '', date: '' });
       setEditingEvent(null);
       setIsDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar evento:', error);
       toast({
         title: "Erro",
-        description: `Não foi possível salvar o evento: ${error.message}`,
+        description: `Não foi possível salvar o evento: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive"
       });
     }
