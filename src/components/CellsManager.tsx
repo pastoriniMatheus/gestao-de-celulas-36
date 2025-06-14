@@ -1,29 +1,58 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home } from 'lucide-react';
+import { AddCellDialog } from './AddCellDialog';
+import { CellsList } from './CellsList';
+import { useCells } from '@/hooks/useCells';
 
 export const CellsManager = () => {
+  const { cells, loading } = useCells();
+
+  const activeCells = cells.filter(cell => cell.active).length;
+  const totalCells = cells.length;
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-blue-600" />
-            Gerenciamento de Células
-          </CardTitle>
-          <CardDescription>
-            Organize e gerencie as células da igreja
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Home className="h-5 w-5 text-blue-600" />
+                Gerenciamento de Células
+              </CardTitle>
+              <CardDescription>
+                Organize e gerencie as células da igreja
+              </CardDescription>
+            </div>
+            <AddCellDialog />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-gray-500">Módulo de células em desenvolvimento...</p>
-            <p className="text-sm text-gray-400 mt-2">
-              Em breve você poderá cadastrar e gerenciar todas as células.
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-blue-800">Total de Células</h3>
+              <p className="text-2xl font-bold text-blue-600">
+                {loading ? '...' : totalCells}
+              </p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-green-800">Células Ativas</h3>
+              <p className="text-2xl font-bold text-green-600">
+                {loading ? '...' : activeCells}
+              </p>
+            </div>
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-orange-800">Taxa de Atividade</h3>
+              <p className="text-2xl font-bold text-orange-600">
+                {loading ? '...' : totalCells > 0 ? `${Math.round((activeCells / totalCells) * 100)}%` : '0%'}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      <CellsList />
     </div>
   );
 };
