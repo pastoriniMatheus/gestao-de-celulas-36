@@ -31,17 +31,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      console.log('Buscando perfil para user_id:', userId);
+      
+      // Primeiro tentar buscar por user_id
+      let { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
+      
+      if (error && error.code === 'PGRST116') {
+        console.log('Perfil não encontrado por user_id, buscando por email...');
+        // Se não encontrar por user_id, tentar por email
+        const userEmail = user?.email;
+        if (userEmail) {
+          const result = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', userEmail)
+            .single();
+          
+          data = result.data;
+          error = result.error;
+        }
+      }
       
       if (error && error.code !== 'PGRST116') {
         console.error('Erro ao buscar perfil:', error);
         return null;
       }
       
+      console.log('Perfil encontrado:', data);
       return data;
     } catch (error) {
       console.error('Erro na consulta do perfil:', error);
@@ -51,6 +71,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const createUserProfile = async (user: User, name?: string) => {
     try {
+      console.log('Criando perfil para usuário:', user.email);
+      
       const { data, error } = await supabase
         .from('profiles')
         .insert({
@@ -68,6 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
 
+      console.log('Perfil criado:', data);
       return data;
     } catch (error) {
       console.error('Erro ao criar perfil:', error);
@@ -80,24 +103,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
         setSession(session);
         setUser(session?.user ?? null);
 
-        if (session?.user && !userProfile) {
-          // Buscar perfil apenas se não existe
-          fetchUserProfile(session.user.id).then(profile => {
-            if (!profile) {
-              createUserProfile(session.user).then(newProfile => {
-                setUserProfile(newProfile);
-              });
-            } else {
-              setUserProfile(profile);
-            }
-          });
-        } else if (!session?.user) {
+        if (session?.user) {
+          console.log('Usuário logado, buscando perfil...');
+          const profile = await fetchUserProfile(session.user.id);
+          
+          if (!profile) {
+            console.log('Perfil não encontrado, criando novo...');
+            const newProfile = await createUserProfile(session.user);
+            setUserProfile(newProfile);
+          } else {
+            setUserProfile(profile);
+          }
+        } else {
           setUserProfile(null);
         }
         
@@ -107,22 +130,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Buscar sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSession(session);
-        setUser(session.user);
-        
-        fetchUserProfile(session.user.id).then(profile => {
-          if (!profile) {
-            createUserProfile(session.user).then(newProfile => {
-              setUserProfile(newProfile);
-              setLoading(false);
-            });
-          } else {
-            setUserProfile(profile);
-            setLoading(false);
-          }
-        });
-      } else {
+      console.log('Sessão inicial:', session?.user?.email);
+      if (!session) {
         setLoading(false);
       }
     });
@@ -130,23 +139,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []); // Dependency array vazia para evitar loops
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
+      console.log('Tentando fazer login com:', email);
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
+      if (error) {
+        console.error('Erro no login:', error);
+      }
+      
       return { error };
     } catch (error) {
       console.error('Erro no signIn:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
+      setLoading(true);
+      console.log('Tentando registrar usuário:', email);
+      
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
@@ -159,16 +181,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
       });
+      
+      if (error) {
+        console.error('Erro no registro:', error);
+      }
+      
       return { error };
     } catch (error) {
       console.error('Erro no signUp:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
       console.log('Iniciando logout...');
+      setLoading(true);
       
       // Limpar estados primeiro
       setUser(null);
@@ -184,6 +214,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       console.error('Erro no signOut:', error);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -222,7 +222,7 @@ export const UsersManager = () => {
           </CardTitle>
           <CardDescription>
             Você não tem permissão para acessar o gerenciamento de usuários.
-            {userProfile ? `Seu papel atual: ${userProfile.role}` : 'Usuário não identificado'}
+            {userProfile ? ` Seu papel atual: ${userProfile.role}` : ' Usuário não identificado'}
           </CardDescription>
         </CardHeader>
       </Card>
