@@ -8,7 +8,7 @@ import { CellsManager } from '@/components/CellsManager';
 import { MessagingCenter } from '@/components/MessagingCenter';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
-import { LoginSystem } from '@/components/LoginSystem';
+import { UsersManager } from '@/components/UsersManager';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -34,7 +34,7 @@ const Index = () => {
       case 'settings':
         return <Settings />;
       case 'users':
-        return <LoginSystem />;
+        return <UsersManager />;
       default:
         return <Dashboard />;
     }

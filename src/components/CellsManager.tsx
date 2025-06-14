@@ -1,127 +1,117 @@
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Users2, MapPin } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Edit, Trash2, Home, MapPin, Calendar, Clock, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface Cell {
-  id: string;
-  name: string;
-  leader_id: string | null;
-  address: string;
-  meeting_day: number;
-  meeting_time: string;
-  active: boolean;
-  profiles?: {
-    name: string;
-  };
-  contacts?: Contact[];
-}
-
-interface Contact {
-  id: string;
-  name: string;
-  whatsapp: string | null;
-}
-
-interface Profile {
-  id: string;
-  name: string;
-  role: string;
-}
-
-const DAYS_OF_WEEK = [
-  'Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'
-];
+import { useAuth } from './AuthProvider';
 
 export const CellsManager = () => {
-  const [cells, setCells] = useState<Cell[]>([]);
-  const [leaders, setLeaders] = useState<Profile[]>([]);
+  const [cells, setCells] = useState<any[]>([]);
+  const [leaders, setLeaders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCell, setEditingCell] = useState<Cell | null>(null);
+  const [editingCell, setEditingCell] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
-    leader_id: '',
     address: '',
-    meeting_day: '',
-    meeting_time: ''
+    meeting_day: 1,
+    meeting_time: '19:00',
+    leader_id: '',
+    active: true
   });
+  
   const { toast } = useToast();
+  const { userProfile } = useAuth();
+
+  // Verificar permissões
+  const canManage = userProfile?.role === 'admin' || userProfile?.role === 'leader';
 
   useEffect(() => {
-    fetchCells();
-    fetchLeaders();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    await Promise.all([fetchCells(), fetchLeaders()]);
+  };
 
   const fetchCells = async () => {
     try {
       console.log('Buscando células...');
+      
       const { data, error } = await supabase
         .from('cells')
         .select(`
           *,
           profiles!cells_leader_id_fkey (
-            name
-          ),
-          contacts (
             id,
             name,
-            whatsapp
+            role
           )
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao buscar células:', error);
-        throw error;
+        toast({
+          title: "Erro ao carregar células",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
       }
 
       console.log('Células encontradas:', data);
       setCells(data || []);
     } catch (error) {
-      console.error('Erro ao buscar células:', error);
+      console.error('Erro na consulta de células:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar as células",
-        variant: "destructive"
+        title: "Erro ao carregar células",
+        description: "Erro inesperado",
+        variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchLeaders = async () => {
     try {
       console.log('Buscando líderes...');
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, role')
-        .in('role', ['leader', 'admin'])
+        .select('*')
+        .in('role', ['admin', 'leader'])
         .eq('active', true)
         .order('name');
 
       if (error) {
         console.error('Erro ao buscar líderes:', error);
-        throw error;
+        toast({
+          title: "Erro ao carregar líderes",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
       }
 
       console.log('Líderes encontrados:', data);
       setLeaders(data || []);
     } catch (error) {
-      console.error('Erro ao buscar líderes:', error);
+      console.error('Erro na consulta de líderes:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar os líderes",
-        variant: "destructive"
+        title: "Erro ao carregar líderes",
+        description: "Erro inesperado",
+        variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,14 +121,12 @@ export const CellsManager = () => {
     try {
       const cellData = {
         name: formData.name,
-        leader_id: formData.leader_id || null,
         address: formData.address,
-        meeting_day: parseInt(formData.meeting_day),
+        meeting_day: formData.meeting_day,
         meeting_time: formData.meeting_time,
-        active: true
+        leader_id: formData.leader_id || null,
+        active: formData.active
       };
-
-      console.log('Salvando célula:', cellData);
 
       if (editingCell) {
         const { error } = await supabase
@@ -149,245 +137,304 @@ export const CellsManager = () => {
         if (error) throw error;
 
         toast({
-          title: "Sucesso",
-          description: "Célula atualizada com sucesso"
+          title: "Célula atualizada com sucesso!",
         });
       } else {
         const { error } = await supabase
           .from('cells')
-          .insert(cellData);
+          .insert([cellData]);
 
         if (error) throw error;
 
         toast({
-          title: "Sucesso",
-          description: "Célula criada com sucesso"
+          title: "Célula criada com sucesso!",
         });
       }
-      
-      fetchCells();
-      setFormData({ name: '', leader_id: '', address: '', meeting_day: '', meeting_time: '' });
-      setEditingCell(null);
+
       setIsDialogOpen(false);
-    } catch (error) {
-      console.error('Erro ao salvar célula:', error);
+      setEditingCell(null);
+      setFormData({
+        name: '',
+        address: '',
+        meeting_day: 1,
+        meeting_time: '19:00',
+        leader_id: '',
+        active: true
+      });
+      fetchCells();
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Não foi possível salvar a célula",
-        variant: "destructive"
+        title: "Erro ao salvar célula",
+        description: error.message,
+        variant: "destructive",
       });
     }
   };
 
-  const handleEdit = (cell: Cell) => {
+  const handleEdit = (cell: any) => {
     setEditingCell(cell);
-    setFormData({ 
-      name: cell.name, 
-      leader_id: cell.leader_id || '',
+    setFormData({
+      name: cell.name,
       address: cell.address,
-      meeting_day: cell.meeting_day.toString(),
-      meeting_time: cell.meeting_time
+      meeting_day: cell.meeting_day,
+      meeting_time: cell.meeting_time,
+      leader_id: cell.leader_id || '',
+      active: cell.active
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (cellId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta célula?')) return;
+
     try {
       const { error } = await supabase
         .from('cells')
         .delete()
-        .eq('id', id);
+        .eq('id', cellId);
 
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: "Célula excluída com sucesso"
+        title: "Célula excluída com sucesso!",
       });
       
       fetchCells();
-    } catch (error) {
-      console.error('Erro ao deletar célula:', error);
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Não foi possível excluir a célula",
-        variant: "destructive"
+        title: "Erro ao excluir célula",
+        description: error.message,
+        variant: "destructive",
       });
     }
   };
 
+  const getDayName = (day: number) => {
+    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    return days[day] || `Dia ${day}`;
+  };
+
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Carregando células...</div>;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Carregando células...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de Células</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Célula
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCell ? 'Editar Célula' : 'Nova Célula'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome da Célula</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Digite o nome da célula"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="leader">Líder</Label>
-                <Select value={formData.leader_id} onValueChange={(value) => setFormData({ ...formData, leader_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um líder" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leaders.map((leader) => (
-                      <SelectItem key={leader.id} value={leader.id}>
-                        {leader.name} ({leader.role})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="address">Endereço</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Endereço completo"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="meeting_day">Dia da Reunião</Label>
-                <Select value={formData.meeting_day} onValueChange={(value) => setFormData({ ...formData, meeting_day: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o dia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DAYS_OF_WEEK.map((day, index) => (
-                      <SelectItem key={index} value={index.toString()}>
-                        {day}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="meeting_time">Horário da Reunião</Label>
-                <Input
-                  id="meeting_time"
-                  type="time"
-                  value={formData.meeting_time}
-                  onChange={(e) => setFormData({ ...formData, meeting_time: e.target.value })}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                {editingCell ? 'Atualizar' : 'Criar'} Célula
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cells.map((cell) => (
-          <Card key={cell.id} className="relative">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{cell.name}</CardTitle>
-                <Badge variant="secondary">
-                  {cell.contacts?.length || 0} membros
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Líder:</p>
-                <p className="text-sm text-gray-600">
-                  {cell.profiles?.name || 'Não definido'}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Home className="h-5 w-5 text-blue-600" />
+                Gerenciamento de Células
+              </CardTitle>
+              <CardDescription>
+                Gerencie as células da igreja
+              </CardDescription>
+            </div>
+            {canManage && (
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => {
+                    setEditingCell(null);
+                    setFormData({
+                      name: '',
+                      address: '',
+                      meeting_day: 1,
+                      meeting_time: '19:00',
+                      leader_id: '',
+                      active: true
+                    });
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Célula
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingCell ? 'Editar Célula' : 'Nova Célula'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Nome da Célula</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address">Endereço</Label>
+                      <Input
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="meeting_day">Dia da Reunião</Label>
+                      <Select value={formData.meeting_day.toString()} onValueChange={(value) => setFormData({ ...formData, meeting_day: parseInt(value) })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Domingo</SelectItem>
+                          <SelectItem value="1">Segunda-feira</SelectItem>
+                          <SelectItem value="2">Terça-feira</SelectItem>
+                          <SelectItem value="3">Quarta-feira</SelectItem>
+                          <SelectItem value="4">Quinta-feira</SelectItem>
+                          <SelectItem value="5">Sexta-feira</SelectItem>
+                          <SelectItem value="6">Sábado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="meeting_time">Horário</Label>
+                      <Input
+                        id="meeting_time"
+                        type="time"
+                        value={formData.meeting_time}
+                        onChange={(e) => setFormData({ ...formData, meeting_time: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="leader_id">Líder</Label>
+                      <Select value={formData.leader_id} onValueChange={(value) => setFormData({ ...formData, leader_id: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um líder" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sem líder</SelectItem>
+                          {leaders.map((leader) => (
+                            <SelectItem key={leader.id} value={leader.id}>
+                              {leader.name} ({leader.role === 'admin' ? 'Admin' : 'Líder'})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="active"
+                        checked={formData.active}
+                        onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                      />
+                      <Label htmlFor="active">Ativa</Label>
+                    </div>
+                    <Button type="submit" className="w-full">
+                      {editingCell ? 'Atualizar' : 'Criar'} Célula
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {cells.length === 0 ? (
+            <div className="text-center py-8">
+              <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Nenhuma célula encontrada.</p>
+              {canManage && (
+                <p className="text-sm text-gray-400 mt-2">
+                  Clique em "Nova Célula" para começar.
                 </p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-700">Reunião:</p>
-                <p className="text-sm text-gray-600">
-                  {DAYS_OF_WEEK[cell.meeting_day]}s às {cell.meeting_time}
-                </p>
-              </div>
-              
-              <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-gray-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-gray-600">{cell.address}</p>
-              </div>
-              
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Users2 size={16} className="text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Membros:</span>
-                </div>
-                {cell.contacts && cell.contacts.length > 0 ? (
-                  <div className="space-y-2">
-                    {cell.contacts.map((member) => (
-                      <div key={member.id} className="p-2 bg-gray-50 rounded text-sm">
-                        <p className="font-medium">{member.name}</p>
-                        {member.whatsapp && (
-                          <p className="text-gray-600">{member.whatsapp}</p>
-                        )}
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Endereço</TableHead>
+                  <TableHead>Reunião</TableHead>
+                  <TableHead>Líder</TableHead>
+                  <TableHead>Status</TableHead>
+                  {canManage && <TableHead>Ações</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cells.map((cell) => (
+                  <TableRow key={cell.id}>
+                    <TableCell className="font-medium">{cell.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">{cell.address}</span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 italic">Nenhum membro cadastrado</p>
-                )}
-              </div>
-              
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(cell)}
-                  className="flex-1"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(cell.id)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {cells.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Nenhuma célula cadastrada ainda.</p>
-          <p className="text-sm text-gray-400">Clique em "Nova Célula" para começar.</p>
-        </div>
-      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{getDayName(cell.meeting_day)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{cell.meeting_time}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {cell.profiles ? (
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{cell.profiles.name}</span>
+                          <Badge variant={cell.profiles.role === 'admin' ? 'destructive' : 'default'} className="text-xs">
+                            {cell.profiles.role === 'admin' ? 'Admin' : 'Líder'}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">Sem líder</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={cell.active ? 'default' : 'secondary'}>
+                        {cell.active ? 'Ativa' : 'Inativa'}
+                      </Badge>
+                    </TableCell>
+                    {canManage && (
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(cell)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(cell.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

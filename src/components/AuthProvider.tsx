@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userProfile: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -25,26 +26,124 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao buscar perfil:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Erro na consulta do perfil:', error);
+      return null;
+    }
+  };
+
+  const createUserProfile = async (user: User, name?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          email: user.email || '',
+          name: name || user.email?.split('@')[0] || 'Usuário',
+          role: 'user',
+          active: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar perfil:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar perfil:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // Set up auth state listener
+    let isMounted = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+
+        console.log('Auth state changed:', event, session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+
+        if (session?.user) {
+          // Buscar ou criar perfil do usuário
+          let profile = await fetchUserProfile(session.user.id);
+          
+          if (!profile) {
+            profile = await createUserProfile(session.user);
+          }
+          
+          if (isMounted) {
+            setUserProfile(profile);
+          }
+        } else {
+          if (isMounted) {
+            setUserProfile(null);
+          }
+        }
+        
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id).then(profile => {
+          if (!profile) {
+            createUserProfile(session.user).then(newProfile => {
+              if (isMounted) {
+                setUserProfile(newProfile);
+                setLoading(false);
+              }
+            });
+          } else {
+            if (isMounted) {
+              setUserProfile(profile);
+              setLoading(false);
+            }
+          }
+        });
+      } else {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -78,6 +177,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = {
     user,
     session,
+    userProfile,
     signIn,
     signUp,
     signOut,

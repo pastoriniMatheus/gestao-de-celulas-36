@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, Shield, User } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
@@ -58,11 +58,15 @@ export const AuthPage = () => {
     } else {
       toast({
         title: "Cadastro realizado!",
-        description: "Verifique seu email para confirmar a conta",
+        description: "Bem-vindo ao sistema! Você foi logado automaticamente.",
       });
     }
     
     setLoading(false);
+  };
+
+  const handleTestLogin = (email: string, password: string) => {
+    setLoginData({ email, password });
   };
 
   return (
@@ -90,7 +94,7 @@ export const AuthPage = () => {
                     type="email"
                     value={loginData.email}
                     onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                    placeholder="admin@sistema.com"
+                    placeholder="seu@email.com"
                     required
                   />
                 </div>
@@ -120,12 +124,53 @@ export const AuthPage = () => {
                 </Button>
               </form>
 
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold text-sm text-blue-800 mb-2">Usuários de teste:</h4>
-                <div className="text-xs text-blue-700 space-y-1">
-                  <p><strong>Admin:</strong> admin@sistema.com / admin</p>
-                  <p><strong>Líder:</strong> lider@sistema.com / lider</p>
+              <div className="mt-6 space-y-3">
+                <h4 className="font-semibold text-sm text-blue-800 text-center">Contas de teste:</h4>
+                
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-left"
+                    onClick={() => handleTestLogin('admin@sistema.com', 'admin123')}
+                  >
+                    <Shield className="w-4 h-4 mr-2 text-red-600" />
+                    <div className="text-left">
+                      <div className="font-medium">Administrador</div>
+                      <div className="text-xs text-gray-500">admin@sistema.com</div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-left"
+                    onClick={() => handleTestLogin('lider@sistema.com', 'lider123')}
+                  >
+                    <Shield className="w-4 h-4 mr-2 text-blue-600" />
+                    <div className="text-left">
+                      <div className="font-medium">Líder</div>
+                      <div className="text-xs text-gray-500">lider@sistema.com</div>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-left"
+                    onClick={() => handleTestLogin('usuario@sistema.com', 'user123')}
+                  >
+                    <User className="w-4 h-4 mr-2 text-gray-600" />
+                    <div className="text-left">
+                      <div className="font-medium">Usuário</div>
+                      <div className="text-xs text-gray-500">usuario@sistema.com</div>
+                    </div>
+                  </Button>
                 </div>
+                
+                <p className="text-xs text-blue-600 text-center mt-2">
+                  Clique nos botões acima para preencher automaticamente
+                </p>
               </div>
             </TabsContent>
             
@@ -161,8 +206,9 @@ export const AuthPage = () => {
                       type={showPassword ? "text" : "password"}
                       value={signupData.password}
                       onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                      placeholder="Crie uma senha"
+                      placeholder="Crie uma senha (mín. 6 caracteres)"
                       required
+                      minLength={6}
                     />
                     <button
                       type="button"
@@ -178,6 +224,13 @@ export const AuthPage = () => {
                   {loading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
               </form>
+              
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-700">
+                  <strong>Nota:</strong> Novos usuários são criados com role "user" por padrão. 
+                  Um administrador pode alterar sua role posteriormente.
+                </p>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
