@@ -73,9 +73,32 @@ export const useEvents = () => {
         throw new Error('Keyword já existe');
       }
 
-      // Gerar URL baseada no domínio atual
+      // Inserir evento primeiro para obter o ID
+      const { data: newEvent, error: insertError } = await supabase
+        .from('events')
+        .insert([{ 
+          ...eventData, 
+          keyword: normalizedKeyword,
+          qr_url: '', // Temporário
+          qr_code: '', // Temporário
+          scan_count: 0 
+        }])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Erro ao criar evento:', insertError);
+        toast({
+          title: "Erro",
+          description: `Erro ao criar evento: ${insertError.message}`,
+          variant: "destructive"
+        });
+        throw insertError;
+      }
+
+      // Gerar URL com parâmetros usando o ID do evento
       const baseUrl = window.location.origin;
-      const redirectUrl = `${baseUrl}/form/${normalizedKeyword}`;
+      const redirectUrl = `${baseUrl}/form?evento=${newEvent.id}&cod=${normalizedKeyword}`;
       
       // Gerar QR code data
       const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
@@ -87,29 +110,23 @@ export const useEvents = () => {
         }
       });
 
-      const { data, error } = await supabase
+      // Atualizar evento com QR code e URL
+      const { data: updatedEvent, error: updateError } = await supabase
         .from('events')
-        .insert([{ 
-          ...eventData, 
-          keyword: normalizedKeyword,
+        .update({
           qr_url: redirectUrl,
-          qr_code: qrCodeDataUrl,
-          scan_count: 0 
-        }])
+          qr_code: qrCodeDataUrl
+        })
+        .eq('id', newEvent.id)
         .select()
         .single();
 
-      if (error) {
-        console.error('Erro ao criar evento:', error);
-        toast({
-          title: "Erro",
-          description: `Erro ao criar evento: ${error.message}`,
-          variant: "destructive"
-        });
-        throw error;
+      if (updateError) {
+        console.error('Erro ao atualizar evento com QR:', updateError);
+        throw updateError;
       }
 
-      console.log('Evento criado com sucesso:', data);
+      console.log('Evento criado com sucesso:', updatedEvent);
       
       toast({
         title: "Sucesso",
@@ -118,7 +135,7 @@ export const useEvents = () => {
 
       // Recarregar a lista completa para garantir atualização
       await fetchEvents();
-      return data;
+      return updatedEvent;
     } catch (error) {
       console.error('Erro ao criar evento:', error);
       throw error;
@@ -131,7 +148,7 @@ export const useEvents = () => {
       if (updates.keyword) {
         const normalizedKeyword = updates.keyword.toLowerCase().trim();
         const baseUrl = window.location.origin;
-        const redirectUrl = `${baseUrl}/form/${normalizedKeyword}`;
+        const redirectUrl = `${baseUrl}/form?evento=${id}&cod=${normalizedKeyword}`;
         
         const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
           width: 300,

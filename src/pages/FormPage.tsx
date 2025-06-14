@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export const FormPage = () => {
-  const { keyword } = useParams();
+  const [searchParams] = useSearchParams();
+  const evento = searchParams.get('evento');
+  const cod = searchParams.get('cod');
+  
   const [itemData, setItemData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,93 +26,137 @@ export const FormPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (keyword) {
-      handleItemScan(keyword);
+    if (evento || cod) {
+      handleItemScan();
     }
-  }, [keyword]);
+  }, [evento, cod]);
 
-  const handleItemScan = async (keyword: string) => {
+  const handleItemScan = async () => {
     try {
-      console.log('Processando scan com keyword:', keyword);
+      console.log('Processando scan com parâmetros:', { evento, cod });
       setLoading(true);
       setError(null);
 
-      const normalizedKeyword = keyword.toLowerCase().trim();
-
-      // Primeiro, buscar na tabela de eventos
-      console.log('Buscando evento...');
-      const { data: eventData, error: eventError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('keyword', normalizedKeyword)
-        .eq('active', true)
-        .maybeSingle();
-
-      console.log('Resultado busca evento:', { eventData, eventError });
-
-      if (eventData && !eventError) {
-        console.log('Evento encontrado:', eventData);
-        
-        // Incrementar contador de scan do evento
-        const { error: updateError } = await supabase
+      // Primeiro, tentar buscar por ID do evento se fornecido
+      if (evento) {
+        console.log('Buscando evento por ID...');
+        const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .update({ scan_count: (eventData.scan_count || 0) + 1 })
-          .eq('id', eventData.id);
+          .select('*')
+          .eq('id', evento)
+          .eq('active', true)
+          .maybeSingle();
 
-        if (updateError) {
-          console.error('Erro ao incrementar contador do evento:', updateError);
-        } else {
-          console.log('Contador do evento incrementado com sucesso');
+        console.log('Resultado busca evento por ID:', { eventData, eventError });
+
+        if (eventData && !eventError) {
+          console.log('Evento encontrado por ID:', eventData);
+          
+          // Incrementar contador de scan do evento
+          const { error: updateError } = await supabase
+            .from('events')
+            .update({ scan_count: (eventData.scan_count || 0) + 1 })
+            .eq('id', eventData.id);
+
+          if (updateError) {
+            console.error('Erro ao incrementar contador do evento:', updateError);
+          } else {
+            console.log('Contador do evento incrementado com sucesso');
+          }
+
+          setItemData({
+            type: 'event',
+            title: eventData.name,
+            description: `Evento: ${eventData.name}`,
+            data: eventData
+          });
+          setShowForm(true);
+          setLoading(false);
+          return;
         }
-
-        setItemData({
-          type: 'event',
-          title: eventData.name,
-          description: `Evento: ${eventData.name}`,
-          data: eventData
-        });
-        setShowForm(true);
-        setLoading(false);
-        return;
       }
 
-      // Se não encontrou evento, buscar na tabela de QR codes (legado)
-      console.log('Buscando QR code...');
-      const { data: qrCodeData, error: qrError } = await supabase
-        .from('qr_codes')
-        .select('*')
-        .eq('keyword', normalizedKeyword)
-        .eq('active', true)
-        .maybeSingle();
-
-      console.log('Resultado busca QR code:', { qrCodeData, qrError });
-
-      if (qrCodeData && !qrError) {
-        console.log('QR code encontrado:', qrCodeData);
+      // Se não encontrou por ID, tentar por código
+      if (cod) {
+        const normalizedCod = cod.toLowerCase().trim();
         
-        // Incrementar contador de scan
-        const { error: updateError } = await supabase
-          .from('qr_codes')
-          .update({ scan_count: (qrCodeData.scan_count || 0) + 1 })
-          .eq('id', qrCodeData.id);
+        // Buscar evento por keyword
+        console.log('Buscando evento por código...');
+        const { data: eventData, error: eventError } = await supabase
+          .from('events')
+          .select('*')
+          .eq('keyword', normalizedCod)
+          .eq('active', true)
+          .maybeSingle();
 
-        if (updateError) {
-          console.error('Erro ao incrementar contador do QR code:', updateError);
-        } else {
-          console.log('Contador do QR code incrementado com sucesso');
+        console.log('Resultado busca evento por código:', { eventData, eventError });
+
+        if (eventData && !eventError) {
+          console.log('Evento encontrado por código:', eventData);
+          
+          // Incrementar contador de scan do evento
+          const { error: updateError } = await supabase
+            .from('events')
+            .update({ scan_count: (eventData.scan_count || 0) + 1 })
+            .eq('id', eventData.id);
+
+          if (updateError) {
+            console.error('Erro ao incrementar contador do evento:', updateError);
+          } else {
+            console.log('Contador do evento incrementado com sucesso');
+          }
+
+          setItemData({
+            type: 'event',
+            title: eventData.name,
+            description: `Evento: ${eventData.name}`,
+            data: eventData
+          });
+          setShowForm(true);
+          setLoading(false);
+          return;
         }
 
-        setItemData({
-          type: 'qrcode',
-          title: qrCodeData.title,
-          description: 'QR Code escaneado com sucesso!',
-          data: qrCodeData
-        });
-        setShowForm(true);
-      } else {
-        console.log('Nenhum evento ou QR code encontrado para keyword:', keyword);
-        setError('Código não encontrado ou inativo');
+        // Se não encontrou evento, buscar na tabela de QR codes (legado)
+        console.log('Buscando QR code...');
+        const { data: qrCodeData, error: qrError } = await supabase
+          .from('qr_codes')
+          .select('*')
+          .eq('keyword', normalizedCod)
+          .eq('active', true)
+          .maybeSingle();
+
+        console.log('Resultado busca QR code:', { qrCodeData, qrError });
+
+        if (qrCodeData && !qrError) {
+          console.log('QR code encontrado:', qrCodeData);
+          
+          // Incrementar contador de scan
+          const { error: updateError } = await supabase
+            .from('qr_codes')
+            .update({ scan_count: (qrCodeData.scan_count || 0) + 1 })
+            .eq('id', qrCodeData.id);
+
+          if (updateError) {
+            console.error('Erro ao incrementar contador do QR code:', updateError);
+          } else {
+            console.log('Contador do QR code incrementado com sucesso');
+          }
+
+          setItemData({
+            type: 'qrcode',
+            title: qrCodeData.title,
+            description: 'QR Code escaneado com sucesso!',
+            data: qrCodeData
+          });
+          setShowForm(true);
+          setLoading(false);
+          return;
+        }
       }
+
+      console.log('Nenhum evento ou QR code encontrado para os parâmetros:', { evento, cod });
+      setError('Código não encontrado ou inativo');
     } catch (error) {
       console.error('Erro crítico ao processar código:', error);
       setError('Erro ao processar código');
@@ -202,7 +249,7 @@ export const FormPage = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-500 mb-4">
-              Palavra-chave: <code className="bg-gray-200 px-2 py-1 rounded">{keyword}</code>
+              Parâmetros: evento={evento}, cod={cod}
             </p>
             <p className="text-sm text-gray-500">
               Verifique se o código é válido ou entre em contato com o organizador.
@@ -310,7 +357,7 @@ export const FormPage = () => {
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
               <QrCode className="w-4 h-4" />
               <span>
-                {itemData?.type === 'event' ? 'Evento:' : 'Código:'} {keyword}
+                {itemData?.type === 'event' ? 'Evento:' : 'Código:'} {evento || cod}
               </span>
             </div>
           </div>
