@@ -1,41 +1,93 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Phone } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Contact {
   id: string;
   name: string;
   neighborhood: string;
-  age: number;
-  whatsapp: string;
-  status: 'pending' | 'participating';
-  cellName?: string;
+  age: number | null;
+  whatsapp: string | null;
+  status: string;
+  cell_id: string | null;
+  cell?: {
+    name: string;
+  };
 }
 
 interface Cell {
   id: string;
   name: string;
-  leader: string;
+  leader_id: string;
+  profiles?: {
+    name: string;
+  };
 }
 
 export const ContactsManager = () => {
-  const [contacts] = useState<Contact[]>([
-    { id: '1', name: 'Maria Silva', neighborhood: 'Centro', age: 34, whatsapp: '(11) 99999-9999', status: 'participating', cellName: 'Célula Esperança' },
-    { id: '2', name: 'João Santos', neighborhood: 'Jardim Europa', age: 28, whatsapp: '(11) 88888-8888', status: 'pending' },
-    { id: '3', name: 'Ana Costa', neighborhood: 'Centro', age: 42, whatsapp: '(11) 77777-7777', status: 'participating', cellName: 'Célula Fé' },
-    { id: '4', name: 'Pedro Lima', neighborhood: 'Vila Nova', age: 31, whatsapp: '(11) 66666-6666', status: 'pending' },
-    { id: '5', name: 'Sofia Oliveira', neighborhood: 'Jardim Europa', age: 26, whatsapp: '(11) 55555-5555', status: 'participating', cellName: 'Célula Esperança' },
-  ]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [cells, setCells] = useState<Cell[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const [cells] = useState<Cell[]>([
-    { id: '1', name: 'Célula Esperança', leader: 'Pastor João' },
-    { id: '2', name: 'Célula Fé', leader: 'Líder Maria' },
-    { id: '3', name: 'Célula Amor', leader: 'Líder Pedro' },
-  ]);
+  useEffect(() => {
+    fetchContacts();
+    fetchCells();
+  }, []);
+
+  const fetchContacts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select(`
+          *,
+          cells (
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setContacts(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar contatos:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os contatos",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCells = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cells')
+        .select(`
+          *,
+          profiles (
+            name
+          )
+        `)
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+
+      setCells(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar células:', error);
+    }
+  };
 
   const neighborhoods = [...new Set(contacts.map(contact => contact.neighborhood))];
 
@@ -46,10 +98,37 @@ export const ContactsManager = () => {
     }));
   };
 
-  const handleAssignToCell = (contactId: string, cellName: string) => {
-    console.log(`Atribuindo contato ${contactId} à célula ${cellName}`);
-    // Aqui implementaríamos a lógica de atribuição
+  const handleAssignToCell = async (contactId: string, cellId: string) => {
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ 
+          cell_id: cellId,
+          status: 'participating'
+        })
+        .eq('id', contactId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Contato atribuído à célula com sucesso"
+      });
+      
+      fetchContacts();
+    } catch (error) {
+      console.error('Erro ao atribuir à célula:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atribuir o contato à célula",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Carregando contatos...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -97,14 +176,16 @@ export const ContactsManager = () => {
                   </div>
                   
                   <div className="space-y-1 text-sm text-gray-600">
-                    <p>Idade: {contact.age} anos</p>
-                    <div className="flex items-center gap-1">
-                      <Phone size={12} />
-                      <span>{contact.whatsapp}</span>
-                    </div>
-                    {contact.cellName && (
+                    {contact.age && <p>Idade: {contact.age} anos</p>}
+                    {contact.whatsapp && (
+                      <div className="flex items-center gap-1">
+                        <Phone size={12} />
+                        <span>{contact.whatsapp}</span>
+                      </div>
+                    )}
+                    {contact.cell && (
                       <p className="text-blue-600 font-medium">
-                        Célula: {contact.cellName}
+                        Célula: {contact.cell.name}
                       </p>
                     )}
                   </div>
@@ -117,7 +198,7 @@ export const ContactsManager = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {cells.map((cell) => (
-                            <SelectItem key={cell.id} value={cell.name}>
+                            <SelectItem key={cell.id} value={cell.id}>
                               {cell.name}
                             </SelectItem>
                           ))}

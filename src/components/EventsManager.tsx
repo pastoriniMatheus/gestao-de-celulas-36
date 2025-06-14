@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,59 +7,31 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, QrCode, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Event {
   id: string;
   name: string;
   keyword: string;
   date: string;
-  qrCode: string;
-  qrUrl: string;
-  scanCount: number;
+  qr_code: string;
+  qr_url: string;
+  scan_count: number;
   active: boolean;
 }
 
 export const EventsManager = () => {
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: '1',
-      name: 'Encontro de Células',
-      keyword: 'encontro-celulas',
-      date: '2024-06-14',
-      qrCode: 'QR123456',
-      qrUrl: `${window.location.origin}/evento/encontro-celulas/qr_123456`,
-      scanCount: 45,
-      active: true
-    },
-    {
-      id: '2',
-      name: 'Culto de Jovens',
-      keyword: 'culto-jovens',
-      date: '2024-06-15',
-      qrCode: 'QR789012',
-      qrUrl: `${window.location.origin}/evento/culto-jovens/qr_789012`,
-      scanCount: 23,
-      active: true
-    },
-    {
-      id: '3',
-      name: 'Retiro Espiritual',
-      keyword: 'retiro-espiritual',
-      date: '2024-06-16',
-      qrCode: 'QR345678',
-      qrUrl: `${window.location.origin}/evento/retiro-espiritual/qr_345678`,
-      scanCount: 8,
-      active: false
-    }
-  ]);
-
+  const [events, setEvents] = useState<Event[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     keyword: '',
     date: ''
   });
+  const { toast } = useToast();
 
   // Check if license guard is loaded
   const [isLicenseGuardReady, setIsLicenseGuardReady] = useState(false);
@@ -67,20 +40,43 @@ export const EventsManager = () => {
     const checkLicenseGuard = () => {
       if (window.generateSecureQR && window.LicenseGuard) {
         setIsLicenseGuardReady(true);
-      } else {
-        // Try again in 100ms if not ready
+      } else {{
         setTimeout(checkLicenseGuard, 100);
       }
     };
     checkLicenseGuard();
   }, []);
 
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setEvents(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar eventos:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os eventos",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const generateSecureQRCode = (eventName: string, keyword: string) => {
-    // Using the system de proteção LicenseGuard
     if (isLicenseGuardReady && window.generateSecureQR) {
       return window.generateSecureQR(eventName, keyword);
     } else {
-      // Fallback caso o script não esteja carregado
       const eventId = 'qr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       const sanitizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, '-');
       return {
@@ -96,33 +92,61 @@ export const EventsManager = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingEvent) {
-      setEvents(events.map(event => 
-        event.id === editingEvent.id 
-          ? { ...event, ...formData }
-          : event
-      ));
-    } else {
-      const qrData = generateSecureQRCode(formData.name, formData.keyword);
-      const newEvent: Event = {
-        id: Date.now().toString(),
-        name: formData.name,
-        keyword: formData.keyword,
-        date: formData.date,
-        qrCode: qrData.eventId,
-        qrUrl: qrData.url,
-        scanCount: 0,
-        active: true
-      };
-      setEvents([...events, newEvent]);
+    try {
+      if (editingEvent) {
+        const { error } = await supabase
+          .from('events')
+          .update({
+            name: formData.name,
+            keyword: formData.keyword,
+            date: formData.date
+          })
+          .eq('id', editingEvent.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Evento atualizado com sucesso"
+        });
+      } else {
+        const qrData = generateSecureQRCode(formData.name, formData.keyword);
+        
+        const { error } = await supabase
+          .from('events')
+          .insert({
+            name: formData.name,
+            keyword: formData.keyword,
+            date: formData.date,
+            qr_code: qrData.eventId,
+            qr_url: qrData.url,
+            scan_count: 0,
+            active: true
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Evento criado com sucesso"
+        });
+      }
+      
+      fetchEvents();
+      setFormData({ name: '', keyword: '', date: '' });
+      setEditingEvent(null);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar evento:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o evento",
+        variant: "destructive"
+      });
     }
-    
-    setFormData({ name: '', keyword: '', date: '' });
-    setEditingEvent(null);
-    setIsDialogOpen(false);
   };
 
   const handleEdit = (event: Event) => {
@@ -135,20 +159,67 @@ export const EventsManager = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setEvents(events.filter(event => event.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Evento excluído com sucesso"
+      });
+      
+      fetchEvents();
+    } catch (error) {
+      console.error('Erro ao deletar evento:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o evento",
+        variant: "destructive"
+      });
+    }
   };
 
-  const toggleActive = (id: string) => {
-    setEvents(events.map(event => 
-      event.id === id ? { ...event, active: !event.active } : event
-    ));
+  const toggleActive = async (id: string, currentActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ active: !currentActive })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Evento ${!currentActive ? 'ativado' : 'desativado'} com sucesso`
+      });
+      
+      fetchEvents();
+    } catch (error) {
+      console.error('Erro ao alterar status do evento:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível alterar o status do evento",
+        variant: "destructive"
+      });
+    }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    // Aqui você pode adicionar um toast de confirmação
+    toast({
+      title: "Copiado!",
+      description: "URL copiada para a área de transferência"
+    });
   };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Carregando eventos...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -223,7 +294,7 @@ export const EventsManager = () => {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-gray-600">Data: {new Date(event.date).toLocaleDateString('pt-BR')}</p>
-                <p className="text-sm text-gray-600">Código QR: {event.qrCode}</p>
+                <p className="text-sm text-gray-600">Código QR: {event.qr_code}</p>
                 <p className="text-sm text-gray-600">Palavra-chave: {event.keyword}</p>
               </div>
               
@@ -233,18 +304,18 @@ export const EventsManager = () => {
               
               <div className="space-y-2">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">{event.scanCount}</p>
+                  <p className="text-2xl font-bold text-blue-600">{event.scan_count}</p>
                   <p className="text-sm text-gray-600">Total de Scans</p>
                 </div>
                 
                 <div className="p-2 bg-blue-50 rounded text-xs">
                   <p className="font-medium mb-1">URL do QR Code:</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-blue-600 break-all flex-1">{event.qrUrl}</p>
+                    <p className="text-blue-600 break-all flex-1">{event.qr_url}</p>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(event.qrUrl)}
+                      onClick={() => copyToClipboard(event.qr_url)}
                       className="flex-shrink-0"
                     >
                       <ExternalLink size={12} />
@@ -257,7 +328,7 @@ export const EventsManager = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => toggleActive(event.id)}
+                  onClick={() => toggleActive(event.id, event.active)}
                   className="flex-1"
                 >
                   {event.active ? 'Desativar' : 'Ativar'}

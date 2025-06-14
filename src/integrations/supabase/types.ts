@@ -9,7 +9,211 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      attendances: {
+        Row: {
+          attendance_date: string
+          cell_id: string
+          contact_id: string
+          created_at: string
+          id: string
+          present: boolean
+        }
+        Insert: {
+          attendance_date: string
+          cell_id: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          present?: boolean
+        }
+        Update: {
+          attendance_date?: string
+          cell_id?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          present?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendances_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendances_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cells: {
+        Row: {
+          active: boolean
+          address: string
+          created_at: string
+          id: string
+          leader_id: string | null
+          meeting_day: number
+          meeting_time: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address: string
+          created_at?: string
+          id?: string
+          leader_id?: string | null
+          meeting_day: number
+          meeting_time: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string
+          created_at?: string
+          id?: string
+          leader_id?: string | null
+          meeting_day?: number
+          meeting_time?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cells_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contacts: {
+        Row: {
+          age: number | null
+          cell_id: string | null
+          created_at: string
+          id: string
+          name: string
+          neighborhood: string
+          status: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          age?: number | null
+          cell_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          neighborhood: string
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          age?: number | null
+          cell_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          neighborhood?: string
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "cells"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          active: boolean
+          created_at: string
+          date: string
+          id: string
+          keyword: string
+          name: string
+          qr_code: string
+          qr_url: string
+          scan_count: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          date: string
+          id?: string
+          keyword: string
+          name: string
+          qr_code: string
+          qr_url: string
+          scan_count?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          date?: string
+          id?: string
+          keyword?: string
+          name?: string
+          qr_code?: string
+          qr_url?: string
+          scan_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string
+          id: string
+          name: string
+          photo_url: string | null
+          role: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          photo_url?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          photo_url?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
