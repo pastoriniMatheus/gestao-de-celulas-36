@@ -1,41 +1,15 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface Cell {
-  id: string;
-  name: string;
-}
-
-interface City {
-  id: string;
-  name: string;
-  state: string;
-}
-
-interface Neighborhood {
-  id: string;
-  name: string;
-  city_id: string;
-}
-
-interface Contact {
-  id: string;
-  name: string;
-}
-
-interface Profile {
-  id: string;
-  name: string;
-  email: string;
-}
+import { useContactForm } from '@/hooks/useContactForm';
+import { useContactDialogData } from '@/hooks/useContactDialogData';
+import { BasicInfoFields } from './contact-form/BasicInfoFields';
+import { LocationFields } from './contact-form/LocationFields';
+import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
 
 interface AddContactDialogProps {
   onContactAdded: () => void;
@@ -44,53 +18,16 @@ interface AddContactDialogProps {
 export const AddContactDialog = ({ onContactAdded }: AddContactDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [cells, setCells] = useState<Cell[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const { toast } = useToast();
-
-  const [formData, setFormData] = useState({
-    name: '',
-    whatsapp: '',
-    email: '',
-    city_id: '',
-    neighborhood: '',
-    referred_by: '',
-    cell_id: ''
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchData();
-    }
-  }, [isOpen]);
-
-  const fetchData = async () => {
-    try {
-      const [cellsData, citiesData, neighborhoodsData, contactsData, profilesData] = await Promise.all([
-        supabase.from('cells').select('id, name').eq('active', true).order('name'),
-        supabase.from('cities').select('id, name, state').eq('active', true).order('name'),
-        supabase.from('neighborhoods').select('id, name, city_id').eq('active', true).order('name'),
-        supabase.from('contacts').select('id, name').order('name'),
-        supabase.from('profiles').select('id, name, email').eq('active', true).order('name')
-      ]);
-
-      setCells(cellsData.data || []);
-      setCities(citiesData.data || []);
-      setNeighborhoods(neighborhoodsData.data || []);
-      setContacts(contactsData.data || []);
-      setProfiles(profilesData.data || []);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    }
-  };
-
-  const getFilteredNeighborhoods = () => {
-    if (!formData.city_id) return [];
-    return neighborhoods.filter(n => n.city_id === formData.city_id);
-  };
+  
+  const { formData, updateFormData, resetForm } = useContactForm();
+  const { 
+    cells, 
+    cities, 
+    contacts, 
+    profiles, 
+    getFilteredNeighborhoods 
+  } = useContactDialogData(isOpen);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,15 +63,7 @@ export const AddContactDialog = ({ onContactAdded }: AddContactDialogProps) => {
         description: "Contato adicionado com sucesso!"
       });
 
-      setFormData({
-        name: '',
-        whatsapp: '',
-        email: '',
-        city_id: '',
-        neighborhood: '',
-        referred_by: '',
-        cell_id: ''
-      });
+      resetForm();
       setIsOpen(false);
       onContactAdded();
     } catch (error) {
@@ -163,113 +92,23 @@ export const AddContactDialog = ({ onContactAdded }: AddContactDialogProps) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Nome Completo *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Digite o nome completo"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="whatsapp">WhatsApp *</Label>
-              <Input
-                id="whatsapp"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                placeholder="(11) 99999-9999"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="city">Cidade</Label>
-              <Select value={formData.city_id} onValueChange={(value) => setFormData({ ...formData, city_id: value, neighborhood: '' })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a cidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cities.map((city) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.name} - {city.state}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="neighborhood">Bairro *</Label>
-              {formData.city_id ? (
-                <Select value={formData.neighborhood} onValueChange={(value) => setFormData({ ...formData, neighborhood: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o bairro" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getFilteredNeighborhoods().map((neighborhood) => (
-                      <SelectItem key={neighborhood.id} value={neighborhood.name}>
-                        {neighborhood.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="neighborhood"
-                  value={formData.neighborhood}
-                  onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-                  placeholder="Digite o nome do bairro"
-                  required
-                />
-              )}
-            </div>
-            <div>
-              <Label htmlFor="referred_by">Quem Indicou</Label>
-              <Select value={formData.referred_by} onValueChange={(value) => setFormData({ ...formData, referred_by: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione quem indicou (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {profiles.map((profile) => (
-                    <SelectItem key={`profile-${profile.id}`} value={profile.id}>
-                      {profile.name} (Usuário)
-                    </SelectItem>
-                  ))}
-                  {contacts.map((contact) => (
-                    <SelectItem key={`contact-${contact.id}`} value={contact.id}>
-                      {contact.name} (Contato)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="cell">Célula</Label>
-              <Select value={formData.cell_id} onValueChange={(value) => setFormData({ ...formData, cell_id: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a célula (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {cells.map((cell) => (
-                    <SelectItem key={cell.id} value={cell.id}>
-                      {cell.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <BasicInfoFields 
+              formData={formData} 
+              onUpdateFormData={updateFormData} 
+            />
+            <LocationFields 
+              formData={formData} 
+              onUpdateFormData={updateFormData} 
+              cities={cities}
+              getFilteredNeighborhoods={getFilteredNeighborhoods}
+            />
+            <ReferralAndCellFields 
+              formData={formData} 
+              onUpdateFormData={updateFormData} 
+              cells={cells}
+              contacts={contacts}
+              profiles={profiles}
+            />
           </div>
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
