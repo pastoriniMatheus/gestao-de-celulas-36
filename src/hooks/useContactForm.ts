@@ -9,6 +9,7 @@ export interface ContactFormData {
   neighborhood: string;
   referred_by: string;
   cell_id: string;
+  age: number | null;
 }
 
 export const useContactForm = () => {
@@ -19,7 +20,8 @@ export const useContactForm = () => {
     city_id: '',
     neighborhood: '',
     referred_by: '',
-    cell_id: ''
+    cell_id: '',
+    age: null
   });
 
   const updateFormData = (updates: Partial<ContactFormData>) => {
@@ -34,7 +36,8 @@ export const useContactForm = () => {
       city_id: '',
       neighborhood: '',
       referred_by: '',
-      cell_id: ''
+      cell_id: '',
+      age: null
     });
   };
 
