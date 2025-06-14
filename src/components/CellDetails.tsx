@@ -45,6 +45,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const channelsRef = useRef<any[]>([]);
+  const isSubscribedRef = useRef(false);
 
   const fetchCellData = async () => {
     try {
@@ -100,18 +101,23 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
   const [filteredAttendances, setFilteredAttendances] = useState<Attendance[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isSubscribedRef.current) {
       fetchCellData();
 
       // Clean up existing channels before creating new ones
       channelsRef.current.forEach(channel => {
+        console.log('Removing existing cell channel...');
         supabase.removeChannel(channel);
       });
       channelsRef.current = [];
 
       // Create unique channel names to avoid conflicts
-      const attendanceChannelName = `attendance-changes-${cellId}-${Date.now()}`;
-      const contactChannelName = `contact-changes-${cellId}-${Date.now()}`;
+      const timestamp = Date.now();
+      const random = Math.random();
+      const attendanceChannelName = `attendance-changes-${cellId}-${timestamp}-${random}`;
+      const contactChannelName = `contact-changes-${cellId}-${timestamp}-${random}`;
+      
+      console.log('Creating cell channels:', { attendanceChannelName, contactChannelName });
 
       // Configurar atualização em tempo real
       const attendanceChannel = supabase
@@ -128,8 +134,7 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
             console.log('Presença alterada:', payload);
             fetchCellData();
           }
-        )
-        .subscribe();
+        );
 
       const contactChannel = supabase
         .channel(contactChannelName)
@@ -145,20 +150,46 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
             console.log('Contato alterado:', payload);
             fetchCellData();
           }
-        )
-        .subscribe();
+        );
+
+      // Subscribe channels
+      attendanceChannel.subscribe((status) => {
+        console.log('Attendance channel subscription status:', status);
+      });
+      
+      contactChannel.subscribe((status) => {
+        console.log('Contact channel subscription status:', status);
+      });
 
       // Store channels for cleanup
       channelsRef.current = [attendanceChannel, contactChannel];
-
-      return () => {
-        channelsRef.current.forEach(channel => {
-          supabase.removeChannel(channel);
-        });
-        channelsRef.current = [];
-      };
+      isSubscribedRef.current = true;
     }
   }, [cellId, isOpen]);
+
+  // Cleanup when dialog closes
+  useEffect(() => {
+    if (!isOpen && isSubscribedRef.current) {
+      console.log('Cleaning up cell channels due to dialog close...');
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      channelsRef.current = [];
+      isSubscribedRef.current = false;
+    }
+  }, [isOpen]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      console.log('Cleaning up cell channels on unmount...');
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      channelsRef.current = [];
+      isSubscribedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const dateStr = format(selectedDate, 'yyyy-MM-dd');

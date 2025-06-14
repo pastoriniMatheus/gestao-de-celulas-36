@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -137,12 +138,14 @@ export const useContacts = () => {
 
     // Clean up existing channel before creating new one
     if (channelRef.current) {
+      console.log('Removing existing channel...');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
     // Create unique channel name to avoid conflicts
-    const channelName = `contacts-changes-${Date.now()}`;
+    const channelName = `contacts-changes-${Date.now()}-${Math.random()}`;
+    console.log('Creating new channel:', channelName);
 
     // Escutar mudanças na tabela contacts
     const channel = supabase
@@ -158,12 +161,17 @@ export const useContacts = () => {
           console.log('Contato alterado:', payload);
           fetchContacts(); // Recarregar contatos quando houver mudanças
         }
-      )
-      .subscribe();
+      );
 
+    // Subscribe and store reference
+    channel.subscribe((status) => {
+      console.log('Channel subscription status:', status);
+    });
+    
     channelRef.current = channel;
 
     return () => {
+      console.log('Cleaning up contacts channel...');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
