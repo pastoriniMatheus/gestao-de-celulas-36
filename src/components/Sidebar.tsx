@@ -9,7 +9,8 @@ import {
   MessageCircle, 
   GitBranch, 
   Settings as SettingsIcon,
-  Shield
+  Shield,
+  QrCode
 } from "lucide-react";
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ export const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
     { id: 'events', label: 'Eventos', icon: Calendar },
     { id: 'contacts', label: 'Contatos', icon: Users },
     { id: 'cells', label: 'Células', icon: Home },
+    { id: 'qrcodes', label: 'QR Codes', icon: QrCode },
     { id: 'messaging', label: 'Mensagens', icon: MessageCircle },
     { id: 'pipeline', label: 'Pipeline', icon: GitBranch },
     { id: 'users', label: 'Usuários', icon: Shield },

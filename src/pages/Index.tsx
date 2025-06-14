@@ -5,6 +5,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { EventsManager } from '@/components/EventsManager';
 import { ContactsManager } from '@/components/ContactsManager';
 import { CellsManager } from '@/components/CellsManager';
+import { QRCodeManager } from '@/components/QRCodeManager';
 import { MessagingCenter } from '@/components/MessagingCenter';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
@@ -27,6 +28,8 @@ const Index = () => {
         return <ContactsManager />;
       case 'cells':
         return <CellsManager />;
+      case 'qrcodes':
+        return <QRCodeManager />;
       case 'messaging':
         return <MessagingCenter />;
       case 'pipeline':
