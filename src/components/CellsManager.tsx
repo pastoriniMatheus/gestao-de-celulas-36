@@ -63,11 +63,12 @@ export const CellsManager = () => {
 
   const fetchCells = async () => {
     try {
+      console.log('Buscando células...');
       const { data, error } = await supabase
         .from('cells')
         .select(`
           *,
-          profiles (
+          profiles!cells_leader_id_fkey (
             name
           ),
           contacts (
@@ -78,8 +79,12 @@ export const CellsManager = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar células:', error);
+        throw error;
+      }
 
+      console.log('Células encontradas:', data);
       setCells(data || []);
     } catch (error) {
       console.error('Erro ao buscar células:', error);
@@ -95,6 +100,7 @@ export const CellsManager = () => {
 
   const fetchLeaders = async () => {
     try {
+      console.log('Buscando líderes...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, role')
@@ -102,11 +108,20 @@ export const CellsManager = () => {
         .eq('active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar líderes:', error);
+        throw error;
+      }
 
+      console.log('Líderes encontrados:', data);
       setLeaders(data || []);
     } catch (error) {
       console.error('Erro ao buscar líderes:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os líderes",
+        variant: "destructive"
+      });
     }
   };
 
@@ -122,6 +137,8 @@ export const CellsManager = () => {
         meeting_time: formData.meeting_time,
         active: true
       };
+
+      console.log('Salvando célula:', cellData);
 
       if (editingCell) {
         const { error } = await supabase
@@ -240,7 +257,7 @@ export const CellsManager = () => {
                   <SelectContent>
                     {leaders.map((leader) => (
                       <SelectItem key={leader.id} value={leader.id}>
-                        {leader.name}
+                        {leader.name} ({leader.role})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -364,6 +381,13 @@ export const CellsManager = () => {
           </Card>
         ))}
       </div>
+
+      {cells.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Nenhuma célula cadastrada ainda.</p>
+          <p className="text-sm text-gray-400">Clique em "Nova Célula" para começar.</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -41,17 +41,10 @@ interface City {
   state: string;
 }
 
-interface Neighborhood {
-  id: string;
-  name: string;
-  city_id: string;
-}
-
 export const ContactsManager = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [cities, setCities] = useState<City[]>([]);
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -63,13 +56,13 @@ export const ContactsManager = () => {
     await Promise.all([
       fetchContacts(),
       fetchCells(),
-      fetchCities(),
-      fetchNeighborhoods()
+      fetchCities()
     ]);
   };
 
   const fetchContacts = async () => {
     try {
+      console.log('Buscando contatos...');
       const { data, error } = await supabase
         .from('contacts')
         .select(`
@@ -79,7 +72,12 @@ export const ContactsManager = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar contatos:', error);
+        throw error;
+      }
+      
+      console.log('Contatos encontrados:', data);
       setContacts(data || []);
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
@@ -95,16 +93,22 @@ export const ContactsManager = () => {
 
   const fetchCells = async () => {
     try {
+      console.log('Buscando células para seleção...');
       const { data, error } = await supabase
         .from('cells')
         .select(`
           *,
-          profiles (name)
+          profiles!cells_leader_id_fkey (name)
         `)
         .eq('active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar células:', error);
+        throw error;
+      }
+      
+      console.log('Células encontradas:', data);
       setCells(data || []);
     } catch (error) {
       console.error('Erro ao buscar células:', error);
@@ -113,31 +117,22 @@ export const ContactsManager = () => {
 
   const fetchCities = async () => {
     try {
+      console.log('Buscando cidades...');
       const { data, error } = await supabase
         .from('cities')
         .select('*')
         .eq('active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar cidades:', error);
+        throw error;
+      }
+      
+      console.log('Cidades encontradas:', data);
       setCities(data || []);
     } catch (error) {
       console.error('Erro ao buscar cidades:', error);
-    }
-  };
-
-  const fetchNeighborhoods = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('neighborhoods')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-
-      if (error) throw error;
-      setNeighborhoods(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar bairros:', error);
     }
   };
 
@@ -150,6 +145,7 @@ export const ContactsManager = () => {
 
   const handleAssignToCell = async (contactId: string, cellId: string) => {
     try {
+      console.log('Atribuindo contato à célula:', { contactId, cellId });
       const { error } = await supabase
         .from('contacts')
         .update({ 
@@ -194,75 +190,82 @@ export const ContactsManager = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {groupContactsByCity().map(({ city, contacts: cityContacts }) => (
-          <Card key={city.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin size={16} className="text-blue-500" />
-                {city.name} - {city.state}
-                <Badge variant="secondary" className="ml-auto">
-                  {cityContacts.length}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {cityContacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className="p-3 border rounded-lg hover:shadow-sm transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <User size={16} className="text-gray-600" />
-                      <span className="font-medium">{contact.name}</span>
+      {groupContactsByCity().length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Nenhum contato cadastrado ainda.</p>
+          <p className="text-sm text-gray-400">Os contatos aparecerão aqui quando forem adicionados.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {groupContactsByCity().map(({ city, contacts: cityContacts }) => (
+            <Card key={city.id}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin size={16} className="text-blue-500" />
+                  {city.name} - {city.state}
+                  <Badge variant="secondary" className="ml-auto">
+                    {cityContacts.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {cityContacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className="p-3 border rounded-lg hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <User size={16} className="text-gray-600" />
+                        <span className="font-medium">{contact.name}</span>
+                      </div>
+                      <Badge 
+                        variant={contact.status === 'participating' ? 'default' : 'secondary'}
+                        className={contact.status === 'participating' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                      >
+                        {contact.status === 'participating' ? 'Participando' : 'Pendente'}
+                      </Badge>
                     </div>
-                    <Badge 
-                      variant={contact.status === 'participating' ? 'default' : 'secondary'}
-                      className={contact.status === 'participating' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
-                    >
-                      {contact.status === 'participating' ? 'Participando' : 'Pendente'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p><strong>Bairro:</strong> {contact.neighborhood}</p>
-                    {contact.age && <p><strong>Idade:</strong> {contact.age} anos</p>}
-                    {contact.whatsapp && (
-                      <div className="flex items-center gap-1">
-                        <Phone size={12} />
-                        <span>{contact.whatsapp}</span>
+                    
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <p><strong>Bairro:</strong> {contact.neighborhood}</p>
+                      {contact.age && <p><strong>Idade:</strong> {contact.age} anos</p>}
+                      {contact.whatsapp && (
+                        <div className="flex items-center gap-1">
+                          <Phone size={12} />
+                          <span>{contact.whatsapp}</span>
+                        </div>
+                      )}
+                      {contact.cells && (
+                        <p className="text-blue-600 font-medium">
+                          <strong>Célula:</strong> {contact.cells.name}
+                        </p>
+                      )}
+                    </div>
+
+                    {contact.status === 'pending' && (
+                      <div className="mt-3">
+                        <Select onValueChange={(value) => handleAssignToCell(contact.id, value)}>
+                          <SelectTrigger className="w-full h-8 text-xs">
+                            <SelectValue placeholder="Atribuir à célula" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cells.map((cell) => (
+                              <SelectItem key={cell.id} value={cell.id}>
+                                {cell.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
-                    {contact.cells && (
-                      <p className="text-blue-600 font-medium">
-                        <strong>Célula:</strong> {contact.cells.name}
-                      </p>
-                    )}
                   </div>
-
-                  {contact.status === 'pending' && (
-                    <div className="mt-3">
-                      <Select onValueChange={(value) => handleAssignToCell(contact.id, value)}>
-                        <SelectTrigger className="w-full h-8 text-xs">
-                          <SelectValue placeholder="Atribuir à célula" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cells.map((cell) => (
-                            <SelectItem key={cell.id} value={cell.id}>
-                              {cell.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

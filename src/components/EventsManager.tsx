@@ -35,30 +35,7 @@ export const EventsManager = () => {
 
   useEffect(() => {
     fetchEvents();
-    testDatabaseConnection();
   }, []);
-
-  const testDatabaseConnection = async () => {
-    try {
-      console.log('Testando conexão com o banco de dados...');
-      const { data, error } = await supabase
-        .from('events')
-        .select('count', { count: 'exact', head: true });
-
-      if (error) {
-        console.error('Erro na conexão:', error);
-        toast({
-          title: "Erro de Conexão",
-          description: "Não foi possível conectar ao banco de dados",
-          variant: "destructive"
-        });
-      } else {
-        console.log('Conexão com banco de dados estabelecida com sucesso!');
-      }
-    } catch (error) {
-      console.error('Erro ao testar conexão:', error);
-    }
-  };
 
   const fetchEvents = async () => {
     try {
@@ -69,7 +46,7 @@ export const EventsManager = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro na consulta:', error);
+        console.error('Erro na consulta de eventos:', error);
         throw error;
       }
 
@@ -169,10 +146,7 @@ export const EventsManager = () => {
         });
       }
       
-      // Recarregar eventos
       await fetchEvents();
-      
-      // Limpar formulário
       setFormData({ name: '', keyword: '', date: '' });
       setEditingEvent(null);
       setIsDialogOpen(false);
@@ -318,79 +292,86 @@ export const EventsManager = () => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event) => (
-          <Card key={event.id} className="relative">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{event.name}</CardTitle>
-                <Badge variant={event.active ? "default" : "secondary"}>
-                  {event.active ? 'Ativo' : 'Inativo'}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600">Data: {new Date(event.date).toLocaleDateString('pt-BR')}</p>
-                <p className="text-sm text-gray-600">Código QR: {event.qr_code}</p>
-                <p className="text-sm text-gray-600">Palavra-chave: {event.keyword}</p>
-              </div>
-              
-              <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-                <QrCode size={64} className="text-gray-600" />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">{event.scan_count}</p>
-                  <p className="text-sm text-gray-600">Total de Scans</p>
+      {events.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Nenhum evento cadastrado ainda.</p>
+          <p className="text-sm text-gray-400">Clique em "Novo Evento" para começar.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map((event) => (
+            <Card key={event.id} className="relative">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{event.name}</CardTitle>
+                  <Badge variant={event.active ? "default" : "secondary"}>
+                    {event.active ? 'Ativo' : 'Inativo'}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600">Data: {new Date(event.date).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-sm text-gray-600">Código QR: {event.qr_code}</p>
+                  <p className="text-sm text-gray-600">Palavra-chave: {event.keyword}</p>
                 </div>
                 
-                <div className="p-2 bg-blue-50 rounded text-xs">
-                  <p className="font-medium mb-1">URL do QR Code:</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-blue-600 break-all flex-1">{event.qr_url}</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyToClipboard(event.qr_url)}
-                      className="flex-shrink-0"
-                    >
-                      <ExternalLink size={12} />
-                    </Button>
+                <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                  <QrCode size={64} className="text-gray-600" />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">{event.scan_count}</p>
+                    <p className="text-sm text-gray-600">Total de Scans</p>
+                  </div>
+                  
+                  <div className="p-2 bg-blue-50 rounded text-xs">
+                    <p className="font-medium mb-1">URL do QR Code:</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-blue-600 break-all flex-1">{event.qr_url}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(event.qr_url)}
+                        className="flex-shrink-0"
+                      >
+                        <ExternalLink size={12} />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleActive(event.id, event.active)}
-                  className="flex-1"
-                >
-                  {event.active ? 'Desativar' : 'Ativar'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(event)}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(event.id)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleActive(event.id, event.active)}
+                    className="flex-1"
+                  >
+                    {event.active ? 'Desativar' : 'Ativar'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(event)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(event.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
