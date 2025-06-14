@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,9 +60,24 @@ export const EventsManager = () => {
     date: ''
   });
 
+  // Check if license guard is loaded
+  const [isLicenseGuardReady, setIsLicenseGuardReady] = useState(false);
+
+  useEffect(() => {
+    const checkLicenseGuard = () => {
+      if (window.generateSecureQR && window.LicenseGuard) {
+        setIsLicenseGuardReady(true);
+      } else {
+        // Try again in 100ms if not ready
+        setTimeout(checkLicenseGuard, 100);
+      }
+    };
+    checkLicenseGuard();
+  }, []);
+
   const generateSecureQRCode = (eventName: string, keyword: string) => {
-    // Usando o sistema de proteção LicenseGuard
-    if (window.generateSecureQR) {
+    // Using the system de proteção LicenseGuard
+    if (isLicenseGuardReady && window.generateSecureQR) {
       return window.generateSecureQR(eventName, keyword);
     } else {
       // Fallback caso o script não esteja carregado
