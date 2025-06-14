@@ -11,7 +11,13 @@ export const UserMenu = () => {
   if (!user) return null;
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      console.log('Iniciando logout...');
+      await signOut();
+      console.log('Logout completado');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
   const getRoleDisplay = (role: string) => {
