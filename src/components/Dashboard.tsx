@@ -82,10 +82,41 @@ export const Dashboard = () => {
       scans: qr.scan_count
     }));
 
+  // Células: visual minimalista
+  const totalCells = cells.length;
+  const activeCells = cells.filter(cell => cell.active).length;
+  const inactiveCells = totalCells - activeCells;
+
   return (
     <div className="space-y-6">
-      {/* Cards de Estatísticas Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Bloco minimalista de células */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Home className="h-4 w-4 text-blue-600" />
+              Células
+            </CardTitle>
+            <CardDescription>
+              Resumo rápido das células cadastradas
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-lg font-bold text-blue-600">{totalCells}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-muted-foreground">Ativas</span>
+              <span className="text-lg font-bold text-green-600">{activeCells}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-muted-foreground">Inativas</span>
+              <span className="text-lg font-bold text-gray-500">{inactiveCells}</span>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Outras métricas principais (contatos, eventos, scans) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Contatos</CardTitle>
@@ -98,20 +129,6 @@ export const Dashboard = () => {
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Células Ativas</CardTitle>
-            <Home className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeCells}</div>
-            <p className="text-xs text-muted-foreground">
-              de {cells.length} total
-            </p>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Eventos Ativos</CardTitle>
@@ -124,19 +141,7 @@ export const Dashboard = () => {
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Scans</CardTitle>
-            <QrCode className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalScans}</div>
-            <p className="text-xs text-muted-foreground">
-              QR codes e eventos
-            </p>
-          </CardContent>
-        </Card>
+        {/* Para manter tudo compacto, removemos cards extras aqui */}
       </div>
 
       {/* Cards Interativos dos Bairros */}
