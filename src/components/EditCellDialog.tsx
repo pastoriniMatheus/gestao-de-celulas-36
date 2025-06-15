@@ -14,19 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Cell {
-  id: string;
-  name: string;
-  address: string;
-  leader_id: string;
-  neighborhood_id: string;
-  meeting_day: number;
-  meeting_time: string;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import type { Cell } from "@/hooks/useCells";
 
 interface Leader {
   id: string;
@@ -247,7 +235,6 @@ export const EditCellDialog = ({
             <select
               id="meeting_day"
               name="meeting_day"
-              // Ensure value is string
               value={
                 formState.meeting_day !== undefined && formState.meeting_day !== null
                   ? String(formState.meeting_day)
