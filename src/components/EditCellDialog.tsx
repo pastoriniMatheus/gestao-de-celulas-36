@@ -1,4 +1,3 @@
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -137,7 +136,11 @@ export const EditCellDialog = ({
       toast({ title: "Selecione o bairro da célula." });
       return;
     }
-    if (formState.meeting_day === undefined || formState.meeting_day === null || formState.meeting_day === "") {
+    if (
+      formState.meeting_day === undefined ||
+      formState.meeting_day === null ||
+      String(formState.meeting_day) === ""
+    ) {
       toast({ title: "Informe o dia da reunião." });
       return;
     }
@@ -244,7 +247,12 @@ export const EditCellDialog = ({
             <select
               id="meeting_day"
               name="meeting_day"
-              value={formState.meeting_day !== undefined ? String(formState.meeting_day) : ""}
+              // Ensure value is string
+              value={
+                formState.meeting_day !== undefined && formState.meeting_day !== null
+                  ? String(formState.meeting_day)
+                  : ""
+              }
               onChange={handleChange}
               required
               className="input w-full border rounded px-2 py-2 bg-white"

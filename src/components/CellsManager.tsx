@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home } from 'lucide-react';
 import { AddCellDialog } from './AddCellDialog';
 import { CellsList } from './CellsList';
 import { useCells } from '@/hooks/useCells';
+import { Button } from '@/components/ui/button';
 
 export const CellsManager = () => {
   const { cells, loading, fetchCells } = useCells();
