@@ -1,12 +1,26 @@
+
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QrCode, CheckCircle, AlertCircle, ExternalLink, User, Phone, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+
+interface SystemSettings {
+  site_logo: { url: string; alt: string };
+  form_title: { text: string };
+  form_description: { text: string };
+}
+
+interface Neighborhood {
+  id: string;
+  name: string;
+  city_id: string;
+}
 
 export const FormPage = () => {
   const [searchParams] = useSearchParams();
@@ -26,6 +40,13 @@ export const FormPage = () => {
     neighborhood: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>({
+    site_logo: { url: '', alt: 'Logo da Igreja' },
+    form_title: { text: 'Formulário de Contato' },
+    form_description: { text: 'Preencha seus dados para nos conectarmos com você' }
+  });
+  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
     console.log('FormPage carregado com parâmetros:', { 
@@ -36,6 +57,9 @@ export const FormPage = () => {
       currentURL: window.location.href
     });
     
+    loadSystemSettings();
+    loadNeighborhoods();
+    
     if (evento || cod) {
       handleItemScan();
     } else {
@@ -44,6 +68,56 @@ export const FormPage = () => {
       setLoading(false);
     }
   }, [evento, cod, keyword]);
+
+  const loadSystemSettings = async () => {
+    try {
+      console.log('Carregando configurações do sistema...');
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('key, value')
+        .in('key', ['site_logo', 'form_title', 'form_description']);
+
+      if (error) {
+        console.error('Erro ao carregar configurações:', error);
+        return;
+      }
+
+      console.log('Configurações carregadas:', data);
+      
+      if (data && data.length > 0) {
+        const settings: any = {};
+        data.forEach(item => {
+          settings[item.key] = item.value;
+        });
+        setSystemSettings(prev => ({ ...prev, ...settings }));
+      }
+    } catch (error) {
+      console.error('Erro crítico ao carregar configurações:', error);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const loadNeighborhoods = async () => {
+    try {
+      console.log('Carregando bairros...');
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('id, name, city_id')
+        .eq('active', true)
+        .order('name');
+
+      if (error) {
+        console.error('Erro ao carregar bairros:', error);
+        return;
+      }
+
+      console.log('Bairros carregados:', data);
+      setNeighborhoods(data || []);
+    } catch (error) {
+      console.error('Erro crítico ao carregar bairros:', error);
+    }
+  };
 
   const handleItemScan = async () => {
     try {
@@ -238,13 +312,13 @@ export const FormPage = () => {
     }
   };
 
-  if (loading) {
+  if (loading || loadingSettings) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Processando código...</p>
+            <p className="text-gray-600">Carregando...</p>
             <div className="mt-4 text-xs text-gray-500">
               <p>Parâmetros: evento={evento}, cod={cod}</p>
               <p>URL: {window.location.href}</p>
@@ -289,14 +363,23 @@ export const FormPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            {systemSettings.site_logo.url && (
+              <div className="mx-auto mb-4">
+                <img 
+                  src={systemSettings.site_logo.url} 
+                  alt={systemSettings.site_logo.alt}
+                  className="h-16 w-auto mx-auto"
+                />
+              </div>
+            )}
             <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <QrCode className="w-6 h-6 text-blue-600" />
             </div>
             <CardTitle className="text-xl text-blue-600">
-              {itemData?.title || 'Formulário de Contato'}
+              {systemSettings.form_title.text}
             </CardTitle>
             <CardDescription>
-              Preencha seus dados para nos conectarmos com você
+              {systemSettings.form_description.text}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -336,14 +419,22 @@ export const FormPage = () => {
                   <MapPin className="w-4 h-4" />
                   Bairro *
                 </Label>
-                <Input
-                  id="neighborhood"
-                  type="text"
-                  value={formData.neighborhood}
-                  onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
-                  placeholder="Seu bairro"
+                <Select 
+                  value={formData.neighborhood} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
                   required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione seu bairro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {neighborhoods.map((neighborhood) => (
+                      <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                        {neighborhood.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button type="submit" className="w-full" disabled={submitting}>
@@ -366,6 +457,15 @@ export const FormPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
+          {systemSettings.site_logo.url && (
+            <div className="mx-auto mb-4">
+              <img 
+                src={systemSettings.site_logo.url} 
+                alt={systemSettings.site_logo.alt}
+                className="h-16 w-auto mx-auto"
+              />
+            </div>
+          )}
           <div className="mx-auto w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
             <CheckCircle className="w-6 h-6 text-green-600" />
           </div>
