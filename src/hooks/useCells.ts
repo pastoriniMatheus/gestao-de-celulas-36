@@ -9,6 +9,7 @@ interface Cell {
   meeting_day: number;
   meeting_time: string;
   leader_id?: string;
+  neighborhood_id?: string | null; // <-- Add this line
   active: boolean;
   created_at: string;
   updated_at: string;
