@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -145,6 +144,24 @@ export const useContacts = () => {
     }
   };
 
+  const canDeleteCell = async (cellId: string) => {
+    // Verifica se há algum contato vinculado a essa célula
+    try {
+      const { count, error } = await supabase
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .eq('cell_id', cellId);
+
+      if (error) {
+        console.error('Erro ao verificar contatos vinculados à célula:', error);
+        return false;
+      }
+      return (count ?? 0) === 0;
+    } catch (err) {
+      return false;
+    }
+  };
+
   // Configurar atualização em tempo real
   useEffect(() => {
     fetchContacts();
@@ -198,6 +215,7 @@ export const useContacts = () => {
     addContact,
     updateContact,
     deleteContact,
-    fetchContacts
+    fetchContacts,
+    canDeleteCell
   };
 };

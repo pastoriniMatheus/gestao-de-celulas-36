@@ -107,14 +107,22 @@ export const PendingContactsManager = () => {
         .from('contacts')
         .update({ 
           cell_id: cellId,
-          status: 'assigned' 
+          status: 'assigned' // Agora aceito pelo banco
         })
         .eq('id', contactId);
 
       if (error) {
+        let description = `Erro ao atribuir célula: ${error.message}`;
+        if (
+          error.message &&
+          error.message.toLowerCase().includes("violates check constraint")
+        ) {
+          description =
+            "O status do contato não foi aceito pelo banco de dados. Por favor, acione o suporte ou revise os status aceitos.";
+        }
         toast({
           title: "Erro",
-          description: `Erro ao atribuir célula: ${error.message}`,
+          description,
           variant: "destructive"
         });
         return;
