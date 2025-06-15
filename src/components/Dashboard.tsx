@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Users, Home, Calendar, QrCode, TrendingUp, Activity } from 'lucide-react';
@@ -7,6 +6,7 @@ import { useCells } from '@/hooks/useCells';
 import { useQRCodes } from '@/hooks/useQRCodes';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { NeighborhoodStatsCards } from './NeighborhoodStatsCards';
 
 export const Dashboard = () => {
   const { events, loading: eventsLoading } = useEvents();
@@ -136,6 +136,12 @@ export const Dashboard = () => {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Cards Interativos dos Bairros */}
+      <div>
+        <h2 className="text-lg font-bold my-2 ml-1">Métricas por Bairro</h2>
+        <NeighborhoodStatsCards />
       </div>
 
       {/* Gráficos */}

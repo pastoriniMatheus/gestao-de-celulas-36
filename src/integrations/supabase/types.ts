@@ -64,6 +64,7 @@ export type Database = {
           meeting_day: number
           meeting_time: string
           name: string
+          neighborhood_id: string | null
           updated_at: string
         }
         Insert: {
@@ -75,6 +76,7 @@ export type Database = {
           meeting_day: number
           meeting_time: string
           name: string
+          neighborhood_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -86,6 +88,7 @@ export type Database = {
           meeting_day?: number
           meeting_time?: string
           name?: string
+          neighborhood_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -94,6 +97,20 @@ export type Database = {
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cells_neighborhood_id_fkey"
+            columns: ["neighborhood_id"]
+            isOneToOne: false
+            referencedRelation: "neighborhood_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cells_neighborhood_id_fkey"
+            columns: ["neighborhood_id"]
+            isOneToOne: false
+            referencedRelation: "neighborhoods"
             referencedColumns: ["id"]
           },
         ]
@@ -389,7 +406,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      neighborhood_stats: {
+        Row: {
+          city_name: string | null
+          id: string | null
+          neighborhood_name: string | null
+          total_cells: number | null
+          total_contacts: number | null
+          total_leaders: number | null
+          total_people: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       increment_qr_scan_count: {
