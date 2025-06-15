@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,24 @@ export const PendingContactsManager = () => {
 
   // Filtrar apenas células ativas
   const activeCells = cells.filter(cell => cell.active);
+
+  // Novo agrupamento: células por bairro
+  // Obtemos nome do bairro a partir de cell.neighborhood_id. Supondo que cada `cell` tem `neighborhood_id` e já está presente.
+  // Trazer os bairros usados pelas células ativas
+  const neighborhoodIdToName = Object.fromEntries(
+    cells.map(cell => [cell.neighborhood_id, cell.neighborhood_id ? cell.address.split(',')[0] : "Outro"])
+  );
+
+  const groupedCellsByNeighborhood: Record<string, typeof activeCells> = {};
+  for (const cell of activeCells) {
+    const neighborhoodLabel = cell.neighborhood_id
+      ? neighborhoodIdToName[cell.neighborhood_id] ?? "Outro"
+      : "Outro";
+    if (!groupedCellsByNeighborhood[neighborhoodLabel]) {
+      groupedCellsByNeighborhood[neighborhoodLabel] = [];
+    }
+    groupedCellsByNeighborhood[neighborhoodLabel].push(cell);
+  }
 
   const handleAssignCell = async (contactId: string, cellId: string) => {
     if (!cellId || cellId === 'no-cell') return;
@@ -77,16 +94,6 @@ export const PendingContactsManager = () => {
       minute: '2-digit'
     });
   };
-
-  // Agrupar células por cidade/região
-  const groupedCells = activeCells.reduce((acc, cell) => {
-    const location = cell.address.split(',')[0] || 'Outras';
-    if (!acc[location]) {
-      acc[location] = [];
-    }
-    acc[location].push(cell);
-    return acc;
-  }, {} as Record<string, typeof activeCells>);
 
   return (
     <div className="space-y-6">
@@ -152,12 +159,12 @@ export const PendingContactsManager = () => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="no-cell">Nenhuma</SelectItem>
-                              {Object.entries(groupedCells).map(([location, locationCells]) => (
-                                <div key={location}>
+                              {Object.entries(groupedCellsByNeighborhood).map(([neighborhood, cellsArr]) => (
+                                <div key={neighborhood}>
                                   <div className="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100">
-                                    {location}
+                                    {neighborhood}
                                   </div>
-                                  {locationCells.map((cell) => (
+                                  {cellsArr.map((cell) => (
                                     <SelectItem key={cell.id} value={cell.id}>
                                       <span className="ml-2">{cell.name}</span>
                                     </SelectItem>

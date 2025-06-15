@@ -11,6 +11,9 @@ import { BasicInfoFields } from './contact-form/BasicInfoFields';
 import { LocationFields } from './contact-form/LocationFields';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
 
+import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
+import { NeighborhoodSelectField } from './contact-form/NeighborhoodSelectField';
+
 export const AddContactDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,13 +26,15 @@ export const AddContactDialog = () => {
     cities, 
     contacts, 
     profiles, 
+    neighborhoods, // Importante para montar o Select de bairros
     getFilteredNeighborhoods 
   } = useContactDialogData(isOpen);
 
+  // Busca bairros filtrados pela cidade, se algum selecionado ou todos
+  const neighborhoodsToShow = formData.city_id ? neighborhoods.filter(n => n.city_id === formData.city_id) : neighborhoods;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('Dados do formulário antes da validação:', formData);
     
     if (!formData.name || !formData.whatsapp || !formData.neighborhood) {
       toast({
@@ -49,10 +54,9 @@ export const AddContactDialog = () => {
         city_id: formData.city_id || null,
         cell_id: formData.cell_id === 'none' ? null : formData.cell_id || null,
         status: 'pending', // GARANTINDO que sempre seja 'pending'
-        age: formData.age || null
+        age: formData.age || null,
+        encounter_with_god: formData.encounter_with_god ?? false,
       };
-
-      console.log('Contato sendo criado com status pending:', contactToAdd);
 
       await addContact(contactToAdd);
 
@@ -64,7 +68,6 @@ export const AddContactDialog = () => {
       resetForm();
       setIsOpen(false);
     } catch (error: any) {
-      console.error('Erro ao criar contato:', error);
       toast({
         title: "Erro",
         description: error?.message || "Erro ao criar contato. Tente novamente.",
@@ -88,11 +91,26 @@ export const AddContactDialog = () => {
           <DialogTitle>Adicionar Novo Contato</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Campos básicos */}
           <BasicInfoFields 
             formData={formData} 
             onUpdateFormData={updateFormData} 
           />
-          
+
+          {/* Checkbox Encontro com Deus */}
+          <EncounterWithGodField
+            checked={formData.encounter_with_god}
+            onChange={checked => updateFormData({ encounter_with_god: checked })}
+          />
+
+          {/* Seleção de Bairro pelo select */}
+          <NeighborhoodSelectField
+            neighborhood={formData.neighborhood}
+            onChange={neigh => updateFormData({ neighborhood: neigh })}
+            neighborhoods={neighborhoodsToShow}
+          />
+
+          {/* Restante dos campos já existentes */}
           <LocationFields 
             formData={formData} 
             onUpdateFormData={updateFormData}
