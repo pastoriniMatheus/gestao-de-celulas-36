@@ -125,7 +125,7 @@ export const FormPage = () => {
       setLoading(true);
       setError(null);
 
-      // Primeiro, tentar buscar por ID do evento se fornecido
+      // Se tem ID do evento, buscar diretamente
       if (evento) {
         console.log('Buscando evento por ID:', evento);
         const { data: eventData, error: eventError } = await supabase
@@ -141,16 +141,10 @@ export const FormPage = () => {
           console.log('Evento encontrado por ID:', eventData);
           
           // Incrementar contador de scan do evento
-          const { error: updateError } = await supabase
+          await supabase
             .from('events')
             .update({ scan_count: (eventData.scan_count || 0) + 1 })
             .eq('id', eventData.id);
-
-          if (updateError) {
-            console.error('Erro ao incrementar contador do evento:', updateError);
-          } else {
-            console.log('Contador do evento incrementado com sucesso');
-          }
 
           setItemData({
             type: 'event',
@@ -164,13 +158,12 @@ export const FormPage = () => {
         }
       }
 
-      // Se não encontrou por ID, tentar por código
+      // Se não encontrou por ID, ou se só tem código, tentar por keyword
       if (cod) {
         const normalizedCod = cod.toLowerCase().trim();
         console.log('Buscando por código normalizado:', normalizedCod);
         
         // Buscar evento por keyword
-        console.log('Buscando evento por código...');
         const { data: eventData, error: eventError } = await supabase
           .from('events')
           .select('*')
@@ -184,16 +177,10 @@ export const FormPage = () => {
           console.log('Evento encontrado por código:', eventData);
           
           // Incrementar contador de scan do evento
-          const { error: updateError } = await supabase
+          await supabase
             .from('events')
             .update({ scan_count: (eventData.scan_count || 0) + 1 })
             .eq('id', eventData.id);
-
-          if (updateError) {
-            console.error('Erro ao incrementar contador do evento:', updateError);
-          } else {
-            console.log('Contador do evento incrementado com sucesso');
-          }
 
           setItemData({
             type: 'event',
@@ -206,8 +193,7 @@ export const FormPage = () => {
           return;
         }
 
-        // Se não encontrou evento, buscar na tabela de QR codes (legado)
-        console.log('Buscando QR code...');
+        // Se não encontrou evento, buscar na tabela de QR codes
         const { data: qrCodeData, error: qrError } = await supabase
           .from('qr_codes')
           .select('*')
@@ -221,16 +207,10 @@ export const FormPage = () => {
           console.log('QR code encontrado:', qrCodeData);
           
           // Incrementar contador de scan
-          const { error: updateError } = await supabase
+          await supabase
             .from('qr_codes')
             .update({ scan_count: (qrCodeData.scan_count || 0) + 1 })
             .eq('id', qrCodeData.id);
-
-          if (updateError) {
-            console.error('Erro ao incrementar contador do QR code:', updateError);
-          } else {
-            console.log('Contador do QR code incrementado com sucesso');
-          }
 
           setItemData({
             type: 'qrcode',
@@ -321,7 +301,6 @@ export const FormPage = () => {
             <p className="text-gray-600">Carregando...</p>
             <div className="mt-4 text-xs text-gray-500">
               <p>Parâmetros: evento={evento}, cod={cod}</p>
-              <p>URL: {window.location.href}</p>
             </div>
           </CardContent>
         </Card>

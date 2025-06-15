@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, Save, Upload } from 'lucide-react';
+import { Settings, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from './AuthProvider';
@@ -17,7 +17,7 @@ interface SystemConfig {
 }
 
 export const SystemSettingsManager = () => {
-  const { userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<SystemConfig>({
@@ -33,6 +33,8 @@ export const SystemSettingsManager = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
+      console.log('Carregando configurações do sistema...');
+      
       const { data, error } = await supabase
         .from('system_settings')
         .select('key, value')
@@ -47,6 +49,8 @@ export const SystemSettingsManager = () => {
         });
         return;
       }
+
+      console.log('Configurações carregadas:', data);
 
       if (data && data.length > 0) {
         const settings: any = {};
@@ -105,7 +109,10 @@ export const SystemSettingsManager = () => {
     }
   };
 
-  if (userProfile?.role !== 'admin') {
+  // Verificar se é admin por email ou por perfil
+  const isAdmin = userProfile?.role === 'admin' || user?.email === 'admin@sistema.com';
+
+  if (!isAdmin) {
     return (
       <Card>
         <CardHeader>
