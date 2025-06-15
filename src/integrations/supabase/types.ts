@@ -152,6 +152,7 @@ export type Database = {
           cell_id: string | null
           city_id: string | null
           created_at: string
+          encounter_with_god: boolean
           id: string
           name: string
           neighborhood: string
@@ -165,6 +166,7 @@ export type Database = {
           cell_id?: string | null
           city_id?: string | null
           created_at?: string
+          encounter_with_god?: boolean
           id?: string
           name: string
           neighborhood: string
@@ -178,6 +180,7 @@ export type Database = {
           cell_id?: string | null
           city_id?: string | null
           created_at?: string
+          encounter_with_god?: boolean
           id?: string
           name?: string
           neighborhood?: string
