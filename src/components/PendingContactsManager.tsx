@@ -1,19 +1,51 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, MapPin, Phone } from 'lucide-react';
+import { Users, MapPin, Phone, User } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useMemo, useState as useReactState } from 'react';
+
+// Buscar os líderes pelo id (Adjust as needed)
+// Pode-se usar um hook ou consultar profiles diretamente aqui.
+// Para simplificar vou montar um hook dentro deste arquivo para buscar os perfis rapidamente.
+const useCellLeaders = (cells) => {
+  // ids unicos dos líderes
+  const leaderIds = useMemo(() => Array.from(new Set(
+    cells.filter((c) => c.leader_id).map((c) => c.leader_id)
+  )), [cells]);
+  const [leaders, setLeaders] = useReactState<{ [id: string]: any }>({});
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      if (leaderIds.length === 0) return setLeaders({});
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', leaderIds);
+      if (!error && data) {
+        const obj = {};
+        data.forEach(profile => obj[profile.id] = profile);
+        setLeaders(obj);
+      }
+    };
+    fetchLeaders();
+  }, [leaderIds]);
+  return leaders;
+};
 
 export const PendingContactsManager = () => {
   const { contacts, fetchContacts } = useContacts();
   const { cells, loading: cellsLoading } = useCells();
   const { toast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
+
+  // Buscamos os líderes via hook
+  const cellLeaders = useCellLeaders(cells);
 
   // Filtrar contatos pendentes (sem célula atribuída)
   const pendingContacts = contacts.filter(contact => 
@@ -23,31 +55,47 @@ export const PendingContactsManager = () => {
   // Filtrar apenas células ativas
   const activeCells = cells.filter(cell => cell.active);
 
-  // Novo agrupamento: células por bairro
-  // Obtemos nome do bairro a partir de cell.neighborhood_id. Supondo que cada `cell` tem `neighborhood_id` e já está presente.
-  // Trazer os bairros usados pelas células ativas
-  const neighborhoodIdToName = Object.fromEntries(
-    cells.map(cell => [cell.neighborhood_id, cell.neighborhood_id ? cell.address.split(',')[0] : "Outro"])
-  );
+  // Buscar bairros das células por neighborhood_id, e nomes dos bairros
+  // Construímos um mapa neighborhood_id => neighborhood_name
+  const [neighborhoods, setNeighborhoods] = useReactState<{ [id: string]: string }>({});
+  useEffect(() => {
+    const fetchNeighborhoods = async () => {
+      const ids = Array.from(new Set(activeCells.map(cell => cell.neighborhood_id).filter(Boolean)));
+      if (ids.length === 0) return setNeighborhoods({});
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('id, name')
+        .in('id', ids);
+      if (!error && data) {
+        const obj = {};
+        data.forEach(n => { obj[n.id] = n.name; });
+        setNeighborhoods(obj);
+      }
+    };
+    fetchNeighborhoods();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCells.map(c => c.neighborhood_id).join(',')]);
 
-  const groupedCellsByNeighborhood: Record<string, typeof activeCells> = {};
-  for (const cell of activeCells) {
-    const neighborhoodLabel = cell.neighborhood_id
-      ? neighborhoodIdToName[cell.neighborhood_id] ?? "Outro"
-      : "Outro";
-    if (!groupedCellsByNeighborhood[neighborhoodLabel]) {
-      groupedCellsByNeighborhood[neighborhoodLabel] = [];
+  // Agrupar células por bairro
+  const groupedCellsByNeighborhood: Record<string, typeof activeCells> = useMemo(() => {
+    const groups: Record<string, typeof activeCells> = {};
+    for (const cell of activeCells) {
+      const neighborhoodLabel = cell.neighborhood_id
+        ? (neighborhoods[cell.neighborhood_id] ?? 'Outro')
+        : 'Outro';
+      if (!groups[neighborhoodLabel]) {
+        groups[neighborhoodLabel] = [];
+      }
+      groups[neighborhoodLabel].push(cell);
     }
-    groupedCellsByNeighborhood[neighborhoodLabel].push(cell);
-  }
+    return groups;
+  }, [activeCells, neighborhoods]);
 
   const handleAssignCell = async (contactId: string, cellId: string) => {
     if (!cellId || cellId === 'no-cell') return;
 
     setUpdating(contactId);
     try {
-      console.log('Atribuindo célula:', { contactId, cellId });
-      
       const { error } = await supabase
         .from('contacts')
         .update({ 
@@ -57,7 +105,6 @@ export const PendingContactsManager = () => {
         .eq('id', contactId);
 
       if (error) {
-        console.error('Erro ao atribuir célula:', error);
         toast({
           title: "Erro",
           description: `Erro ao atribuir célula: ${error.message}`,
@@ -71,10 +118,8 @@ export const PendingContactsManager = () => {
         description: "Contato atribuído à célula com sucesso!"
       });
 
-      // Atualizar lista de contatos automaticamente
       await fetchContacts();
     } catch (error: any) {
-      console.error('Erro ao atribuir célula:', error);
       toast({
         title: "Erro",
         description: `Erro inesperado: ${error?.message || 'Tente novamente'}`,
@@ -126,7 +171,6 @@ export const PendingContactsManager = () => {
                             Pendente
                           </Badge>
                         </div>
-                        
                         <div className="flex flex-col gap-1 text-sm text-gray-600">
                           {contact.whatsapp && (
                             <div className="flex items-center gap-2">
@@ -146,8 +190,7 @@ export const PendingContactsManager = () => {
                           </span>
                         </div>
                       </div>
-
-                      <div className="flex flex-col gap-2 min-w-[200px]">
+                      <div className="flex flex-col gap-2 min-w-[220px]">
                         <label className="text-sm font-medium">Atribuir à Célula:</label>
                         <div className="flex gap-2">
                           <Select
@@ -157,16 +200,28 @@ export const PendingContactsManager = () => {
                             <SelectTrigger className="flex-1">
                               <SelectValue placeholder="Selecione uma célula" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[50] bg-white border rounded shadow-lg">
                               <SelectItem value="no-cell">Nenhuma</SelectItem>
                               {Object.entries(groupedCellsByNeighborhood).map(([neighborhood, cellsArr]) => (
                                 <div key={neighborhood}>
-                                  <div className="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100">
+                                  <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b">
                                     {neighborhood}
                                   </div>
                                   {cellsArr.map((cell) => (
-                                    <SelectItem key={cell.id} value={cell.id}>
-                                      <span className="ml-2">{cell.name}</span>
+                                    <SelectItem key={cell.id} value={cell.id} className="pt-2 pb-1">
+                                      <div className="flex flex-col">
+                                        <span className="font-semibold text-sm flex gap-1 items-center">
+                                          <Home className="h-3 w-3 mr-1 text-blue-400" />
+                                          {cell.name}
+                                        </span>
+                                        <span className="text-xs text-gray-500 ml-5">{cell.address}</span>
+                                        {cell.leader_id && cellLeaders[cell.leader_id] && (
+                                          <span className="text-xs text-purple-700 ml-5 flex items-center gap-1">
+                                            <User className="h-3 w-3" /> 
+                                            {cellLeaders[cell.leader_id].name}
+                                          </span>
+                                        )}
+                                      </div>
                                     </SelectItem>
                                   ))}
                                 </div>
@@ -194,3 +249,4 @@ export const PendingContactsManager = () => {
     </div>
   );
 };
+
