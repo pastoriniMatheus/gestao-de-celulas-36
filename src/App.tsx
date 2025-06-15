@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { QRRedirect } from "./pages/QRRedirect";
 import { FormPage } from "./pages/FormPage";
+import { cellRoutes } from "@/routes/cells";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +18,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Rotas de célula */}
+          {cellRoutes.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
+          ))}
           <Route path="/" element={<Index />} />
           <Route path="/form" element={<FormPage />} />
           <Route path="/form/:keyword" element={<FormPage />} />

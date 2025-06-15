@@ -65,6 +65,7 @@ export type Database = {
           meeting_time: string
           name: string
           neighborhood_id: string | null
+          qr_code_token: string | null
           updated_at: string
         }
         Insert: {
@@ -77,6 +78,7 @@ export type Database = {
           meeting_time: string
           name: string
           neighborhood_id?: string | null
+          qr_code_token?: string | null
           updated_at?: string
         }
         Update: {
@@ -89,6 +91,7 @@ export type Database = {
           meeting_time?: string
           name?: string
           neighborhood_id?: string | null
+          qr_code_token?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -145,6 +148,7 @@ export type Database = {
       contacts: {
         Row: {
           age: number | null
+          attendance_code: string | null
           cell_id: string | null
           city_id: string | null
           created_at: string
@@ -157,6 +161,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          attendance_code?: string | null
           cell_id?: string | null
           city_id?: string | null
           created_at?: string
@@ -169,6 +174,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          attendance_code?: string | null
           cell_id?: string | null
           city_id?: string | null
           created_at?: string
