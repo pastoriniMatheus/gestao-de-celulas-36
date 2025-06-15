@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, MapPin, Phone, User } from 'lucide-react';
+import { Users, MapPin, Phone, User, Home } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
 import { useToast } from '@/hooks/use-toast';
@@ -16,20 +15,28 @@ import { useEffect, useMemo, useState as useReactState } from 'react';
 // Para simplificar vou montar um hook dentro deste arquivo para buscar os perfis rapidamente.
 const useCellLeaders = (cells) => {
   // ids unicos dos líderes
-  const leaderIds = useMemo(() => Array.from(new Set(
-    cells.filter((c) => c.leader_id).map((c) => c.leader_id)
-  )), [cells]);
+  const leaderIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          cells.filter((c) => c.leader_id).map((c) => c.leader_id)
+        )
+      ),
+    [cells]
+  );
   const [leaders, setLeaders] = useReactState<{ [id: string]: any }>({});
   useEffect(() => {
     const fetchLeaders = async () => {
       if (leaderIds.length === 0) return setLeaders({});
+      // --- Cast leaderIds as string[] to solve TS2345 error ---
+      const ids = leaderIds as string[];
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .in('id', leaderIds);
+        .in('id', ids);
       if (!error && data) {
         const obj = {};
-        data.forEach(profile => obj[profile.id] = profile);
+        data.forEach((profile) => (obj[profile.id] = profile));
         setLeaders(obj);
       }
     };
@@ -249,4 +256,3 @@ export const PendingContactsManager = () => {
     </div>
   );
 };
-
