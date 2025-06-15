@@ -1,35 +1,18 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Home, MapPin, Clock, Edit, Trash2, Users, Eye } from 'lucide-react';
-import { useCells } from '@/hooks/useCells';
+import { useCells, Cell } from '@/hooks/useCells';
 import { EditCellDialog } from './EditCellDialog';
 import { CellDetails } from './CellDetails';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-// Add a proper type for Cell based on your schema, to avoid type issues.
-// If cells returned from useCells contain all properties including neighborhood_id, define it accordingly.
-// You may want to use SupabaseCell type in a real codebase, but we'll fix it inline here.
-
-type CellType = {
-  id: string;
-  name: string;
-  address: string;
-  leader_id?: string | null;
-  neighborhood_id?: string | null;
-  meeting_day: number;
-  meeting_time: string;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
-// Use this new type when using `cells` and `selectedCell`
 export const CellsList = () => {
   const { cells, loading, deleteCell } = useCells();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [selectedCell, setSelectedCell] = useState<null | CellType>(null);
+  const [selectedCell, setSelectedCell] = useState<null | Cell>(null);
   const { toast } = useToast();
 
   const handleDelete = async (id: string, name: string) => {
@@ -128,7 +111,6 @@ export const CellsList = () => {
                       >
                         <Eye className="h-4 w-4 text-blue-500" />
                       </Button>
-                      {/* Pass required props to EditCellDialog */}
                       <EditCellDialog
                         cell={cell}
                         isOpen={false}

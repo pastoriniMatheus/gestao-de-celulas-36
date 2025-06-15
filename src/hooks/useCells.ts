@@ -2,14 +2,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Cell {
+export interface Cell {
   id: string;
   name: string;
   address: string;
   meeting_day: number;
   meeting_time: string;
   leader_id?: string;
-  neighborhood_id?: string | null; // <-- Add this line
+  neighborhood_id?: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
