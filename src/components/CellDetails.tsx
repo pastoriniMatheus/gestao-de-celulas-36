@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarIcon, Users, UserCheck, UserPlus, BarChart3 } from 'lucide-react';
+import { CalendarIcon, Users, UserCheck, UserPlus, BarChart3, CheckCircle2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -30,6 +30,7 @@ interface Contact {
   neighborhood: string;
   status: string;
   attendance_code?: string;
+  encounter_with_god?: boolean;
 }
 
 interface Attendance {
@@ -74,7 +75,7 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
       // Buscar membros da célula (incluindo visitantes)
       const { data: membersData, error: membersError } = await supabase
         .from('contacts')
-        .select('id, name, whatsapp, neighborhood, status, attendance_code')
+        .select('id, name, whatsapp, neighborhood, status, attendance_code, encounter_with_god')
         .eq('cell_id', cellId);
 
       if (membersError) {
@@ -527,8 +528,8 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                           <div
                             key={member.id}
                             className={`flex items-center justify-between p-3 rounded-lg border ${
-                              isPresent 
-                                ? 'bg-green-50 border-green-200' 
+                              isPresent
+                                ? 'bg-green-50 border-green-200'
                                 : 'bg-gray-50 border-gray-200'
                             }`}
                           >
@@ -538,6 +539,13 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                                 {member.attendance_code && (
                                   <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
                                     Código: {member.attendance_code}
+                                  </span>
+                                )}
+                                {/* Indicador de Encontro */}
+                                {member.encounter_with_god && (
+                                  <span className="flex items-center gap-1 ml-1 text-green-700 bg-green-100 px-2 py-0.5 rounded text-xs">
+                                    <CheckCircle2 className="w-3 h-3 mr-0.5" />
+                                    Encontro
                                   </span>
                                 )}
                                 <Button size="icon" variant="ghost" className="ml-1" onClick={() => setEditContact(member)} title="Editar membro">

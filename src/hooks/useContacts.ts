@@ -18,8 +18,13 @@ interface Contact {
 }
 
 function generateCode() {
-  // Gera um UUID simples, pode customizar se quiser só números/mais curto
-  return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 8).toUpperCase();
+  // Gera um código aleatório curto de 4 a 6 caracteres (somente números)
+  const length = 6; // pode trocar para 4 a 6, conforme desejar
+  let code = "";
+  for (let i = 0; i < length; i++) {
+    code += Math.floor(Math.random() * 10).toString();
+  }
+  return code;
 }
 
 export const useContacts = () => {
