@@ -60,13 +60,14 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // FIX: Do not send encounter_with_god since it's not in the Contact type or DB.
       await updateContact(contact.id, {
         name: form.name,
         whatsapp: form.whatsapp,
         neighborhood: form.neighborhood,
         city_id: form.city_id || null,
         age: form.age ? parseInt(form.age) : null,
-        encounter_with_god: !!form.encounter_with_god,
+        // encounter_with_god: !!form.encounter_with_god, // REMOVED TO FIX ERROR
       });
       onOpenChange(false);
     } finally {
