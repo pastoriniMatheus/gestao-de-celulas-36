@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,6 @@ export const AddContactDialog = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.name || !formData.whatsapp || !formData.neighborhood) {
       toast({
         title: "Erro",
@@ -44,7 +42,6 @@ export const AddContactDialog = () => {
       });
       return;
     }
-
     setLoading(true);
     try {
       const contactToAdd = {
@@ -53,18 +50,15 @@ export const AddContactDialog = () => {
         neighborhood: formData.neighborhood,
         city_id: formData.city_id || null,
         cell_id: formData.cell_id === 'none' ? null : formData.cell_id || null,
-        status: 'pending', // GARANTINDO que sempre seja 'pending'
-        age: formData.age || null,
-        encounter_with_god: formData.encounter_with_god ?? false,
+        status: 'pending',
+        age: formData.age ? Number(formData.age) : null,
+        encounter_with_god: !!formData.encounter_with_god, // força boolean
       };
-
       await addContact(contactToAdd);
-
       toast({
         title: "Sucesso",
         description: "Contato adicionado com sucesso com status pendente!",
       });
-
       resetForm();
       setIsOpen(false);
     } catch (error: any) {
@@ -91,41 +85,33 @@ export const AddContactDialog = () => {
           <DialogTitle>Adicionar Novo Contato</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Campos básicos */}
-          <BasicInfoFields 
-            formData={formData} 
-            onUpdateFormData={updateFormData} 
+          <BasicInfoFields
+            formData={formData}
+            onUpdateFormData={updateFormData}
+            showAge={true} // Garante que o campo idade estará presente
           />
-
-          {/* Checkbox Encontro com Deus */}
           <EncounterWithGodField
-            checked={formData.encounter_with_god}
+            checked={!!formData.encounter_with_god}
             onChange={checked => updateFormData({ encounter_with_god: checked })}
           />
-
-          {/* Seleção de Bairro pelo select */}
           <NeighborhoodSelectField
             neighborhood={formData.neighborhood}
             onChange={neigh => updateFormData({ neighborhood: neigh })}
             neighborhoods={neighborhoodsToShow}
           />
-
-          {/* Restante dos campos já existentes */}
-          <LocationFields 
-            formData={formData} 
+          <LocationFields
+            formData={formData}
             onUpdateFormData={updateFormData}
             cities={cities}
             getFilteredNeighborhoods={getFilteredNeighborhoods}
           />
-          
-          <ReferralAndCellFields 
-            formData={formData} 
+          <ReferralAndCellFields
+            formData={formData}
             onUpdateFormData={updateFormData}
             cells={cells}
             contacts={contacts}
             profiles={profiles}
           />
-
           <div className="flex justify-end space-x-2 pt-4">
             <Button
               type="button"

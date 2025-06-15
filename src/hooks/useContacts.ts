@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -15,6 +14,11 @@ interface Contact {
   created_at: string;
   updated_at: string;
   encounter_with_god: boolean; // ✅ Added this line
+}
+
+function generateCode() {
+  // Gera um UUID simples, pode customizar se quiser só números/mais curto
+  return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 8).toUpperCase();
 }
 
 export const useContacts = () => {
@@ -39,12 +43,24 @@ export const useContacts = () => {
 
       console.log('Contatos encontrados:', data);
       // Garantir que os dados estejam bem formatados
-      const formattedContacts = (data || []).map(contact => ({
-        ...contact,
-        status: contact.status || 'pending',
-        neighborhood: contact.neighborhood || '',
-        name: contact.name || ''
-      }));
+      const formattedContacts = await Promise.all(
+        (data || []).map(async (contact) => {
+          let attendance_code = contact.attendance_code;
+          if (!attendance_code) {
+            attendance_code = generateCode();
+            // Atualiza só se necessário no banco
+            await supabase.from('contacts').update({ attendance_code }).eq('id', contact.id);
+          }
+          return {
+            ...contact,
+            attendance_code: attendance_code,
+            status: contact.status || 'pending',
+            neighborhood: contact.neighborhood || '',
+            name: contact.name || '',
+            encounter_with_god: !!contact.encounter_with_god
+          };
+        })
+      );
       
       setContacts(formattedContacts);
     } catch (error) {

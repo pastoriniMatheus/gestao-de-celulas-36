@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Phone, MapPin, Home, Search, Filter, Trash2 } from 'lucide-react';
+import { Users, Phone, MapPin, Home, Search, Filter, Trash2, Edit } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
 import {
@@ -17,9 +17,10 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"; // Importa dialog de alerta shadcn/ui
+import { EditContactDialog } from './EditContactDialog';
 
 export const ContactsList = () => {
-  const { contacts, loading, deleteContact } = useContacts();
+  const { contacts, loading, deleteContact, updateContact, fetchContacts } = useContacts();
   const { cells } = useCells();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCell, setSelectedCell] = useState<string>('all');
@@ -28,6 +29,9 @@ export const ContactsList = () => {
   // Estado para controle de diálogo de exclusão
   const [contactToDelete, setContactToDelete] = useState<null | { id: string; name: string }>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Novo estado para o contato sendo editado
+  const [contactToEdit, setContactToEdit] = useState(null);
 
   // Filtrar contatos
   const filteredContacts = contacts.filter(contact => {
@@ -197,6 +201,16 @@ export const ContactsList = () => {
                       <h3 className="font-semibold truncate">{contact.name}</h3>
                       <div className="flex gap-2 items-center">
                         {getStatusBadge(contact.status)}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-blue-500 hover:bg-blue-100"
+                          title="Editar contato"
+                          aria-label="Editar contato"
+                          onClick={() => setContactToEdit(contact)}
+                        >
+                          <Edit />
+                        </Button>
                         {/* Botão de Deletar */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -234,6 +248,12 @@ export const ContactsList = () => {
                     </div>
 
                     <div className="space-y-2 text-sm text-gray-600">
+                      {contact.attendance_code && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-gray-700">Código:</span>
+                          <span className="tracking-wider">{contact.attendance_code}</span>
+                        </div>
+                      )}
                       {contact.whatsapp && (
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4" />
@@ -260,6 +280,9 @@ export const ContactsList = () => {
                       <div className="text-xs text-gray-500">
                         Cadastrado: {formatDate(contact.created_at)}
                       </div>
+                      {contact.encounter_with_god && (
+                        <div className="text-xs text-green-700 font-semibold">Já fez Encontro com Deus</div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -289,6 +312,15 @@ export const ContactsList = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Dialog de editar */}
+        {contactToEdit && (
+          <EditContactDialog
+            open={!!contactToEdit}
+            onOpenChange={(open) => { if (!open) setContactToEdit(null); }}
+            contact={contactToEdit}
+          />
+        )}
       </CardContent>
     </Card>
   );
