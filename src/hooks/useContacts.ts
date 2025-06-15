@@ -13,7 +13,8 @@ interface Contact {
   cell_id?: string;
   created_at: string;
   updated_at: string;
-  encounter_with_god: boolean; // ✅ Added this line
+  encounter_with_god: boolean;
+  attendance_code?: string;
 }
 
 function generateCode() {
