@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -13,6 +14,7 @@ interface Contact {
   cell_id?: string;
   created_at: string;
   updated_at: string;
+  encounter_with_god: boolean; // ✅ Added this line
 }
 
 export const useContacts = () => {
