@@ -1,20 +1,13 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Users, Home, Calendar, QrCode, TrendingUp, Activity } from 'lucide-react';
-import { useEvents } from '@/hooks/useEvents';
-import { useCells } from '@/hooks/useCells';
-import { useQRCodes } from '@/hooks/useQRCodes';
+import { Users, HeartHandshake } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { NeighborhoodStatsCards } from './NeighborhoodStatsCards';
 
+// Dashboard limpo, sem dados prefixados/fictícios, só mostrando os dados reais
 export const Dashboard = () => {
-  const { events, loading: eventsLoading } = useEvents();
-  const { cells, loading: cellsLoading } = useCells();
-  const { qrCodes, loading: qrLoading } = useQRCodes();
   const [contacts, setContacts] = useState([]);
   const [contactsLoading, setContactsLoading] = useState(true);
-  const [selectedNeighborhood, setSelectedNeighborhood] = useState(null);
 
   useEffect(() => {
     fetchContacts();
@@ -25,7 +18,6 @@ export const Dashboard = () => {
       const { data, error } = await supabase
         .from('contacts')
         .select('*');
-
       if (error) throw error;
       setContacts(data || []);
     } catch (error) {
@@ -35,7 +27,7 @@ export const Dashboard = () => {
     }
   };
 
-  if (eventsLoading || cellsLoading || qrLoading || contactsLoading) {
+  if (contactsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -46,251 +38,35 @@ export const Dashboard = () => {
     );
   }
 
-  const activeEvents = events.filter(event => event.active).length;
-  const activeCells = cells.filter(cell => cell.active).length;
-  const totalCells = cells.length;
-  const inactiveCells = totalCells - activeCells;
-  const activeQRCodes = qrCodes.filter(qr => qr.active).length;
-  const totalScans = [...events, ...qrCodes].reduce((sum, item) => sum + item.scan_count, 0);
-
-  const contactsByStatus = contacts.reduce((acc: any, contact: any) => {
-    acc[contact.status] = (acc[contact.status] || 0) + 1;
-    return acc;
-  }, {});
-
-  const statusData = Object.entries(contactsByStatus).map(([status, count]) => ({
-    name: status === 'pending' ? 'Pendente' : 
-          status === 'active' ? 'Ativo' : 
-          status === 'inactive' ? 'Inativo' : 'Convertido',
-    value: count,
-    color: status === 'pending' ? '#f59e0b' : 
-           status === 'active' ? '#10b981' : 
-           status === 'inactive' ? '#6b7280' : '#3b82f6'
-  }));
-
-  const eventScansData = events
-    .filter(event => event.scan_count > 0)
-    .slice(0, 5)
-    .map(event => ({
-      name: event.name.length > 15 ? event.name.substring(0, 15) + '...' : event.name,
-      scans: event.scan_count
-    }));
-
-  const qrScansData = qrCodes
-    .filter(qr => qr.scan_count > 0)
-    .slice(0, 5)
-    .map(qr => ({
-      name: qr.title.length > 15 ? qr.title.substring(0, 15) + '...' : qr.title,
-      scans: qr.scan_count
-    }));
+  // Métricas calculadas de acordo com dados REAIS
+  const totalMembers = contacts.length;
+  const totalEncounter = contacts.filter((c: any) => c.encounter_with_god === true).length;
 
   return (
-    <div className="space-y-6">
-      {/* Bloco minimalista de células */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <Card className="col-span-1 max-w-xs mx-auto">
-          <CardContent className="flex flex-row items-center justify-between p-4">
-            <div className="flex flex-col items-center flex-1">
-              <span className="text-[12px] text-muted-foreground">Total</span>
-              <span className="text-xl font-bold text-blue-600">{totalCells}</span>
-            </div>
-            <div className="w-px bg-muted h-8 mx-3" />
-            <div className="flex flex-col items-center flex-1">
-              <span className="text-[12px] text-muted-foreground">Ativas</span>
-              <span className="text-xl font-bold text-green-600">{activeCells}</span>
-            </div>
-            <div className="w-px bg-muted h-8 mx-3" />
-            <div className="flex flex-col items-center flex-1">
-              <span className="text-[12px] text-muted-foreground">Inativas</span>
-              <span className="text-xl font-bold text-gray-500">{inactiveCells}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Outras métricas principais (contatos, eventos, scans) */}
+    <div className="space-y-8 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4 text-center">Resumo Geral</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Contatos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center gap-2">
+            <Users className="h-6 w-6 text-blue-600" />
+            <CardTitle>Total de Membros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{contacts.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {contacts.filter((c: any) => c.status === 'active').length} ativos
-            </p>
+            <div className="text-4xl font-bold text-blue-700">{totalMembers}</div>
+            <CardDescription>Número total de membros cadastrados no sistema</CardDescription>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Eventos Ativos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center gap-2">
+            <HeartHandshake className="h-6 w-6 text-green-600" />
+            <CardTitle>Já fez Encontro com Deus</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeEvents}</div>
-            <p className="text-xs text-muted-foreground">
-              de {events.length} total
-            </p>
-          </CardContent>
-        </Card>
-        {/* Para manter tudo compacto, removemos cards extras aqui */}
-      </div>
-
-      {/* Cards Interativos dos Bairros */}
-      <div>
-        <h2 className="text-lg font-bold my-2 ml-1">
-          Métricas por Bairro
-          {selectedNeighborhood && (
-            <span className="ml-2 text-blue-600 font-medium">
-              · {selectedNeighborhood.neighborhood_name}
-            </span>
-          )}
-        </h2>
-        <NeighborhoodStatsCards
-          selectedNeighborhoodId={selectedNeighborhood?.id ?? null}
-          onSelectNeighborhood={setSelectedNeighborhood}
-        />
-      </div>
-
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              Status dos Contatos
-            </CardTitle>
-            <CardDescription>
-              Distribuição dos contatos por status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-gray-500">
-                Nenhum dado disponível
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-green-600" />
-              Eventos Mais Acessados
-            </CardTitle>
-            <CardDescription>
-              Top 5 eventos por número de scans
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {eventScansData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={eventScansData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="scans" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-gray-500">
-                Nenhum evento com scans ainda
-              </div>
-            )}
+            <div className="text-4xl font-bold text-green-700">{totalEncounter}</div>
+            <CardDescription>Pessoas que marcaram encontro com Deus</CardDescription>
           </CardContent>
         </Card>
       </div>
-
-      {/* QR Codes Mais Acessados */}
-      {qrScansData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5 text-purple-600" />
-              QR Codes Mais Acessados
-            </CardTitle>
-            <CardDescription>
-              Top 5 QR codes por número de scans
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={qrScansData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="scans" fill="#8b5cf6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Resumo de Atividades Recentes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo do Sistema</CardTitle>
-          <CardDescription>
-            Visão geral das principais métricas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-800">QR Codes Ativos</h3>
-              <p className="text-2xl font-bold text-blue-600">{activeQRCodes}</p>
-              <p className="text-sm text-blue-600">de {qrCodes.length} total</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-green-800">Taxa de Conversão</h3>
-              <p className="text-2xl font-bold text-green-600">
-                {contacts.length > 0 ? 
-                  Math.round((contacts.filter((c: any) => c.status === 'converted').length / contacts.length) * 100) 
-                  : 0}%
-              </p>
-              <p className="text-sm text-green-600">contatos convertidos</p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-yellow-800">Pendências</h3>
-              <p className="text-2xl font-bold text-yellow-600">
-                {contacts.filter((c: any) => c.status === 'pending').length}
-              </p>
-              <p className="text-sm text-yellow-600">contatos pendentes</p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-purple-800">Média de Scans</h3>
-              <p className="text-2xl font-bold text-purple-600">
-                {events.length + qrCodes.length > 0 ? 
-                  Math.round(totalScans / (events.length + qrCodes.length)) 
-                  : 0}
-              </p>
-              <p className="text-sm text-purple-600">por QR code/evento</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
