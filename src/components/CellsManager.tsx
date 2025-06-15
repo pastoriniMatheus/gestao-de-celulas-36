@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Home } from 'lucide-react';
 import { AddCellDialog } from './AddCellDialog';
@@ -6,7 +7,8 @@ import { CellsList } from './CellsList';
 import { useCells } from '@/hooks/useCells';
 
 export const CellsManager = () => {
-  const { cells, loading } = useCells();
+  const { cells, loading, fetchCells } = useCells();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const activeCells = cells.filter(cell => cell.active).length;
   const totalCells = cells.length;
@@ -25,7 +27,15 @@ export const CellsManager = () => {
                 Organize e gerencie as células da igreja
               </CardDescription>
             </div>
-            <AddCellDialog />
+            <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(true)}>
+              <Home className="mr-2 h-4 w-4" />
+              Adicionar Célula
+            </Button>
+            <AddCellDialog
+              isOpen={isAddDialogOpen}
+              onClose={() => setIsAddDialogOpen(false)}
+              onCellAdded={fetchCells}
+            />
           </div>
         </CardHeader>
         <CardContent>
