@@ -5,16 +5,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Phone, MapPin, Home, Search, Filter } from 'lucide-react';
+import { Users, Phone, MapPin, Home, Search, Filter, Trash2 } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"; // Importa dialog de alerta shadcn/ui
 
 export const ContactsList = () => {
-  const { contacts, loading } = useContacts();
+  const { contacts, loading, deleteContact } = useContacts();
   const { cells } = useCells();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCell, setSelectedCell] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Estado para controle de diálogo de exclusão
+  const [contactToDelete, setContactToDelete] = useState<null | { id: string; name: string }>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filtrar contatos
   const filteredContacts = contacts.filter(contact => {
@@ -53,6 +67,20 @@ export const ContactsList = () => {
     if (!cellId) return 'Sem célula';
     const cell = cells.find(c => c.id === cellId);
     return cell ? cell.name : 'Célula não encontrada';
+  };
+
+  // Função para exclusão
+  const handleDelete = async () => {
+    if (!contactToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteContact(contactToDelete.id);
+      setContactToDelete(null);
+    } catch (e) {
+      // Erro já gerenciado pelo hook useContacts
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (loading) {
@@ -168,7 +196,43 @@ export const ContactsList = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold truncate">{contact.name}</h3>
-                      {getStatusBadge(contact.status)}
+                      <div className="flex gap-2 items-center">
+                        {getStatusBadge(contact.status)}
+                        {/* Botão de Deletar */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-500 hover:bg-red-100"
+                              title="Deletar contato"
+                              aria-label="Deletar contato"
+                              onClick={() => setContactToDelete({ id: contact.id, name: contact.name })}
+                            >
+                              <Trash2 />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogTitle>Excluir contato</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir o contato <span className="font-bold">{contact.name}</span>?
+                              Esta ação não poderá ser desfeita.
+                            </AlertDialogDescription>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setContactToDelete(null)}>
+                                Cancelar
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                              >
+                                {isDeleting ? 'Excluindo...' : 'Excluir'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
 
                     <div className="space-y-2 text-sm text-gray-600">
@@ -205,6 +269,29 @@ export const ContactsList = () => {
             ))}
           </div>
         )}
+        {/* Confirmação de exclusão centralizada (fora do map) para garantir fechar corretamente */}
+        <AlertDialog open={!!contactToDelete} onOpenChange={(open) => { if (!open) setContactToDelete(null); }}>
+          <AlertDialogContent>
+            <AlertDialogTitle>Excluir contato</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o contato{' '}
+              <span className="font-bold">{contactToDelete?.name}</span>?
+              Esta ação não poderá ser desfeita.
+            </AlertDialogDescription>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setContactToDelete(null)}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Excluindo...' : 'Excluir'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
