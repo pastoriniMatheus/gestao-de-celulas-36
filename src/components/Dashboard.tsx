@@ -14,6 +14,7 @@ export const Dashboard = () => {
   const { qrCodes, loading: qrLoading } = useQRCodes();
   const [contacts, setContacts] = useState([]);
   const [contactsLoading, setContactsLoading] = useState(true);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState(null);
 
   useEffect(() => {
     fetchContacts();
@@ -140,8 +141,18 @@ export const Dashboard = () => {
 
       {/* Cards Interativos dos Bairros */}
       <div>
-        <h2 className="text-lg font-bold my-2 ml-1">Métricas por Bairro</h2>
-        <NeighborhoodStatsCards />
+        <h2 className="text-lg font-bold my-2 ml-1">
+          Métricas por Bairro
+          {selectedNeighborhood && (
+            <span className="ml-2 text-blue-600 font-medium">
+              · {selectedNeighborhood.neighborhood_name}
+            </span>
+          )}
+        </h2>
+        <NeighborhoodStatsCards
+          selectedNeighborhoodId={selectedNeighborhood?.id ?? null}
+          onSelectNeighborhood={setSelectedNeighborhood}
+        />
       </div>
 
       {/* Gráficos */}
