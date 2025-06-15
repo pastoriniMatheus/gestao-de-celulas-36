@@ -13,6 +13,7 @@ import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CellQrCode } from "./CellQrCode";
 
 interface CellDetailsProps {
   cellId: string;
@@ -37,7 +38,7 @@ interface Attendance {
   visitor: boolean;
 }
 
-export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDetailsProps) => {
+export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
   const [cell, setCell] = useState<any>(null);
   const [members, setMembers] = useState<Contact[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -599,7 +600,21 @@ export const CellDetails = ({ cellId, cellName, isOpen, onOpenChange }: CellDeta
             </CardContent>
           </Card>
         </div>
+
+        <div className="mt-4">
+          <h3 className="font-bold text-blue-800 mb-2">QR Code de Presença da Célula</h3>
+          <p className="text-xs text-gray-600 mb-2">
+            Escaneie, copie ou baixe este QR code.<br />
+            Ele leva para a página pública onde os membros podem marcar presença apenas no dia da célula!
+          </p>
+          <CellQrCode cellId={cellId} />
+          <div className="text-xs text-gray-700 mt-2">
+            Dia da célula: <b className="text-blue-700">{/* Renderizar nome do dia da semana */}</b>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
-};
+}
+
+export default CellDetails;
