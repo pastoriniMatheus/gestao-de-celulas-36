@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Home, Users, MapPin } from 'lucide-react';
@@ -78,15 +77,13 @@ export const NeighborhoodStatsCards = ({
           </button>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
         {cardsToShow.map((bairro) => (
           <Card
             key={bairro.id}
-            className={`hover:scale-[1.02] transition-all shadow-lg border-blue-200 bg-white/90 cursor-pointer ${
-              selectedNeighborhoodId === bairro.id
-                ? 'border-2 border-blue-600 ring-2 ring-blue-400'
-                : ''
-            }`}
+            className={`hover:scale-[1.01] transition-all shadow border-2 border-blue-100 bg-white/95 cursor-pointer
+              ${selectedNeighborhoodId === bairro.id ? 'border-blue-600 ring-2 ring-blue-300' : ''}
+            `}
             tabIndex={0}
             aria-pressed={selectedNeighborhoodId === bairro.id}
             onClick={() =>
@@ -103,36 +100,32 @@ export const NeighborhoodStatsCards = ({
               }
             }}
           >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="pb-2 flex-row items-center gap-2">
+              <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-pink-600" />
-                {bairro.neighborhood_name}
-                <span className="text-xs text-gray-400 font-normal">
-                  ({bairro.city_name || 'Cidade desconhecida'})
-                </span>
-              </CardTitle>
-              <CardDescription>
-                <span className="font-semibold">{bairro.total_cells}</span> célula(s)
-              </CardDescription>
+                <span className="font-bold text-base">{bairro.neighborhood_name}</span>
+              </div>
+              <span className="text-xs text-gray-400 font-normal ml-1">
+                {bairro.city_name || 'Cidade desconhecida'}
+              </span>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col gap-2 pl-1">
-                <div className="flex items-center gap-2 text-blue-700">
-                  <Home className="h-4 w-4" /> 
-                  <span>{bairro.total_cells} célula(s) ativas</span>
-                </div>
-                <div className="flex items-center gap-2 text-green-700">
-                  <Users className="h-4 w-4" />
-                  <span>{bairro.total_contacts} pessoas (contatos)</span>
-                </div>
-                <div className="flex items-center gap-2 text-purple-700">
-                  <Users className="h-4 w-4" />
-                  <span>{bairro.total_leaders} líderes</span>
-                </div>
-                <div className="flex items-center gap-2 text-pink-700 font-semibold mt-2">
-                  <Users className="h-4 w-4" />
+              <div className="flex flex-wrap gap-2 justify-between items-center">
+                <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                  <Home className="h-3 w-3" />
+                  {bairro.total_cells} célula{Number(bairro.total_cells) === 1 ? "" : "s"}
+                </span>
+                <span className="bg-green-50 text-green-700 px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {bairro.total_contacts} contato{Number(bairro.total_contacts) === 1 ? "" : "s"}
+                </span>
+                <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {bairro.total_leaders} líder{Number(bairro.total_leaders) === 1 ? "" : "es"}
+                </span>
+                <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded-md text-xs flex items-center gap-1 font-semibold">
                   Total: {bairro.total_people}
-                </div>
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -141,4 +134,3 @@ export const NeighborhoodStatsCards = ({
     </div>
   );
 };
-
