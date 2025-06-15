@@ -122,7 +122,7 @@ export default function CellAttendancePage() {
       toast({ title: "Erro", description: "Erro ao registrar presença!", variant: "destructive" });
       return;
     }
-    toast({ title: "Sucesso!", description: "Presença confirmada!", variant: "success" });
+    toast({ title: "Sucesso!", description: "Presença confirmada!", variant: "default" });
     setStep("done");
   }
 
