@@ -412,230 +412,240 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
   const visitorCount = todayAttendances.filter(att => att.present && att.visitor).length;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{cellName}</DialogTitle>
-          <DialogDescription>{cell.address}</DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{cellName}</DialogTitle>
+            <DialogDescription>{cell.address}</DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Estatísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <Users className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Total de Membros</p>
-                    <p className="text-2xl font-bold">{members.filter(m => m.status !== 'visitor').length}</p>
+          <div className="space-y-6">
+            {/* Estatísticas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-8 w-8 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Total de Membros</p>
+                      <p className="text-2xl font-bold">{members.filter(m => m.status !== 'visitor').length}</p>
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <UserCheck className="h-8 w-8 text-green-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Presentes na Data</p>
+                      <p className="text-2xl font-bold">{presentCount}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <UserPlus className="h-8 w-8 text-orange-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Visitantes na Data</p>
+                      <p className="text-2xl font-bold">{visitorCount}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Gráfico de Frequência */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Frequência Semanal
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={getChartData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="week" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="members" fill="#3b82f6" name="Membros" />
+                    <Bar dataKey="visitors" fill="#f59e0b" name="Visitantes" />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
 
+            {/* Controle de Presença */}
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <UserCheck className="h-8 w-8 text-green-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Presentes na Data</p>
-                    <p className="text-2xl font-bold">{presentCount}</p>
-                  </div>
+              <CardHeader>
+                <CardTitle>Controle de Presença</CardTitle>
+                <CardDescription>
+                  Selecione uma data e marque a presença dos membros
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Seletor de Data */}
+                <div className="flex items-center gap-4">
+                  <label className="font-medium">Data da Reunião:</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[240px] justify-start text-left">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {format(selectedDate, 'dd/MM/yyyy')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <UserPlus className="h-8 w-8 text-orange-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Visitantes na Data</p>
-                    <p className="text-2xl font-bold">{visitorCount}</p>
-                  </div>
+                {/* Lista de Membros */}
+                <div className="space-y-2">
+                  <h4 className="font-medium">Membros:</h4>
+                  {members.filter(m => m.status !== 'visitor').length === 0 ? (
+                    <p className="text-gray-500">Nenhum membro cadastrado nesta célula.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {members.filter(member => member.status !== 'visitor').map((member) => {
+                        const attendance = todayAttendances.find(att => att.contact_id === member.id);
+                        const isPresent = attendance?.present || false;
+                        const isLoading = isUpdating === member.id;
+                        return (
+                          <div
+                            key={member.id}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              isPresent 
+                                ? 'bg-green-50 border-green-200' 
+                                : 'bg-gray-50 border-gray-200'
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{member.name}</p>
+                                {member.attendance_code && (
+                                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
+                                    Código: {member.attendance_code}
+                                  </span>
+                                )}
+                                <Button size="icon" variant="ghost" className="ml-1" onClick={() => setEditContact(member)} title="Editar membro">
+                                  <svg width="16" height="16" fill="none" stroke="currentColor"><path d="M15.232 2.12a3 3 0 0 1 0 4.243l-8.61 8.611a2 2 0 0 1-1.049.555l-4.077.68.68-4.078a2 2 0 0 1 .555-1.048l8.61-8.611a3 3 0 0 1 4.244 0Z"></path></svg>
+                                </Button>
+                              </div>
+                              <p className="text-sm text-gray-600">{member.neighborhood}</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={isPresent ? "default" : "outline"}
+                              onClick={() => toggleAttendance(member.id)}
+                              disabled={isLoading}
+                              className={isPresent ? "bg-green-600 hover:bg-green-700" : ""}
+                            >
+                              {isLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                              ) : isPresent ? (
+                                <UserCheck className="h-4 w-4" />
+                              ) : (
+                                <Users className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Gráfico de Frequência */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Frequência Semanal
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={getChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="week" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="members" fill="#3b82f6" name="Membros" />
-                  <Bar dataKey="visitors" fill="#f59e0b" name="Visitantes" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Controle de Presença */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Controle de Presença</CardTitle>
-              <CardDescription>
-                Selecione uma data e marque a presença dos membros
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Seletor de Data */}
-              <div className="flex items-center gap-4">
-                <label className="font-medium">Data da Reunião:</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[240px] justify-start text-left">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(selectedDate, 'dd/MM/yyyy')}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      initialFocus
+                {/* Adicionar Visitante */}
+                <div className="space-y-2 pt-4 border-t">
+                  <h4 className="font-medium">Adicionar Visitante:</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nome do visitante"
+                      value={newVisitorName}
+                      onChange={(e) => setNewVisitorName(e.target.value)}
+                      className="flex-1"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addVisitor();
+                        }
+                      }}
                     />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                    <Button onClick={addVisitor} disabled={!newVisitorName.trim()}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
 
-              {/* Lista de Membros */}
-              <div className="space-y-2">
-                <h4 className="font-medium">Membros:</h4>
-                {members.filter(m => m.status !== 'visitor').length === 0 ? (
-                  <p className="text-gray-500">Nenhum membro cadastrado nesta célula.</p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {members.filter(member => member.status !== 'visitor').map((member) => {
-                      const attendance = todayAttendances.find(att => att.contact_id === member.id);
-                      const isPresent = attendance?.present || false;
-                      const isLoading = isUpdating === member.id;
-                      return (
-                        <div
-                          key={member.id}
-                          className={`flex items-center justify-between p-3 rounded-lg border ${
-                            isPresent 
-                              ? 'bg-green-50 border-green-200' 
-                              : 'bg-gray-50 border-gray-200'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{member.name}</p>
-                              {member.attendance_code && (
+                {/* Visitantes do Dia */}
+                {visitorCount > 0 && (
+                  <div className="space-y-2 pt-4 border-t">
+                    <h4 className="font-medium">Visitantes Presentes:</h4>
+                    <div className="space-y-1">
+                      {todayAttendances
+                        .filter(att => att.visitor && att.present)
+                        .map(att => {
+                          const visitor = members.find(m => m.id === att.contact_id);
+                          return visitor ? (
+                            <div key={att.id} className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
+                              <UserPlus className="h-4 w-4 text-orange-600" />
+                              <span>{visitor.name}</span>
+                              {visitor.attendance_code && (
                                 <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
-                                  Código: {member.attendance_code}
+                                  Código: {visitor.attendance_code}
                                 </span>
                               )}
-                              <Button size="icon" variant="ghost" className="ml-1" onClick={() => setEditContact(member)} title="Editar membro">
+                              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                                Visitante
+                              </Badge>
+                              <Button size="icon" variant="ghost" className="ml-1" onClick={() => setEditContact(visitor)} title="Editar visitante">
                                 <svg width="16" height="16" fill="none" stroke="currentColor"><path d="M15.232 2.12a3 3 0 0 1 0 4.243l-8.61 8.611a2 2 0 0 1-1.049.555l-4.077.68.68-4.078a2 2 0 0 1 .555-1.048l8.61-8.611a3 3 0 0 1 4.244 0Z"></path></svg>
                               </Button>
                             </div>
-                            <p className="text-sm text-gray-600">{member.neighborhood}</p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant={isPresent ? "default" : "outline"}
-                            onClick={() => toggleAttendance(member.id)}
-                            disabled={isLoading}
-                            className={isPresent ? "bg-green-600 hover:bg-green-700" : ""}
-                          >
-                            {isLoading ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                            ) : isPresent ? (
-                              <UserCheck className="h-4 w-4" />
-                            ) : (
-                              <Users className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      );
-                    })}
+                          ) : null;
+                        })}
+                    </div>
                   </div>
                 )}
-              </div>
-
-              {/* Adicionar Visitante */}
-              <div className="space-y-2 pt-4 border-t">
-                <h4 className="font-medium">Adicionar Visitante:</h4>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nome do visitante"
-                    value={newVisitorName}
-                    onChange={(e) => setNewVisitorName(e.target.value)}
-                    className="flex-1"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        addVisitor();
-                      }
-                    }}
-                  />
-                  <Button onClick={addVisitor} disabled={!newVisitorName.trim()}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Adicionar
-                  </Button>
-                </div>
-              </div>
-
-              {/* Visitantes do Dia */}
-              {visitorCount > 0 && (
-                <div className="space-y-2 pt-4 border-t">
-                  <h4 className="font-medium">Visitantes Presentes:</h4>
-                  <div className="space-y-1">
-                    {todayAttendances
-                      .filter(att => att.visitor && att.present)
-                      .map(att => {
-                        const visitor = members.find(m => m.id === att.contact_id);
-                        return visitor ? (
-                          <div key={att.id} className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
-                            <UserPlus className="h-4 w-4 text-orange-600" />
-                            <span>{visitor.name}</span>
-                            {visitor.attendance_code && (
-                              <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
-                                Código: {visitor.attendance_code}
-                              </span>
-                            )}
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                              Visitante
-                            </Badge>
-                            <Button size="icon" variant="ghost" className="ml-1" onClick={() => setEditContact(visitor)} title="Editar visitante">
-                              <svg width="16" height="16" fill="none" stroke="currentColor"><path d="M15.232 2.12a3 3 0 0 1 0 4.243l-8.61 8.611a2 2 0 0 1-1.049.555l-4.077.68.68-4.078a2 2 0 0 1 .555-1.048l8.61-8.611a3 3 0 0 1 4.244 0Z"></path></svg>
-                            </Button>
-                          </div>
-                        ) : null;
-                      })}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-4">
-          <h3 className="font-bold text-blue-800 mb-2">QR Code de Presença da Célula</h3>
-          <p className="text-xs text-gray-600 mb-2">
-            Escaneie, copie ou baixe este QR code.<br />
-            Ele leva para a página pública onde os membros podem marcar presença apenas no dia da célula!
-          </p>
-          <CellQrCode cellId={cellId} />
-          <div className="text-xs text-gray-700 mt-2">
-            Dia da célula: <b className="text-blue-700">{/* Renderizar nome do dia da semana */}</b>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+
+          <div className="mt-4">
+            <h3 className="font-bold text-blue-800 mb-2">QR Code de Presença da Célula</h3>
+            <p className="text-xs text-gray-600 mb-2">
+              Escaneie, copie ou baixe este QR code.<br />
+              Ele leva para a página pública onde os membros podem marcar presença apenas no dia da célula!
+            </p>
+            <CellQrCode cellId={cellId} />
+            <div className="text-xs text-gray-700 mt-2">
+              Dia da célula: <b className="text-blue-700">{/* Renderizar nome do dia da semana */}</b>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Adiciona o Dialog para Edição de Membro/Visitante */}
+      {editContact && (
+        <EditContactDialog
+          open={!!editContact}
+          contact={editContact}
+          onOpenChange={(open) => setEditContact(open ? editContact : null)}
+        />
+      )}
+    </>
   );
 }
 
