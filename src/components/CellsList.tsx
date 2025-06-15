@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 export const CellsList = () => {
   const { cells, loading, deleteCell } = useCells();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [selectedCell, setSelectedCell] = useState<{ id: string; name: string } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<null | (typeof cells)[number]>(null);
   const { toast } = useToast();
 
   const handleDelete = async (id: string, name: string) => {
@@ -105,7 +105,7 @@ export const CellsList = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setSelectedCell({ id: cell.id, name: cell.name })}
+                        onClick={() => setSelectedCell(cell)}
                         title="Ver detalhes"
                       >
                         <Eye className="h-4 w-4 text-blue-500" />
