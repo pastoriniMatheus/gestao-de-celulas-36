@@ -88,31 +88,25 @@ export const Dashboard = () => {
     <div className="space-y-6">
       {/* Bloco minimalista de células */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Home className="h-4 w-4 text-blue-600" />
-              Células
-            </CardTitle>
-            <CardDescription>
-              Resumo rápido das células cadastradas
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2">
-            <div className="flex flex-col items-center">
-              <span className="text-xs text-muted-foreground">Total</span>
-              <span className="text-lg font-bold text-blue-600">{totalCells}</span>
+        <Card className="col-span-1 max-w-xs mx-auto">
+          <CardContent className="flex flex-row items-center justify-between p-4">
+            <div className="flex flex-col items-center flex-1">
+              <span className="text-[12px] text-muted-foreground">Total</span>
+              <span className="text-xl font-bold text-blue-600">{totalCells}</span>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-xs text-muted-foreground">Ativas</span>
-              <span className="text-lg font-bold text-green-600">{activeCells}</span>
+            <div className="w-px bg-muted h-8 mx-3" />
+            <div className="flex flex-col items-center flex-1">
+              <span className="text-[12px] text-muted-foreground">Ativas</span>
+              <span className="text-xl font-bold text-green-600">{activeCells}</span>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-xs text-muted-foreground">Inativas</span>
-              <span className="text-lg font-bold text-gray-500">{inactiveCells}</span>
+            <div className="w-px bg-muted h-8 mx-3" />
+            <div className="flex flex-col items-center flex-1">
+              <span className="text-[12px] text-muted-foreground">Inativas</span>
+              <span className="text-xl font-bold text-gray-500">{inactiveCells}</span>
             </div>
           </CardContent>
         </Card>
+
         {/* Outras métricas principais (contatos, eventos, scans) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -300,3 +294,5 @@ export const Dashboard = () => {
     </div>
   );
 };
+
+export default Dashboard;
