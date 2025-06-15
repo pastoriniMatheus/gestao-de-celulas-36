@@ -1,10 +1,24 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { users, usersRound, circleCheck, home, calendarDays, chartBar, chartPie } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Users,
+  UsersRound,
+  CircleCheck,
+  Home,
+  CalendarDays,
+  ChartBar,
+  ChartPie,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Ícones Lucide disponíveis: "users", "users-round", "circle-check", "calendar-days", "chart-bar", "chart-pie"
+// Ícones Lucide disponíveis: "Users", "UsersRound", "CircleCheck", "Home", "CalendarDays", "ChartBar", "ChartPie"
 export const Dashboard = () => {
   const [stats, setStats] = useState({
     totalMembers: 0,
@@ -84,7 +98,7 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <users className="h-6 w-6 text-blue-700" />
+            <Users className="h-6 w-6 text-blue-700" />
             <CardTitle>Membros</CardTitle>
           </CardHeader>
           <CardContent>
@@ -94,7 +108,7 @@ export const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <circleCheck className="h-6 w-6 text-green-600" />
+            <CircleCheck className="h-6 w-6 text-green-600" />
             <CardTitle>Encontro com Deus</CardTitle>
           </CardHeader>
           <CardContent>
@@ -104,7 +118,7 @@ export const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <home className="h-6 w-6 text-indigo-600" />
+            <Home className="h-6 w-6 text-indigo-600" />
             <CardTitle>Células</CardTitle>
           </CardHeader>
           <CardContent>
@@ -114,7 +128,7 @@ export const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <usersRound className="h-6 w-6 text-teal-600" />
+            <UsersRound className="h-6 w-6 text-teal-600" />
             <CardTitle>Células Ativas</CardTitle>
           </CardHeader>
           <CardContent>
@@ -124,7 +138,7 @@ export const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <chartPie className="h-6 w-6 text-pink-600" />
+            <ChartPie className="h-6 w-6 text-pink-600" />
             <CardTitle>Bairros com membros</CardTitle>
           </CardHeader>
           <CardContent>
@@ -134,7 +148,7 @@ export const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <chartBar className="h-6 w-6 text-orange-600" />
+            <ChartBar className="h-6 w-6 text-orange-600" />
             <CardTitle>Bairros cadastrados</CardTitle>
           </CardHeader>
           <CardContent>
@@ -144,7 +158,7 @@ export const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <calendarDays className="h-6 w-6 text-violet-600" />
+            <CalendarDays className="h-6 w-6 text-violet-600" />
             <CardTitle>Cidades</CardTitle>
           </CardHeader>
           <CardContent>
@@ -154,7 +168,7 @@ export const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2">
-            <users className="h-6 w-6 text-yellow-600" />
+            <Users className="h-6 w-6 text-yellow-600" />
             <CardTitle>Líderes</CardTitle>
           </CardHeader>
           <CardContent>
@@ -168,3 +182,4 @@ export const Dashboard = () => {
 };
 
 export default Dashboard;
+
