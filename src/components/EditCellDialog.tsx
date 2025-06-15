@@ -1,201 +1,217 @@
-
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Edit } from 'lucide-react';
-import { useCells } from '@/hooks/useCells';
-import { useToast } from '@/hooks/use-toast';
-
-interface Cell {
-  id: string;
-  name: string;
-  address: string;
-  meeting_day: number;
-  meeting_time: string;
-  leader_id?: string;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
+import { Cell } from "@/types";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EditCellDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
   cell: Cell;
+  onCellUpdated: (cell: Cell) => void;
 }
 
-export const EditCellDialog = ({ cell }: EditCellDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+export const EditCellDialog = ({
+  isOpen,
+  onClose,
+  cell,
+  onCellUpdated,
+}: EditCellDialogProps) => {
+  const [formState, setFormState] = useState<Partial<Cell>>({
     name: cell.name,
     address: cell.address,
-    meeting_day: cell.meeting_day.toString(),
-    meeting_time: cell.meeting_time,
-    leader_id: cell.leader_id || 'no-leader',
-    active: cell.active
+    leader_id: cell.leader_id,
+    neighborhood_id: cell.neighborhood_id,
+    active: cell.active,
   });
-  
-  const { updateCell } = useCells();
-  const { toast } = useToast();
+  const [leaders, setLeaders] = useState([]);
+  const [neighborhoods, setNeighborhoods] = useState([]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.address || !formData.meeting_day || !formData.meeting_time) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      const { data, error } = await supabase.from("users").select("id, name");
+      if (error) {
+        toast({
+          title: "Erro ao buscar líderes.",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setLeaders(data || []);
+      }
+    };
+
+    const fetchNeighborhoods = async () => {
+      const { data, error } = await supabase
+        .from("neighborhoods")
+        .select("id, name");
+      if (error) {
+        toast({
+          title: "Erro ao buscar bairros.",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setNeighborhoods(data || []);
+      }
+    };
+
+    fetchLeaders();
+    fetchNeighborhoods();
+  }, []);
+
+  useEffect(() => {
+    if (cell) {
+      setFormState({
+        name: cell.name,
+        address: cell.address,
+        leader_id: cell.leader_id,
+        neighborhood_id: cell.neighborhood_id,
+        active: cell.active,
       });
+    }
+  }, [cell]);
+
+  const handleChange = (e: any) => {
+    const { name, value, type, checked } = e.target;
+    setFormState((prevState) => ({
+      ...prevState,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    if (!formState.leader_id) {
+      toast({ title: "Selecione o líder da célula." });
+      return;
+    }
+    if (!formState.neighborhood_id) {
+      toast({ title: "Selecione o bairro da célula." });
       return;
     }
 
-    setLoading(true);
-    try {
-      await updateCell(cell.id, {
-        name: formData.name,
-        address: formData.address,
-        meeting_day: parseInt(formData.meeting_day),
-        meeting_time: formData.meeting_time,
-        leader_id: formData.leader_id === 'no-leader' ? undefined : formData.leader_id,
-        active: formData.active
-      });
+    const { data, error } = await supabase
+      .from("cells")
+      .update(formState)
+      .eq("id", cell.id)
+      .select()
+      .single();
 
+    if (error) {
       toast({
-        title: "Sucesso",
-        description: "Célula atualizada com sucesso!",
-      });
-
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Erro ao atualizar célula:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar célula. Tente novamente.",
+        title: "Erro ao atualizar a célula.",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+    } else {
+      toast({
+        title: "Célula atualizada com sucesso!",
+      });
+      onCellUpdated(data);
+      onClose();
     }
   };
 
-  const weekDays = [
-    { value: '0', label: 'Domingo' },
-    { value: '1', label: 'Segunda-feira' },
-    { value: '2', label: 'Terça-feira' },
-    { value: '3', label: 'Quarta-feira' },
-    { value: '4', label: 'Quinta-feira' },
-    { value: '5', label: 'Sexta-feira' },
-    { value: '6', label: 'Sábado' }
-  ];
-
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Edit className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Editar Célula</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nome da Célula *</Label>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Editar Célula</AlertDialogTitle>
+          <AlertDialogDescription>
+            Atualize os dados da célula.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Nome</Label>
             <Input
+              type="text"
               id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Ex: Célula Esperança"
-              required
+              name="name"
+              value={formState.name || ""}
+              onChange={handleChange}
             />
           </div>
-          
-          <div>
-            <Label htmlFor="address">Endereço *</Label>
+          <div className="grid gap-2">
+            <Label htmlFor="address">Endereço</Label>
             <Input
+              type="text"
               id="address"
-              value={formData.address}
-              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              placeholder="Endereço completo"
-              required
+              name="address"
+              value={formState.address || ""}
+              onChange={handleChange}
             />
           </div>
-
           <div>
-            <Label htmlFor="meeting_day">Dia da Reunião *</Label>
-            <Select 
-              value={formData.meeting_day} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o dia da semana" />
-              </SelectTrigger>
-              <SelectContent>
-                {weekDays.map((day) => (
-                  <SelectItem key={day.value} value={day.value}>
-                    {day.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="meeting_time">Horário da Reunião *</Label>
-            <Input
-              id="meeting_time"
-              type="time"
-              value={formData.meeting_time}
-              onChange={(e) => setFormData(prev => ({ ...prev, meeting_time: e.target.value }))}
+            <Label className="block font-medium">Líder da Célula *</Label>
+            <select
               required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="leader_id">Líder (Opcional)</Label>
-            <Select 
-              value={formData.leader_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value }))}
+              value={formState.leader_id || ""}
+              onChange={(e) =>
+                setFormState((f) => ({ ...f, leader_id: e.target.value }))
+              }
+              className="input"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um líder (opcional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-leader">Nenhum líder</SelectItem>
-                {/* Note: You would need to add leaders data here when available */}
-              </SelectContent>
-            </Select>
+              <option value="" disabled>
+                Selecione um líder
+              </option>
+              {leaders.map((l: any) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
           </div>
-
+          <div>
+            <Label className="block font-medium">Bairro *</Label>
+            <select
+              required
+              value={formState.neighborhood_id || ""}
+              onChange={(e) =>
+                setFormState((f) => ({ ...f, neighborhood_id: e.target.value }))
+              }
+              className="input"
+            >
+              <option value="" disabled>
+                Selecione um bairro
+              </option>
+              {neighborhoods.map((b: any) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center space-x-2">
-            <Switch
+            <Input
+              type="checkbox"
               id="active"
-              checked={formData.active}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
+              name="active"
+              checked={formState.active || false}
+              onChange={handleChange}
             />
-            <Label htmlFor="active">Célula ativa</Label>
+            <Label htmlFor="active">Ativo</Label>
           </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
-            </Button>
-          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction type="submit">Salvar</AlertDialogAction>
+          </AlertDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };

@@ -1,166 +1,201 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PlusIcon } from "@radix-ui/react-icons";
+import { useState, useEffect } from "react";
+import { toast } from "@/components/ui/use-toast"
+import { supabase } from "@/integrations/supabase/client";
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
-import { useCells } from '@/hooks/useCells';
-import { useToast } from '@/hooks/use-toast';
+interface AddCellDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCellAdded: () => void;
+}
 
-export const AddCellDialog = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    meeting_day: '',
-    meeting_time: '',
-    leader_id: ''
+export const AddCellDialog = ({ isOpen, onClose, onCellAdded }) => {
+  const [formState, setFormState] = useState({
+    name: "",
+    address: "",
+    leader_id: "",
+    neighborhood_id: "",
   });
-  
-  const { addCell } = useCells();
-  const { toast } = useToast();
+  const [leaders, setLeaders] = useState([]);
+  const [neighborhoods, setNeighborhoods] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('role', 'leader');
+
+      if (error) {
+        toast({
+          title: "Erro ao buscar líderes.",
+          description: "Por favor, tente novamente.",
+          variant: "destructive",
+        })
+      } else {
+        setLeaders(data || []);
+      }
+    };
+
+    const fetchNeighborhoods = async () => {
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('id, name');
+
+      if (error) {
+        toast({
+          title: "Erro ao buscar bairros.",
+          description: "Por favor, tente novamente.",
+          variant: "destructive",
+        })
+      } else {
+        setNeighborhoods(data || []);
+      }
+    };
+
+    if (isOpen) {
+      setLoading(true);
+      Promise.all([fetchLeaders(), fetchNeighborhoods()])
+        .finally(() => setLoading(false));
+    }
+  }, [isOpen]);
+
+  const handleChange = (e) => {
+    setFormState({ ...formState, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.address || !formData.meeting_day || !formData.meeting_time) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
+    // Validação simples: líder e bairro obrigatórios
+    if (!formState.leader_id) {
+      toast({ title: "Selecione o líder da célula." });
+      return;
+    }
+    if (!formState.neighborhood_id) {
+      toast({ title: "Selecione o bairro da célula." });
       return;
     }
 
-    setLoading(true);
-    try {
-      await addCell({
-        name: formData.name,
-        address: formData.address,
-        meeting_day: parseInt(formData.meeting_day),
-        meeting_time: formData.meeting_time,
-        leader_id: formData.leader_id || undefined,
-        active: true
-      });
+    const { data, error } = await supabase
+      .from('cells')
+      .insert([
+        {
+          name: formState.name,
+          address: formState.address,
+          leader_id: formState.leader_id,
+          neighborhood_id: formState.neighborhood_id,
+        },
+      ])
+      .select()
 
+    if (error) {
       toast({
-        title: "Sucesso",
-        description: "Célula criada com sucesso!",
-      });
-
-      setFormData({
-        name: '',
-        address: '',
-        meeting_day: '',
-        meeting_time: '',
-        leader_id: ''
-      });
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Erro ao criar célula:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao criar célula. Tente novamente.",
+        title: "Erro ao criar célula.",
+        description: "Por favor, tente novamente.",
         variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      })
+    } else {
+      toast({
+        title: "Célula criada com sucesso!",
+      })
+      onCellAdded();
+      onClose();
     }
   };
 
-  const weekDays = [
-    { value: '0', label: 'Domingo' },
-    { value: '1', label: 'Segunda-feira' },
-    { value: '2', label: 'Terça-feira' },
-    { value: '3', label: 'Quarta-feira' },
-    { value: '4', label: 'Quinta-feira' },
-    { value: '5', label: 'Sexta-feira' },
-    { value: '6', label: 'Sábado' }
-  ];
-
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Célula
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <PlusIcon className="mr-2 h-4 w-4" />
+          Adicionar Célula
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Criar Nova Célula</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nome da Célula *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Ex: Célula Esperança"
-              required
-            />
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Adicionar Nova Célula</AlertDialogTitle>
+          <AlertDialogDescription>
+            Preencha os campos abaixo para adicionar uma nova célula.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
-          
-          <div>
-            <Label htmlFor="address">Endereço *</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              placeholder="Endereço completo"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="meeting_day">Dia da Reunião *</Label>
-            <Select 
-              value={formData.meeting_day} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o dia da semana" />
-              </SelectTrigger>
-              <SelectContent>
-                {weekDays.map((day) => (
-                  <SelectItem key={day.value} value={day.value}>
-                    {day.label}
-                  </SelectItem>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nome da Célula</Label>
+              <Input
+                type="text"
+                id="name"
+                name="name"
+                value={formState.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="address">Endereço</Label>
+              <Input
+                type="text"
+                id="address"
+                name="address"
+                value={formState.address}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label className="block font-medium">Líder da Célula *</label>
+              <select
+                required
+                value={formState.leader_id || ""}
+                onChange={e => setFormState(f => ({ ...f, leader_id: e.target.value }))}
+                className="input"
+              >
+                <option value="" disabled>Selecione um líder</option>
+                {leaders.map(l => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="meeting_time">Horário da Reunião *</Label>
-            <Input
-              id="meeting_time"
-              type="time"
-              value={formData.meeting_time}
-              onChange={(e) => setFormData(prev => ({ ...prev, meeting_time: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Criando...' : 'Criar Célula'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+              </select>
+            </div>
+            <div>
+              <label className="block font-medium">Bairro *</label>
+              <select
+                required
+                value={formState.neighborhood_id || ""}
+                onChange={e => setFormState(f => ({ ...f, neighborhood_id: e.target.value }))}
+                className="input"
+              >
+                <option value="" disabled>Selecione um bairro</option>
+                {neighborhoods.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction type="submit">Adicionar</AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        )}
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 };
