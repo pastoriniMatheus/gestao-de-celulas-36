@@ -14,6 +14,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CellQrCode } from "./CellQrCode";
+import { EditContactDialog } from "./EditContactDialog";
 
 interface CellDetailsProps {
   cellId: string;
@@ -28,6 +29,7 @@ interface Contact {
   whatsapp?: string;
   neighborhood: string;
   status: string;
+  attendance_code?: string;
 }
 
 interface Attendance {
@@ -46,6 +48,7 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
   const [newVisitorName, setNewVisitorName] = useState('');
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [editContact, setEditContact] = useState(null);
   const { toast } = useToast();
   const channelsRef = useRef<any[]>([]);
   const isSubscribedRef = useRef(false);
@@ -71,7 +74,7 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
       // Buscar membros da célula (incluindo visitantes)
       const { data: membersData, error: membersError } = await supabase
         .from('contacts')
-        .select('id, name, whatsapp, neighborhood, status')
+        .select('id, name, whatsapp, neighborhood, status, attendance_code')
         .eq('cell_id', cellId);
 
       if (membersError) {
@@ -289,15 +292,15 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
 
     try {
       console.log('Adicionando visitante:', newVisitorName);
-      
-      // Criar contato visitante
+
+      // Corrigir insert: garantir campos obrigatórios e status válidos
       const { data: visitorData, error: visitorError } = await supabase
         .from('contacts')
         .insert([{
           name: newVisitorName.trim(),
           neighborhood: 'Visitante',
           status: 'visitor',
-          cell_id: cellId
+          cell_id: cellId // vincula visitante como membro dessa célula
         }])
         .select()
         .single();
@@ -306,7 +309,9 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
         console.error('Erro ao criar visitante:', visitorError);
         toast({
           title: "Erro",
-          description: "Erro ao criar visitante. Tente novamente.",
+          description: visitorError.message?.includes('violates not-null')
+            ? "Erro ao criar visitante: divulgação inválida (campos obrigatórios ausentes ou valor inválido)."
+            : "Erro ao criar visitante. Tente novamente.",
           variant: "destructive"
         });
         return;
@@ -517,7 +522,6 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                       const attendance = todayAttendances.find(att => att.contact_id === member.id);
                       const isPresent = attendance?.present || false;
                       const isLoading = isUpdating === member.id;
-                      
                       return (
                         <div
                           key={member.id}
@@ -528,7 +532,17 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                           }`}
                         >
                           <div>
-                            <p className="font-medium">{member.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{member.name}</p>
+                              {member.attendance_code && (
+                                <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
+                                  Código: {member.attendance_code}
+                                </span>
+                              )}
+                              <Button size="icon" variant="ghost" className="ml-1" onClick={() => setEditContact(member)} title="Editar membro">
+                                <svg width="16" height="16" fill="none" stroke="currentColor"><path d="M15.232 2.12a3 3 0 0 1 0 4.243l-8.61 8.611a2 2 0 0 1-1.049.555l-4.077.68.68-4.078a2 2 0 0 1 .555-1.048l8.61-8.611a3 3 0 0 1 4.244 0Z"></path></svg>
+                              </Button>
+                            </div>
                             <p className="text-sm text-gray-600">{member.neighborhood}</p>
                           </div>
                           <Button
@@ -588,9 +602,17 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                           <div key={att.id} className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
                             <UserPlus className="h-4 w-4 text-orange-600" />
                             <span>{visitor.name}</span>
+                            {visitor.attendance_code && (
+                              <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
+                                Código: {visitor.attendance_code}
+                              </span>
+                            )}
                             <Badge variant="secondary" className="bg-orange-100 text-orange-800">
                               Visitante
                             </Badge>
+                            <Button size="icon" variant="ghost" className="ml-1" onClick={() => setEditContact(visitor)} title="Editar visitante">
+                              <svg width="16" height="16" fill="none" stroke="currentColor"><path d="M15.232 2.12a3 3 0 0 1 0 4.243l-8.61 8.611a2 2 0 0 1-1.049.555l-4.077.68.68-4.078a2 2 0 0 1 .555-1.048l8.61-8.611a3 3 0 0 1 4.244 0Z"></path></svg>
+                            </Button>
                           </div>
                         ) : null;
                       })}
