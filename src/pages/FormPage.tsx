@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +10,11 @@ import { toast } from '@/hooks/use-toast';
 
 export const FormPage = () => {
   const [searchParams] = useSearchParams();
+  const { keyword } = useParams();
+  
+  // Buscar parâmetros tanto da URL quanto dos searchParams
   const evento = searchParams.get('evento');
-  const cod = searchParams.get('cod');
+  const cod = searchParams.get('cod') || keyword;
   
   const [itemData, setItemData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -26,10 +28,22 @@ export const FormPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log('FormPage carregado com parâmetros:', { 
+      evento, 
+      cod, 
+      keyword, 
+      allSearchParams: Object.fromEntries(searchParams.entries()),
+      currentURL: window.location.href
+    });
+    
     if (evento || cod) {
       handleItemScan();
+    } else {
+      console.log('Nenhum parâmetro válido encontrado');
+      setError('Parâmetros não encontrados na URL');
+      setLoading(false);
     }
-  }, [evento, cod]);
+  }, [evento, cod, keyword]);
 
   const handleItemScan = async () => {
     try {
@@ -39,7 +53,7 @@ export const FormPage = () => {
 
       // Primeiro, tentar buscar por ID do evento se fornecido
       if (evento) {
-        console.log('Buscando evento por ID...');
+        console.log('Buscando evento por ID:', evento);
         const { data: eventData, error: eventError } = await supabase
           .from('events')
           .select('*')
@@ -79,6 +93,7 @@ export const FormPage = () => {
       // Se não encontrou por ID, tentar por código
       if (cod) {
         const normalizedCod = cod.toLowerCase().trim();
+        console.log('Buscando por código normalizado:', normalizedCod);
         
         // Buscar evento por keyword
         console.log('Buscando evento por código...');
@@ -230,6 +245,10 @@ export const FormPage = () => {
           <CardContent className="p-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Processando código...</p>
+            <div className="mt-4 text-xs text-gray-500">
+              <p>Parâmetros: evento={evento}, cod={cod}</p>
+              <p>URL: {window.location.href}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -244,16 +263,21 @@ export const FormPage = () => {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
               <AlertCircle className="w-6 h-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl text-red-600">Código Inválido</CardTitle>
+            <CardTitle className="text-xl text-red-600">Código Não Encontrado</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500 mb-4">
-              Parâmetros: evento={evento}, cod={cod}
-            </p>
-            <p className="text-sm text-gray-500">
-              Verifique se o código é válido ou entre em contato com o organizador.
-            </p>
+            <div className="space-y-2 text-sm text-gray-500">
+              <p>Parâmetros recebidos:</p>
+              <div className="bg-gray-100 p-2 rounded text-left">
+                <p>• evento: {evento || 'não fornecido'}</p>
+                <p>• cod: {cod || 'não fornecido'}</p>
+                <p>• keyword: {keyword || 'não fornecido'}</p>
+              </div>
+              <p className="mt-4">
+                Verifique se o código é válido ou entre em contato com o organizador.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
