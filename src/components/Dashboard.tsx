@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import DashboardCharts from "./DashboardCharts";
 
 // Ícones Lucide disponíveis: "Users", "UsersRound", "CircleCheck", "Home", "CalendarDays", "ChartBar", "ChartPie"
 export const Dashboard = () => {
@@ -93,7 +93,7 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto py-6">
+    <div className="space-y-10 max-w-6xl mx-auto py-6">
       <h1 className="text-2xl font-bold text-center mb-3">Painel de Indicadores</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         <Card>
@@ -177,9 +177,10 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+      {/* Bloco bonito de gráficos logo abaixo dos cards */}
+      <DashboardCharts stats={stats} />
     </div>
   );
 };
 
 export default Dashboard;
-
