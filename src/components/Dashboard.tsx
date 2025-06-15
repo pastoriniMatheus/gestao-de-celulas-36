@@ -48,6 +48,8 @@ export const Dashboard = () => {
 
   const activeEvents = events.filter(event => event.active).length;
   const activeCells = cells.filter(cell => cell.active).length;
+  const totalCells = cells.length;
+  const inactiveCells = totalCells - activeCells;
   const activeQRCodes = qrCodes.filter(qr => qr.active).length;
   const totalScans = [...events, ...qrCodes].reduce((sum, item) => sum + item.scan_count, 0);
 
@@ -81,11 +83,6 @@ export const Dashboard = () => {
       name: qr.title.length > 15 ? qr.title.substring(0, 15) + '...' : qr.title,
       scans: qr.scan_count
     }));
-
-  // Células: visual minimalista
-  const totalCells = cells.length;
-  const activeCells = cells.filter(cell => cell.active).length;
-  const inactiveCells = totalCells - activeCells;
 
   return (
     <div className="space-y-6">
