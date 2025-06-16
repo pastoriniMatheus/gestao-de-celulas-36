@@ -1,33 +1,24 @@
 
-import { useSystemConfig } from '@/hooks/useSystemConfig';
+import { Button } from "@/components/ui/button";
+import { UserMenu } from "./UserMenu";
+import { useAuth } from "./AuthProvider";
+import { BirthdayNotifications } from "./BirthdayNotifications";
 
-export const Header = () => {
-  const { config, loading } = useSystemConfig();
+interface HeaderProps {
+  title: string;
+}
 
-  if (loading) {
-    return (
-      <header className="bg-white shadow-sm border-b px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-200 rounded animate-pulse"></div>
-          <div className="w-32 h-6 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-      </header>
-    );
-  }
+export const Header = ({ title }: HeaderProps) => {
+  const { user } = useAuth();
 
   return (
-    <header className="bg-white shadow-sm border-b px-6 py-4">
-      <div className="flex items-center gap-3">
-        {config.site_logo?.url && (
-          <img 
-            src={config.site_logo.url} 
-            alt={config.site_logo.alt || 'Logo'}
-            className="h-10 w-auto object-contain"
-          />
-        )}
-        <h1 className="text-xl font-semibold text-gray-800">
-          {config.church_name?.text || config.form_title?.text || 'Sistema de Células'}
-        </h1>
+    <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+        <div className="flex items-center gap-4">
+          {user && <BirthdayNotifications />}
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

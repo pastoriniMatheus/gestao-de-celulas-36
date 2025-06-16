@@ -54,6 +54,41 @@ export type Database = {
           },
         ]
       }
+      birthday_notifications: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          notification_date: string
+          sent: boolean
+          sent_at: string | null
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          notification_date: string
+          sent?: boolean
+          sent_at?: string | null
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          notification_date?: string
+          sent?: boolean
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birthday_notifications_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       birthday_webhooks: {
         Row: {
           active: boolean
@@ -492,6 +527,66 @@ export type Database = {
           },
         ]
       }
+      sent_messages: {
+        Row: {
+          contact_id: string
+          created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          message_content: string
+          message_type: string
+          phone_number: string | null
+          sent_at: string | null
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_content: string
+          message_type?: string
+          phone_number?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_content?: string
+          message_type?: string
+          phone_number?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sent_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sent_messages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           created_at: string
@@ -576,6 +671,16 @@ export type Database = {
       check_birthdays_and_trigger_webhooks: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_today_birthdays: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          contact_id: string
+          contact_name: string
+          birth_date: string
+          whatsapp: string
+          age: number
+        }[]
       }
       increment_qr_scan_count: {
         Args: { qr_id: string; user_ip?: unknown; user_agent_string?: string }
