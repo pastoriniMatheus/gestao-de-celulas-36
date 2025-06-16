@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings as SettingsIcon, Shield, Tabs } from 'lucide-react';
+import { Settings as SettingsIcon, Shield } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { SystemSettingsManager } from './SystemSettingsManager';
 import { AppearanceSettings } from './AppearanceSettings';
