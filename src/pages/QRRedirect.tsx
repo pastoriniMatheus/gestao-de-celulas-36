@@ -21,7 +21,7 @@ export const QRRedirect = () => {
       currentOrigin: window.location.origin
     });
 
-    // Construir URL de redirecionamento usando o domínio atual
+    // Construir URL de redirecionamento
     let redirectUrl = '/form';
     const params = new URLSearchParams();
 
@@ -40,13 +40,9 @@ export const QRRedirect = () => {
     // Se há parâmetros, adicionar à URL
     if (params.toString()) {
       redirectUrl += `?${params.toString()}`;
-    } else if (keyword) {
-      // Se só tem keyword, usar como parâmetro de rota
-      redirectUrl += `/${keyword}`;
     }
 
     console.log('QRRedirect: URL final de redirecionamento:', redirectUrl);
-    console.log('QRRedirect: Domínio atual:', window.location.origin);
     
     // Pequeno delay para garantir que o console.log seja visível
     setTimeout(() => {
@@ -61,7 +57,6 @@ export const QRRedirect = () => {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Redirecionando...</h3>
           <p className="text-sm text-gray-500">Aguarde um momento</p>
-          <p className="text-xs text-gray-400 mt-2">Domínio: {window.location.origin}</p>
         </CardContent>
       </Card>
     </div>

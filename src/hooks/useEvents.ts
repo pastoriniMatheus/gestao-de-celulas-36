@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -42,7 +41,14 @@ export const useEvents = () => {
       }
 
       console.log('Eventos encontrados:', data);
-      setEvents(data || []);
+      
+      // Atualizar URLs dinamicamente com domínio atual
+      const updatedData = (data || []).map(event => ({
+        ...event,
+        qr_url: `${window.location.origin}/form?evento=${event.id}&cod=${event.keyword}`
+      }));
+      
+      setEvents(updatedData);
     } catch (error) {
       console.error('Erro ao buscar eventos:', error);
     } finally {
@@ -98,7 +104,6 @@ export const useEvents = () => {
 
       // Gerar URL com parâmetros usando o ID do evento
       const baseUrl = window.location.origin;
-      // Usar o endpoint /form diretamente com parâmetros
       const redirectUrl = `${baseUrl}/form?evento=${newEvent.id}&cod=${normalizedKeyword}`;
       
       console.log('useEvents: Gerando QR code para URL:', redirectUrl);
@@ -271,17 +276,146 @@ export const useEvents = () => {
     }
   };
 
+  // Configurar atualização em tempo real
   useEffect(() => {
     fetchEvents();
+
+    const channel = supabase
+      .channel('events_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('Evento alterado:', payload);
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {
     events,
     loading,
     addEvent,
-    updateEvent,
-    deleteEvent,
-    toggleEventStatus,
+    updateEvent: async (id: string, updates: Partial<Event>) => {
+      try {
+        // Se estiver atualizando keyword, regenerar QR code
+        if (updates.keyword) {
+          const normalizedKeyword = updates.keyword.toLowerCase().trim();
+          
+          // Verificar se keyword já existe (exceto no próprio evento)
+          const { data: existingEvent } = await supabase
+            .from('events')
+            .select('id')
+            .eq('keyword', normalizedKeyword)
+            .neq('id', id)
+            .maybeSingle();
+
+          if (existingEvent) {
+            toast({
+              title: "Erro",
+              description: "Esta palavra-chave já existe. Escolha outra.",
+              variant: "destructive"
+            });
+            throw new Error('Keyword já existe');
+          }
+
+          const baseUrl = window.location.origin;
+          const redirectUrl = `${baseUrl}/form?evento=${id}&cod=${normalizedKeyword}`;
+          
+          console.log('useEvents: Atualizando QR code para URL:', redirectUrl);
+          
+          const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
+            width: 400,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            },
+            errorCorrectionLevel: 'M'
+          });
+
+          updates.keyword = normalizedKeyword;
+          updates.qr_url = redirectUrl;
+          updates.qr_code = qrCodeDataUrl;
+        }
+
+        const { data, error } = await supabase
+          .from('events')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Erro ao atualizar evento:', error);
+          throw error;
+        }
+
+        toast({
+          title: "Sucesso",
+          description: "Evento atualizado com sucesso!"
+        });
+
+        await fetchEvents();
+        return data;
+      } catch (error) {
+        console.error('Erro ao atualizar evento:', error);
+        throw error;
+      }
+    },
+    toggleEventStatus: async (id: string, active: boolean) => {
+      try {
+        const { error } = await supabase
+          .from('events')
+          .update({ active })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: `Evento ${active ? 'ativado' : 'desativado'} com sucesso!`
+        });
+
+        await fetchEvents();
+      } catch (error) {
+        console.error('Erro ao atualizar status:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao atualizar status do evento",
+          variant: "destructive"
+        });
+      }
+    },
+    deleteEvent: async (id: string) => {
+      try {
+        const { error } = await supabase
+          .from('events')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Evento excluído com sucesso!"
+        });
+
+        await fetchEvents();
+      } catch (error) {
+        console.error('Erro ao deletar evento:', error);
+        throw error;
+      }
+    },
     fetchEvents
   };
 };

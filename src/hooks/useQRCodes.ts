@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -42,7 +43,14 @@ export const useQRCodes = () => {
       }
 
       console.log('QR codes encontrados:', data);
-      setQRCodes(data || []);
+      
+      // Atualizar URLs dinamicamente com domínio atual
+      const updatedData = (data || []).map(qr => ({
+        ...qr,
+        url: `${window.location.origin}/qr/${qr.keyword}`
+      }));
+      
+      setQRCodes(updatedData);
     } catch (error) {
       console.error('Erro crítico ao buscar QR codes:', error);
     } finally {
@@ -202,12 +210,81 @@ export const useQRCodes = () => {
     }
   }, [user]);
 
+  // Configurar atualização em tempo real
+  useEffect(() => {
+    const channel = supabase
+      .channel('qr_codes_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'qr_codes'
+        },
+        (payload) => {
+          console.log('QR code alterado:', payload);
+          fetchQRCodes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     qrCodes,
     loading,
     createQRCode,
-    toggleQRCodeStatus,
-    deleteQRCode,
+    toggleQRCodeStatus: async (id: string, active: boolean) => {
+      try {
+        const { error } = await supabase
+          .from('qr_codes')
+          .update({ active })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: `QR code ${active ? 'ativado' : 'desativado'} com sucesso!`
+        });
+
+        await fetchQRCodes();
+      } catch (error) {
+        console.error('Erro ao atualizar status:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao atualizar status do QR code",
+          variant: "destructive"
+        });
+      }
+    },
+    deleteQRCode: async (id: string) => {
+      try {
+        const { error } = await supabase
+          .from('qr_codes')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "QR code deletado com sucesso!"
+        });
+
+        await fetchQRCodes();
+      } catch (error) {
+        console.error('Erro ao deletar QR code:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao deletar QR code",
+          variant: "destructive"
+        });
+      }
+    },
     refreshQRCodes: fetchQRCodes
   };
 };

@@ -17,13 +17,13 @@ interface EditContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contact: any;
-  context?: 'cell' | 'contacts'; // Adicionar contexto para determinar quais botões mostrar
+  context?: 'cell' | 'contacts';
 }
 
 export function EditContactDialog({ open, onOpenChange, contact, context = 'contacts' }: EditContactDialogProps) {
   const { updateContact } = useContacts();
   const { neighborhoods, cities } = useContactDialogData(open);
-  const { cells } = useCells();
+  const { cells, fetchCells } = useCells();
 
   const [form, setForm] = useState({
     name: contact?.name ?? '',
@@ -62,7 +62,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateContact(contact.id, {
+      // Preparar dados para atualização mantendo a célula original se não foi alterada
+      const updateData = {
         name: form.name,
         whatsapp: form.whatsapp,
         neighborhood: form.neighborhood,
@@ -70,8 +71,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         age: form.age ? parseInt(form.age) : null,
         encounter_with_god: !!form.encounter_with_god,
         status: form.status,
-        cell_id: form.cell_id || null,
-      });
+        // Manter cell_id original se não foi alterado explicitamente
+        cell_id: form.cell_id || contact.cell_id || null,
+      };
+
+      await updateContact(contact.id, updateData);
       toast({
         title: "Sucesso",
         description: "Contato atualizado com sucesso!",
@@ -93,7 +97,9 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     setSaving(true);
     try {
       await updateContact(contact.id, {
-        status: 'member'
+        status: 'member',
+        // Manter a célula atual
+        cell_id: contact.cell_id
       });
       toast({
         title: "Sucesso",
@@ -147,8 +153,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   // Botão "Transformar em Membro" só aparece para visitantes no contexto de células
   const showTransformButton = context === 'cell' && isVisitor;
   
-  // Botão "Transferir Célula" aparece para membros em ambos os contextos
-  const showTransferButton = isMember && contact?.cell_id !== form.cell_id;
+  // Botão "Transferir Célula" aparece para membros quando a célula é diferente da atual
+  const showTransferButton = isMember && contact?.cell_id !== form.cell_id && form.cell_id;
   
   // Campo de célula aparece para membros ou no contexto de contatos
   const showCellField = isMember || context === 'contacts';
@@ -260,7 +266,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                   ))}
                 </SelectContent>
               </Select>
-              {contact.cell_id && contact.cell_id !== form.cell_id && (
+              {contact.cell_id && (
                 <p className="text-xs text-gray-500 mt-1">
                   Atual: {getCellName(contact.cell_id)}
                 </p>
@@ -309,7 +315,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
               <ArrowRightLeft className="w-4 h-4 mr-2" />
-              {saving ? "Transferindo..." : "Transferir para Célula"}
+              {saving ? "Transferindo..." : "Transferir para Nova Célula"}
             </Button>
           )}
 

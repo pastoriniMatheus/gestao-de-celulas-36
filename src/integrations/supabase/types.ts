@@ -429,6 +429,14 @@ export type Database = {
       }
     }
     Functions: {
+      can_delete_city: {
+        Args: { city_uuid: string }
+        Returns: boolean
+      }
+      can_delete_neighborhood: {
+        Args: { neighborhood_name: string }
+        Returns: boolean
+      }
       increment_qr_scan_count: {
         Args: { qr_id: string; user_ip?: unknown; user_agent_string?: string }
         Returns: undefined

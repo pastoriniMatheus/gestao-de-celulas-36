@@ -24,11 +24,7 @@ export const Header = () => {
             alt={config.site_logo.alt}
             className="h-10 w-auto"
           />
-        ) : (
-          <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center">
-            <span className="text-white font-bold text-lg">C</span>
-          </div>
-        )}
+        ) : null}
         <h1 className="text-xl font-semibold text-gray-800">
           {config.form_title.text || 'Sistema de Células'}
         </h1>

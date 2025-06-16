@@ -46,7 +46,6 @@ export function CellQrCode({ cellId }: CellQrCodeProps) {
       <div className="text-xs mt-2 break-all text-center max-w-xs">
         {cellUrl}
       </div>
-      <div className="text-xs text-gray-500">Domínio atual: {window.location.origin}</div>
       <div className="flex gap-2">
         <Button size="sm" variant="outline" onClick={handleCopy}>Copiar link</Button>
         <Button size="sm" variant="outline" onClick={handleDownload}>Baixar QR</Button>
