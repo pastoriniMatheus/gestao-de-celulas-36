@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,10 @@ interface AppearanceConfig {
 export const AppearanceSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
+  
   const [config, setConfig] = useState<AppearanceConfig>({
     site_logo: { url: '', alt: 'Logo da Igreja' },
     favicon: { url: '' },
@@ -60,6 +64,67 @@ export const AppearanceSettings = () => {
       console.error('Erro crítico ao carregar configurações:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Erro",
+        description: "Tipo de arquivo não suportado. Use PNG, JPG, GIF ou SVG.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar tamanho (máximo 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Erro",
+        description: "Arquivo muito grande. Máximo 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Converter arquivo para base64 para simular upload
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const result = e.target?.result as string;
+        
+        if (type === 'logo') {
+          setConfig(prev => ({
+            ...prev,
+            site_logo: { ...prev.site_logo, url: result }
+          }));
+        } else {
+          setConfig(prev => ({
+            ...prev,
+            favicon: { url: result }
+          }));
+        }
+
+        toast({
+          title: "Sucesso",
+          description: `${type === 'logo' ? 'Logo' : 'Favicon'} carregado! Não esqueça de salvar as configurações.`,
+        });
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer upload da imagem",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -150,26 +215,54 @@ export const AppearanceSettings = () => {
 
         {/* Logo da Igreja */}
         <div className="space-y-2">
-          <Label htmlFor="logo-url">Logo da Igreja</Label>
-          <Input
-            id="logo-url"
-            type="url"
-            value={config.site_logo.url}
-            onChange={(e) => setConfig(prev => ({
-              ...prev,
-              site_logo: { ...prev.site_logo, url: e.target.value }
-            }))}
-            placeholder="https://exemplo.com/logo.png"
-          />
-          <p className="text-sm text-gray-500">
-            URL da imagem do logo que aparecerá no sistema
-          </p>
+          <Label>Logo da Igreja</Label>
+          <div className="flex gap-4 items-start">
+            <div className="flex-1">
+              <Input
+                type="url"
+                value={config.site_logo.url}
+                onChange={(e) => setConfig(prev => ({
+                  ...prev,
+                  site_logo: { ...prev.site_logo, url: e.target.value }
+                }))}
+                placeholder="https://exemplo.com/logo.png ou carregue um arquivo"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                URL da imagem do logo que aparecerá no sistema
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {uploading ? 'Carregando...' : 'Carregar'}
+              </Button>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file, 'logo');
+                }}
+              />
+            </div>
+          </div>
           {config.site_logo.url && (
             <div className="mt-2">
               <img 
                 src={config.site_logo.url} 
                 alt="Preview do logo"
                 className="h-16 w-auto border rounded"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </div>
           )}
@@ -177,20 +270,57 @@ export const AppearanceSettings = () => {
 
         {/* Favicon */}
         <div className="space-y-2">
-          <Label htmlFor="favicon-url">Favicon</Label>
-          <Input
-            id="favicon-url"
-            type="url"
-            value={config.favicon.url}
-            onChange={(e) => setConfig(prev => ({
-              ...prev,
-              favicon: { url: e.target.value }
-            }))}
-            placeholder="https://exemplo.com/favicon.png"
-          />
-          <p className="text-sm text-gray-500">
-            URL do ícone que aparecerá na aba do navegador
-          </p>
+          <Label>Favicon</Label>
+          <div className="flex gap-4 items-start">
+            <div className="flex-1">
+              <Input
+                type="url"
+                value={config.favicon.url}
+                onChange={(e) => setConfig(prev => ({
+                  ...prev,
+                  favicon: { url: e.target.value }
+                }))}
+                placeholder="https://exemplo.com/favicon.png ou carregue um arquivo"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                URL do ícone que aparecerá na aba do navegador
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => faviconInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {uploading ? 'Carregando...' : 'Carregar'}
+              </Button>
+              <input
+                ref={faviconInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file, 'favicon');
+                }}
+              />
+            </div>
+          </div>
+          {config.favicon.url && (
+            <div className="mt-2">
+              <img 
+                src={config.favicon.url} 
+                alt="Preview do favicon"
+                className="h-8 w-8 border rounded"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Cores do Sistema */}
@@ -298,7 +428,7 @@ export const AppearanceSettings = () => {
 
         <Button 
           onClick={saveSettings} 
-          disabled={saving}
+          disabled={saving || uploading}
           className="w-full"
         >
           <Save className="w-4 h-4 mr-2" />

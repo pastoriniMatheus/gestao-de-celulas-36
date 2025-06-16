@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -186,6 +187,57 @@ export const useContacts = () => {
     }
   };
 
+  const canDeleteCity = async (cityId: string) => {
+    try {
+      // Verificar se há contatos usando esta cidade
+      const { count: contactsCount, error: contactsError } = await supabase
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .eq('city_id', cityId);
+
+      if (contactsError) {
+        console.error('Erro ao verificar contatos da cidade:', contactsError);
+        return false;
+      }
+
+      // Verificar se há bairros vinculados a esta cidade
+      const { count: neighborhoodsCount, error: neighborhoodsError } = await supabase
+        .from('neighborhoods')
+        .select('id', { count: 'exact', head: true })
+        .eq('city_id', cityId);
+
+      if (neighborhoodsError) {
+        console.error('Erro ao verificar bairros da cidade:', neighborhoodsError);
+        return false;
+      }
+
+      return (contactsCount ?? 0) === 0 && (neighborhoodsCount ?? 0) === 0;
+    } catch (err) {
+      console.error('Erro ao verificar se cidade pode ser deletada:', err);
+      return false;
+    }
+  };
+
+  const canDeleteNeighborhood = async (neighborhoodName: string) => {
+    try {
+      // Verificar se há contatos usando este bairro
+      const { count, error } = await supabase
+        .from('contacts')
+        .select('id', { count: 'exact', head: true })
+        .eq('neighborhood', neighborhoodName);
+
+      if (error) {
+        console.error('Erro ao verificar contatos do bairro:', error);
+        return false;
+      }
+
+      return (count ?? 0) === 0;
+    } catch (err) {
+      console.error('Erro ao verificar se bairro pode ser deletado:', err);
+      return false;
+    }
+  };
+
   // Configurar atualização em tempo real
   useEffect(() => {
     fetchContacts();
@@ -240,6 +292,8 @@ export const useContacts = () => {
     updateContact,
     deleteContact,
     fetchContacts,
-    canDeleteCell
+    canDeleteCell,
+    canDeleteCity,
+    canDeleteNeighborhood
   };
 };

@@ -6,15 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useContacts } from '@/hooks/useContacts';
 import { useContactDialogData } from '@/hooks/useContactDialogData';
+import { useCells } from '@/hooks/useCells';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserCheck } from 'lucide-react';
+import { UserCheck, ArrowRightLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export function EditContactDialog({ open, onOpenChange, contact }) {
   const { updateContact } = useContacts();
   const { neighborhoods, cities } = useContactDialogData(open);
+  const { cells } = useCells();
 
   const [form, setForm] = useState({
     name: contact?.name ?? '',
@@ -24,6 +26,7 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
     age: contact?.age ?? '',
     encounter_with_god: contact?.encounter_with_god ?? false,
     status: contact?.status ?? 'pending',
+    cell_id: contact?.cell_id ?? '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -41,6 +44,7 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
       age: contact?.age ?? '',
       encounter_with_god: contact?.encounter_with_god ?? false,
       status: contact?.status ?? 'pending',
+      cell_id: contact?.cell_id ?? '',
     });
   }, [contact, neighborhoods]);
 
@@ -59,8 +63,20 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
         age: form.age ? parseInt(form.age) : null,
         encounter_with_god: !!form.encounter_with_god,
         status: form.status,
+        cell_id: form.cell_id || null,
+      });
+      toast({
+        title: "Sucesso",
+        description: "Contato atualizado com sucesso!",
       });
       onOpenChange(false);
+    } catch (error) {
+      console.error('Erro ao atualizar contato:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar contato",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -78,6 +94,7 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
       });
       onOpenChange(false);
     } catch (error) {
+      console.error('Erro ao transformar em membro:', error);
       toast({
         title: "Erro",
         description: "Erro ao transformar visitante em membro",
@@ -86,6 +103,34 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTransferCell = async () => {
+    setSaving(true);
+    try {
+      await updateContact(contact.id, {
+        cell_id: form.cell_id || null,
+      });
+      toast({
+        title: "Sucesso",
+        description: "Membro transferido para nova célula com sucesso!",
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Erro ao transferir célula:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao transferir membro para célula",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getCellName = (cellId: string) => {
+    const cell = cells.find(c => c.id === cellId);
+    return cell ? cell.name : 'Célula não encontrada';
   };
 
   return (
@@ -169,6 +214,40 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Campo de célula para membros */}
+          {form.status === 'member' && (
+            <div>
+              <Label htmlFor="edit-contact-cell">Célula</Label>
+              <Select
+                value={form.cell_id || "no-cell"}
+                onValueChange={value =>
+                  setForm(f => ({
+                    ...f,
+                    cell_id: value === "no-cell" ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger id="edit-contact-cell">
+                  <SelectValue placeholder="Selecione a célula" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-cell">Sem célula</SelectItem>
+                  {cells.map(cell => (
+                    <SelectItem key={cell.id} value={cell.id}>
+                      {cell.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {contact.cell_id && contact.cell_id !== form.cell_id && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Atual: {getCellName(contact.cell_id)}
+                </p>
+              )}
+            </div>
+          )}
+
           <div>
             <Label htmlFor="edit-contact-age">Idade</Label>
             <Input
@@ -190,6 +269,7 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
           </div>
         </div>
         <DialogFooter className="flex-col gap-2">
+          {/* Botão para transformar visitante em membro */}
           {form.status !== 'member' && (
             <Button 
               onClick={handleTransformToMember} 
@@ -200,6 +280,19 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
               {saving ? "Transformando..." : "Transformar em Membro"}
             </Button>
           )}
+
+          {/* Botão para transferir membro de célula */}
+          {form.status === 'member' && contact.cell_id !== form.cell_id && (
+            <Button 
+              onClick={handleTransferCell} 
+              disabled={saving}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              <ArrowRightLeft className="w-4 h-4 mr-2" />
+              {saving ? "Transferindo..." : "Transferir para Célula"}
+            </Button>
+          )}
+
           <div className="flex gap-2 w-full">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving} className="flex-1">
               Cancelar
