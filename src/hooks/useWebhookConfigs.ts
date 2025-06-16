@@ -122,9 +122,13 @@ export const useWebhookConfigs = () => {
   useEffect(() => {
     fetchWebhooks();
 
+    // Create a unique channel name to prevent conflicts
+    const channelName = `webhook-configs-changes-${Date.now()}-${Math.random()}`;
+    console.log('Creating webhook configs channel:', channelName);
+
     // Real-time updates
     const channel = supabase
-      .channel('webhook-configs-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -136,9 +140,12 @@ export const useWebhookConfigs = () => {
           fetchWebhooks();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Webhook configs channel subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up webhook configs channel...');
       supabase.removeChannel(channel);
     };
   }, []);

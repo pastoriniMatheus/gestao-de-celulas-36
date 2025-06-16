@@ -112,9 +112,13 @@ export const useBirthdayWebhooks = () => {
   useEffect(() => {
     fetchWebhooks();
 
+    // Create a unique channel name to prevent conflicts
+    const channelName = `birthday-webhooks-changes-${Date.now()}-${Math.random()}`;
+    console.log('Creating birthday webhooks channel:', channelName);
+
     // Configurar real-time
     const channel = supabase
-      .channel('birthday-webhooks-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -123,12 +127,15 @@ export const useBirthdayWebhooks = () => {
           table: 'birthday_webhooks'
         },
         () => {
-          fetchWebhooks();
+          fetchTemplates();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Birthday webhooks channel subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up birthday webhooks channel...');
       supabase.removeChannel(channel);
     };
   }, []);

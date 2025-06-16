@@ -35,7 +35,9 @@ export const useMessageTemplates = () => {
         template_type: item.template_type as 'birthday' | 'welcome' | 'reminder' | 'custom',
         subject: item.subject || undefined,
         message: item.message,
-        variables: Array.isArray(item.variables) ? item.variables.filter(v => typeof v === 'string') : [],
+        variables: Array.isArray(item.variables) 
+          ? item.variables.filter(v => typeof v === 'string').map(v => String(v))
+          : [],
         active: item.active,
         created_at: item.created_at,
         updated_at: item.updated_at
@@ -130,9 +132,13 @@ export const useMessageTemplates = () => {
   useEffect(() => {
     fetchTemplates();
 
+    // Create a unique channel name to prevent conflicts
+    const channelName = `message-templates-changes-${Date.now()}-${Math.random()}`;
+    console.log('Creating message templates channel:', channelName);
+
     // Real-time updates
     const channel = supabase
-      .channel('message-templates-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -144,9 +150,12 @@ export const useMessageTemplates = () => {
           fetchTemplates();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Message templates channel subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up message templates channel...');
       supabase.removeChannel(channel);
     };
   }, []);
