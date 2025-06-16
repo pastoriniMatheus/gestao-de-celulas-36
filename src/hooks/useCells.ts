@@ -108,9 +108,13 @@ export const useCells = () => {
   useEffect(() => {
     fetchCells();
 
+    // Create a unique channel name to prevent conflicts
+    const channelName = `cells-realtime-changes-${Date.now()}-${Math.random()}`;
+    console.log('Creating cells channel:', channelName);
+
     // Configurar real-time updates melhorado
     const channel = supabase
-      .channel('cells-realtime-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -132,9 +136,12 @@ export const useCells = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Cells channel subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up cells channel...');
       supabase.removeChannel(channel);
     };
   }, []);

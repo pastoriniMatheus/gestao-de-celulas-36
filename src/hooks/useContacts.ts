@@ -49,7 +49,7 @@ export const useContacts = () => {
         encounter_with_god: contact.encounter_with_god,
         pipeline_stage_id: contact.pipeline_stage_id,
         age: contact.age,
-        birth_date: contact.birth_date || null,
+        birth_date: (contact as any).birth_date || null,
         attendance_code: contact.attendance_code,
         created_at: contact.created_at,
         updated_at: contact.updated_at
@@ -93,7 +93,7 @@ export const useContacts = () => {
         encounter_with_god: data.encounter_with_god,
         pipeline_stage_id: data.pipeline_stage_id,
         age: data.age,
-        birth_date: data.birth_date || null,
+        birth_date: (data as any).birth_date || null,
         attendance_code: data.attendance_code,
         created_at: data.created_at,
         updated_at: data.updated_at
@@ -138,7 +138,7 @@ export const useContacts = () => {
         encounter_with_god: data.encounter_with_god,
         pipeline_stage_id: data.pipeline_stage_id,
         age: data.age,
-        birth_date: data.birth_date || null,
+        birth_date: (data as any).birth_date || null,
         attendance_code: data.attendance_code,
         created_at: data.created_at,
         updated_at: data.updated_at
@@ -208,7 +208,7 @@ export const useContacts = () => {
               encounter_with_god: payload.new.encounter_with_god,
               pipeline_stage_id: payload.new.pipeline_stage_id,
               age: payload.new.age,
-              birth_date: payload.new.birth_date || null,
+              birth_date: (payload.new as any).birth_date || null,
               attendance_code: payload.new.attendance_code,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
@@ -226,7 +226,7 @@ export const useContacts = () => {
               encounter_with_god: payload.new.encounter_with_god,
               pipeline_stage_id: payload.new.pipeline_stage_id,
               age: payload.new.age,
-              birth_date: payload.new.birth_date || null,
+              birth_date: (payload.new as any).birth_date || null,
               attendance_code: payload.new.attendance_code,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
