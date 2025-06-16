@@ -6,10 +6,10 @@ import { ContactFormData } from '@/hooks/useContactForm';
 interface BasicInfoFieldsProps {
   formData: ContactFormData;
   onUpdateFormData: (updates: Partial<ContactFormData>) => void;
-  showAge?: boolean;
+  showBirthDate?: boolean;
 }
 
-export const BasicInfoFields = ({ formData, onUpdateFormData, showAge }: BasicInfoFieldsProps) => {
+export const BasicInfoFields = ({ formData, onUpdateFormData, showBirthDate }: BasicInfoFieldsProps) => {
   return (
     <>
       <div>
@@ -42,20 +42,17 @@ export const BasicInfoFields = ({ formData, onUpdateFormData, showAge }: BasicIn
           placeholder="email@exemplo.com"
         />
       </div>
-      {showAge && (
+      {showBirthDate && (
         <div>
-          <Label htmlFor="age">Idade</Label>
+          <Label htmlFor="birth_date">Data de Nascimento</Label>
           <Input
-            id="age"
-            type="number"
-            min={0}
-            value={formData.age !== null ? formData.age : ''}
-            onChange={e => onUpdateFormData({ age: e.target.value ? Number(e.target.value) : null })}
-            placeholder="Idade"
+            id="birth_date"
+            type="date"
+            value={formData.birth_date || ''}
+            onChange={e => onUpdateFormData({ birth_date: e.target.value })}
           />
         </div>
       )}
     </>
   );
 };
-
