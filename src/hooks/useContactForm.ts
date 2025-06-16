@@ -9,7 +9,7 @@ export interface ContactFormData {
   neighborhood: string;
   referred_by: string;
   cell_id: string;
-  age: number | null;
+  birth_date: string;
   encounter_with_god: boolean;
 }
 
@@ -22,7 +22,7 @@ export const useContactForm = () => {
     neighborhood: '',
     referred_by: '',
     cell_id: '',
-    age: null,
+    birth_date: '',
     encounter_with_god: false,
   });
 
@@ -39,7 +39,7 @@ export const useContactForm = () => {
       neighborhood: '',
       referred_by: '',
       cell_id: '',
-      age: null,
+      birth_date: '',
       encounter_with_god: false,
     });
   };

@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, MapPin, Phone, User, Home } from 'lucide-react';
+import { Users, MapPin, Phone, User, Home, Calendar } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
 import { useToast } from '@/hooks/use-toast';
@@ -147,6 +146,23 @@ export const PendingContactsManager = () => {
     });
   };
 
+  const formatBirthDate = (birthDate: string) => {
+    if (!birthDate) return null;
+    return new Date(birthDate).toLocaleDateString('pt-BR');
+  };
+
+  const calculateAge = (birthDate: string) => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -189,8 +205,14 @@ export const PendingContactsManager = () => {
                             <MapPin className="h-4 w-4" />
                             <span>{contact.neighborhood}</span>
                           </div>
-                          {contact.age && (
-                            <span className="text-xs">Idade: {contact.age} anos</span>
+                          {contact.birth_date && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              <span>
+                                {formatBirthDate(contact.birth_date)}
+                                {calculateAge(contact.birth_date) && ` (${calculateAge(contact.birth_date)} anos)`}
+                              </span>
+                            </div>
                           )}
                           <span className="text-xs text-gray-500">
                             Cadastrado em: {formatDate(contact.created_at)}

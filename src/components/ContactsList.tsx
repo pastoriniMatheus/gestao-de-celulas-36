@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Phone, MapPin, Home, Search, Filter, Trash2, Edit } from 'lucide-react';
+import { Users, Phone, MapPin, Home, Search, Filter, Trash2, Edit, Calendar } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
 import {
@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/components/ui/alert-dialog"; // Importa dialog de alerta shadcn/ui
+} from "@/components/ui/alert-dialog";
 import { EditContactDialog } from './EditContactDialog';
 
 export const ContactsList = () => {
@@ -49,6 +49,23 @@ export const ContactsList = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const formatBirthDate = (birthDate: string) => {
+    if (!birthDate) return null;
+    return new Date(birthDate).toLocaleDateString('pt-BR');
+  };
+
+  const calculateAge = (birthDate: string) => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   const getStatusBadge = (status: string) => {
@@ -271,9 +288,13 @@ export const ContactsList = () => {
                         <span>{getCellName(contact.cell_id)}</span>
                       </div>
 
-                      {contact.age && (
-                        <div className="text-xs">
-                          Idade: {contact.age} anos
+                      {contact.birth_date && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {formatBirthDate(contact.birth_date)} 
+                            {calculateAge(contact.birth_date) && ` (${calculateAge(contact.birth_date)} anos)`}
+                          </span>
                         </div>
                       )}
 
