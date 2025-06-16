@@ -13,7 +13,14 @@ import { Badge } from '@/components/ui/badge';
 import { UserCheck, ArrowRightLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-export function EditContactDialog({ open, onOpenChange, contact }) {
+interface EditContactDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  contact: any;
+  context?: 'cell' | 'contacts'; // Adicionar contexto para determinar quais botões mostrar
+}
+
+export function EditContactDialog({ open, onOpenChange, contact, context = 'contacts' }: EditContactDialogProps) {
   const { updateContact } = useContacts();
   const { neighborhoods, cities } = useContactDialogData(open);
   const { cells } = useCells();
@@ -133,14 +140,27 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
     return cell ? cell.name : 'Célula não encontrada';
   };
 
+  // Determinar quais botões mostrar baseado no contexto e status
+  const isVisitor = contact?.status === 'visitor';
+  const isMember = contact?.status === 'member';
+  
+  // Botão "Transformar em Membro" só aparece para visitantes no contexto de células
+  const showTransformButton = context === 'cell' && isVisitor;
+  
+  // Botão "Transferir Célula" aparece para membros em ambos os contextos
+  const showTransferButton = isMember && contact?.cell_id !== form.cell_id;
+  
+  // Campo de célula aparece para membros ou no contexto de contatos
+  const showCellField = isMember || context === 'contacts';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Editar {form.status === 'member' ? 'Membro' : 'Visitante'}
-            <Badge variant={form.status === 'member' ? 'default' : 'secondary'}>
-              {form.status === 'member' ? 'Membro' : 'Visitante'}
+            Editar {isMember ? 'Membro' : isVisitor ? 'Visitante' : 'Contato'}
+            <Badge variant={isMember ? 'default' : isVisitor ? 'secondary' : 'outline'}>
+              {isMember ? 'Membro' : isVisitor ? 'Visitante' : 'Pendente'}
             </Badge>
           </DialogTitle>
         </DialogHeader>
@@ -215,8 +235,8 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
             </Select>
           </div>
 
-          {/* Campo de célula para membros */}
-          {form.status === 'member' && (
+          {/* Campo de célula para membros ou contexto de contatos */}
+          {showCellField && (
             <div>
               <Label htmlFor="edit-contact-cell">Célula</Label>
               <Select
@@ -269,8 +289,8 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
           </div>
         </div>
         <DialogFooter className="flex-col gap-2">
-          {/* Botão para transformar visitante em membro */}
-          {form.status !== 'member' && (
+          {/* Botão para transformar visitante em membro - apenas no contexto de células */}
+          {showTransformButton && (
             <Button 
               onClick={handleTransformToMember} 
               disabled={saving}
@@ -282,7 +302,7 @@ export function EditContactDialog({ open, onOpenChange, contact }) {
           )}
 
           {/* Botão para transferir membro de célula */}
-          {form.status === 'member' && contact.cell_id !== form.cell_id && (
+          {showTransferButton && (
             <Button 
               onClick={handleTransferCell} 
               disabled={saving}

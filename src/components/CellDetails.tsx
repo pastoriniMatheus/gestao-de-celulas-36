@@ -645,11 +645,12 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Adiciona o Dialog para Edição de Membro/Visitante */}
+      {/* Adiciona o Dialog para Edição de Membro/Visitante - passando contexto 'cell' */}
       {editContact && (
         <EditContactDialog
           open={!!editContact}
           contact={editContact}
+          context="cell"
           onOpenChange={(open) => setEditContact(open ? editContact : null)}
         />
       )}

@@ -8,8 +8,13 @@ type CellQrCodeProps = {
 };
 
 export function CellQrCode({ cellId }: CellQrCodeProps) {
-  // Link único para presença
-  const cellUrl = useMemo(() => `${window.location.origin}/cells/${cellId}/attendance`, [cellId]);
+  // Link único para presença usando o domínio atual dinamicamente
+  const cellUrl = useMemo(() => {
+    const currentOrigin = window.location.origin;
+    const url = `${currentOrigin}/cells/${cellId}/attendance`;
+    console.log('CellQrCode: URL gerada:', url);
+    return url;
+  }, [cellId]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(cellUrl);
@@ -38,7 +43,10 @@ export function CellQrCode({ cellId }: CellQrCodeProps) {
         renderAs="canvas"
         style={{ borderRadius: 12, border: "1px solid #bcd" }}
       />
-      <div className="text-xs mt-2 break-all text-center">{cellUrl}</div>
+      <div className="text-xs mt-2 break-all text-center max-w-xs">
+        {cellUrl}
+      </div>
+      <div className="text-xs text-gray-500">Domínio atual: {window.location.origin}</div>
       <div className="flex gap-2">
         <Button size="sm" variant="outline" onClick={handleCopy}>Copiar link</Button>
         <Button size="sm" variant="outline" onClick={handleDownload}>Baixar QR</Button>
