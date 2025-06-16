@@ -9,433 +9,108 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      attendances: {
-        Row: {
-          attendance_date: string
-          cell_id: string
-          contact_id: string
-          created_at: string
-          id: string
-          present: boolean
-          visitor: boolean
-        }
-        Insert: {
-          attendance_date: string
-          cell_id: string
-          contact_id: string
-          created_at?: string
-          id?: string
-          present?: boolean
-          visitor?: boolean
-        }
-        Update: {
-          attendance_date?: string
-          cell_id?: string
-          contact_id?: string
-          created_at?: string
-          id?: string
-          present?: boolean
-          visitor?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendances_cell_id_fkey"
-            columns: ["cell_id"]
-            isOneToOne: false
-            referencedRelation: "cells"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendances_contact_id_fkey"
-            columns: ["contact_id"]
-            isOneToOne: false
-            referencedRelation: "contacts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cells: {
-        Row: {
-          active: boolean
-          address: string
-          created_at: string
-          id: string
-          leader_id: string | null
-          meeting_day: number
-          meeting_time: string
-          name: string
-          neighborhood_id: string | null
-          qr_code_token: string | null
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          address: string
-          created_at?: string
-          id?: string
-          leader_id?: string | null
-          meeting_day: number
-          meeting_time: string
-          name: string
-          neighborhood_id?: string | null
-          qr_code_token?: string | null
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          address?: string
-          created_at?: string
-          id?: string
-          leader_id?: string | null
-          meeting_day?: number
-          meeting_time?: string
-          name?: string
-          neighborhood_id?: string | null
-          qr_code_token?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cells_leader_id_fkey"
-            columns: ["leader_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cells_neighborhood_id_fkey"
-            columns: ["neighborhood_id"]
-            isOneToOne: false
-            referencedRelation: "neighborhood_stats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cells_neighborhood_id_fkey"
-            columns: ["neighborhood_id"]
-            isOneToOne: false
-            referencedRelation: "neighborhoods"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cities: {
-        Row: {
-          active: boolean
-          created_at: string
-          id: string
-          name: string
-          state: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          id?: string
-          name: string
-          state: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          id?: string
-          name?: string
-          state?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      contacts: {
-        Row: {
-          age: number | null
-          attendance_code: string | null
-          cell_id: string | null
-          city_id: string | null
-          created_at: string
-          encounter_with_god: boolean
-          id: string
-          name: string
-          neighborhood: string
-          status: string
-          updated_at: string
-          whatsapp: string | null
-        }
-        Insert: {
-          age?: number | null
-          attendance_code?: string | null
-          cell_id?: string | null
-          city_id?: string | null
-          created_at?: string
-          encounter_with_god?: boolean
-          id?: string
-          name: string
-          neighborhood: string
-          status?: string
-          updated_at?: string
-          whatsapp?: string | null
-        }
-        Update: {
-          age?: number | null
-          attendance_code?: string | null
-          cell_id?: string | null
-          city_id?: string | null
-          created_at?: string
-          encounter_with_god?: boolean
-          id?: string
-          name?: string
-          neighborhood?: string
-          status?: string
-          updated_at?: string
-          whatsapp?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "contacts_cell_id_fkey"
-            columns: ["cell_id"]
-            isOneToOne: false
-            referencedRelation: "cells"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "contacts_city_id_fkey"
-            columns: ["city_id"]
-            isOneToOne: false
-            referencedRelation: "cities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      events: {
-        Row: {
-          active: boolean
-          created_at: string
-          date: string
-          id: string
-          keyword: string
-          name: string
-          qr_code: string
-          qr_url: string
-          scan_count: number
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          date: string
-          id?: string
-          keyword: string
-          name: string
-          qr_code: string
-          qr_url: string
-          scan_count?: number
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          date?: string
-          id?: string
-          keyword?: string
-          name?: string
-          qr_code?: string
-          qr_url?: string
-          scan_count?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      neighborhoods: {
-        Row: {
-          active: boolean
-          city_id: string
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          city_id: string
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          city_id?: string
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "neighborhoods_city_id_fkey"
-            columns: ["city_id"]
-            isOneToOne: false
-            referencedRelation: "cities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
-          active: boolean
-          created_at: string
-          email: string
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      resumes: {
+        Row: {
+          category: string
+          created_at: string | null
+          data: Json
           id: string
           name: string
-          photo_url: string | null
-          role: string
-          updated_at: string
+          photo: string | null
+          template: string
+          transcription: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          active?: boolean
-          created_at?: string
-          email: string
+          category: string
+          created_at?: string | null
+          data: Json
           id?: string
           name: string
-          photo_url?: string | null
-          role?: string
-          updated_at?: string
+          photo?: string | null
+          template: string
+          transcription?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          active?: boolean
-          created_at?: string
-          email?: string
+          category?: string
+          created_at?: string | null
+          data?: Json
           id?: string
           name?: string
-          photo_url?: string | null
-          role?: string
-          updated_at?: string
+          photo?: string | null
+          template?: string
+          transcription?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
-      qr_codes: {
+      user_roles: {
         Row: {
-          active: boolean
-          created_at: string
-          created_by: string | null
+          created_at: string | null
           id: string
-          keyword: string
-          qr_code_data: string
-          scan_count: number
-          title: string
-          updated_at: string
-          url: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
         }
         Insert: {
-          active?: boolean
-          created_at?: string
-          created_by?: string | null
+          created_at?: string | null
           id?: string
-          keyword: string
-          qr_code_data: string
-          scan_count?: number
-          title: string
-          updated_at?: string
-          url: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
         }
         Update: {
-          active?: boolean
-          created_at?: string
-          created_by?: string | null
+          created_at?: string | null
           id?: string
-          keyword?: string
-          qr_code_data?: string
-          scan_count?: number
-          title?: string
-          updated_at?: string
-          url?: string
-        }
-        Relationships: []
-      }
-      qr_scans: {
-        Row: {
-          created_at: string
-          id: string
-          ip_address: unknown | null
-          qr_code_id: string
-          scanned_at: string
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          qr_code_id: string
-          scanned_at?: string
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          qr_code_id?: string
-          scanned_at?: string
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "qr_scans_qr_code_id_fkey"
-            columns: ["qr_code_id"]
-            isOneToOne: false
-            referencedRelation: "qr_codes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      system_settings: {
-        Row: {
-          created_at: string
-          id: string
-          key: string
-          updated_at: string
-          value: Json
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          key: string
-          updated_at?: string
-          value: Json
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          key?: string
-          updated_at?: string
-          value?: Json
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
     }
     Views: {
-      neighborhood_stats: {
-        Row: {
-          city_name: string | null
-          id: string | null
-          neighborhood_name: string | null
-          total_cells: number | null
-          total_contacts: number | null
-          total_leaders: number | null
-          total_people: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      increment_qr_scan_count: {
-        Args: { qr_id: string; user_ip?: unknown; user_agent_string?: string }
-        Returns: undefined
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -550,6 +225,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
