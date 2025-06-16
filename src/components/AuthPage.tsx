@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, EyeOff, Home } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useSystemConfig } from '@/hooks/useSystemConfig';
 
 export const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +17,7 @@ export const AuthPage = () => {
   
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
+  const { config, loading: configLoading } = useSystemConfig();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,16 +97,44 @@ export const AuthPage = () => {
     }
   };
 
+  if (configLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div>
+                <div className="w-32 h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Home className="w-8 h-8 text-white" />
-            </div>
+            {config.site_logo?.url ? (
+              <img 
+                src={config.site_logo.url} 
+                alt={config.site_logo.alt || 'Logo'}
+                className="w-12 h-12 object-contain"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <Home className="w-8 h-8 text-white" />
+              </div>
+            )}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CellManager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {config.form_title?.text || 'Sistema de Células'}
+              </h1>
               <p className="text-sm text-gray-600">Sistema de Gestão de Células</p>
             </div>
           </div>

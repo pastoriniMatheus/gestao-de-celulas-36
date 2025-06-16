@@ -11,7 +11,7 @@ interface SystemConfig {
 export const useSystemConfig = () => {
   const [config, setConfig] = useState<SystemConfig>({
     site_logo: { url: '', alt: 'Logo da Igreja' },
-    form_title: { text: 'Formulário de Contato' },
+    form_title: { text: 'Sistema de Células' },
     form_description: { text: 'Preencha seus dados para nos conectarmos com você' }
   });
   const [loading, setLoading] = useState(true);
@@ -38,6 +38,11 @@ export const useSystemConfig = () => {
             settings[item.key] = item.value;
           });
           setConfig(prev => ({ ...prev, ...settings }));
+
+          // Atualizar favicon se houver logo configurado
+          if (settings.site_logo?.url) {
+            updateFavicon(settings.site_logo.url);
+          }
         }
       } catch (error) {
         console.error('Erro crítico ao carregar configurações:', error);
@@ -48,6 +53,27 @@ export const useSystemConfig = () => {
 
     loadConfig();
   }, []);
+
+  const updateFavicon = (logoUrl: string) => {
+    try {
+      // Remover favicon existente
+      const existingFavicon = document.querySelector('link[rel="icon"]');
+      if (existingFavicon) {
+        existingFavicon.remove();
+      }
+
+      // Adicionar novo favicon
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = logoUrl;
+      link.type = 'image/png';
+      document.head.appendChild(link);
+      
+      console.log('Favicon atualizado para:', logoUrl);
+    } catch (error) {
+      console.error('Erro ao atualizar favicon:', error);
+    }
+  };
 
   return { config, loading };
 };

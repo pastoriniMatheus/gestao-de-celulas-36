@@ -18,15 +18,15 @@ export const Header = () => {
   return (
     <header className="bg-white shadow-sm border-b px-6 py-4">
       <div className="flex items-center gap-3">
-        {config.site_logo.url ? (
+        {config.site_logo?.url && (
           <img 
             src={config.site_logo.url} 
-            alt={config.site_logo.alt}
-            className="h-10 w-auto"
+            alt={config.site_logo.alt || 'Logo'}
+            className="h-10 w-auto object-contain"
           />
-        ) : null}
+        )}
         <h1 className="text-xl font-semibold text-gray-800">
-          {config.form_title.text || 'Sistema de Células'}
+          {config.form_title?.text || 'Sistema de Células'}
         </h1>
       </div>
     </header>

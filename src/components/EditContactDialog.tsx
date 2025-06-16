@@ -51,7 +51,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       age: contact?.age ?? '',
       encounter_with_god: contact?.encounter_with_god ?? false,
       status: contact?.status ?? 'pending',
-      cell_id: contact?.cell_id ?? '',
+      cell_id: contact?.cell_id ?? '', // Manter cell_id do contato
     });
   }, [contact, neighborhoods]);
 
@@ -64,7 +64,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     try {
       console.log('EditContactDialog: Salvando contato com dados:', form);
       
-      // Preparar dados para atualização mantendo a célula original
+      // Preparar dados para atualização MANTENDO a célula e status originais
       const updateData = {
         name: form.name,
         whatsapp: form.whatsapp,
@@ -72,12 +72,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         city_id: form.city_id || null,
         age: form.age ? parseInt(form.age) : null,
         encounter_with_god: !!form.encounter_with_god,
-        status: form.status,
-        // Manter cell_id atual se não foi alterado explicitamente
-        cell_id: form.cell_id || contact.cell_id || null,
+        // IMPORTANTE: Manter status e célula originais ao salvar dados básicos
+        status: contact.status, // Não alterar status no save básico
+        cell_id: contact.cell_id, // Não alterar célula no save básico
       };
 
-      console.log('EditContactDialog: Dados de atualização:', updateData);
+      console.log('EditContactDialog: Dados de atualização (mantendo status e célula):', updateData);
       
       await updateContact(contact.id, updateData);
       toast({
@@ -102,10 +102,10 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     try {
       console.log('EditContactDialog: Transformando visitante em membro');
       
+      // IMPORTANTE: Só alterar o status, mantendo a célula atual
       await updateContact(contact.id, {
         status: 'member',
-        // Manter a célula atual
-        cell_id: contact.cell_id
+        cell_id: contact.cell_id // Manter a célula atual
       });
       toast({
         title: "Sucesso",
