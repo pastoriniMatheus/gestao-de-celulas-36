@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from '@/hooks/use-toast';
@@ -21,6 +20,8 @@ export const useQRCodes = () => {
   const [qrCodes, setQRCodes] = useState<QRCode[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
 
   const fetchQRCodes = async () => {
     try {
@@ -146,32 +147,26 @@ export const useQRCodes = () => {
 
   const toggleQRCodeStatus = async (id: string, active: boolean) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('qr_codes')
         .update({ active })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
-      if (error) {
-        console.error('Erro ao atualizar status:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao atualizar status do QR code",
-          variant: "destructive"
-        });
-        return;
-      }
+      if (error) throw error;
 
       toast({
         title: "Sucesso",
         description: `QR code ${active ? 'ativado' : 'desativado'} com sucesso!`
       });
 
-      // Atualizar automaticamente
       await fetchQRCodes();
     } catch (error) {
-      console.error('Erro crítico ao atualizar status:', error);
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status do QR code",
+        variant: "destructive"
+      });
     }
   };
 
@@ -182,25 +177,21 @@ export const useQRCodes = () => {
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Erro ao deletar QR code:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao deletar QR code",
-          variant: "destructive"
-        });
-        return;
-      }
+      if (error) throw error;
 
       toast({
         title: "Sucesso",
         description: "QR code deletado com sucesso!"
       });
 
-      // Atualizar automaticamente
       await fetchQRCodes();
     } catch (error) {
-      console.error('Erro crítico ao deletar QR code:', error);
+      console.error('Erro ao deletar QR code:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao deletar QR code",
+        variant: "destructive"
+      });
     }
   };
 
@@ -212,24 +203,51 @@ export const useQRCodes = () => {
 
   // Configurar atualização em tempo real
   useEffect(() => {
-    const channel = supabase
-      .channel('qr_codes_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'qr_codes'
-        },
-        (payload) => {
-          console.log('QR code alterado:', payload);
-          fetchQRCodes();
+    // Clean up existing channel before creating new one
+    if (channelRef.current) {
+      console.log('Removing existing QR codes channel...');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      isSubscribedRef.current = false;
+    }
+
+    // Only create new subscription if not already subscribed
+    if (!isSubscribedRef.current) {
+      const channelName = `qr_codes_changes_${Date.now()}_${Math.random()}`;
+      console.log('Creating new QR codes channel:', channelName);
+
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'qr_codes'
+          },
+          (payload) => {
+            console.log('QR code alterado:', payload);
+            fetchQRCodes();
+          }
+        );
+
+      channel.subscribe((status) => {
+        console.log('QR codes channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isSubscribedRef.current = true;
         }
-      )
-      .subscribe();
+      });
+
+      channelRef.current = channel;
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      console.log('Cleaning up QR codes channel...');
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
     };
   }, []);
 
@@ -237,54 +255,8 @@ export const useQRCodes = () => {
     qrCodes,
     loading,
     createQRCode,
-    toggleQRCodeStatus: async (id: string, active: boolean) => {
-      try {
-        const { error } = await supabase
-          .from('qr_codes')
-          .update({ active })
-          .eq('id', id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Sucesso",
-          description: `QR code ${active ? 'ativado' : 'desativado'} com sucesso!`
-        });
-
-        await fetchQRCodes();
-      } catch (error) {
-        console.error('Erro ao atualizar status:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao atualizar status do QR code",
-          variant: "destructive"
-        });
-      }
-    },
-    deleteQRCode: async (id: string) => {
-      try {
-        const { error } = await supabase
-          .from('qr_codes')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Sucesso",
-          description: "QR code deletado com sucesso!"
-        });
-
-        await fetchQRCodes();
-      } catch (error) {
-        console.error('Erro ao deletar QR code:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao deletar QR code",
-          variant: "destructive"
-        });
-      }
-    },
+    toggleQRCodeStatus,
+    deleteQRCode,
     refreshQRCodes: fetchQRCodes
   };
 };

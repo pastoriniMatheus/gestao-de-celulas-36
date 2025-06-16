@@ -107,7 +107,7 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
   const [filteredAttendances, setFilteredAttendances] = useState<Attendance[]>([]);
 
   useEffect(() => {
-    if (isOpen && !isSubscribedRef.current) {
+    if (isOpen && cellId && !isSubscribedRef.current) {
       fetchCellData();
 
       // Clean up existing channels before creating new ones
@@ -161,6 +161,9 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
       // Subscribe channels
       attendanceChannel.subscribe((status) => {
         console.log('Attendance channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isSubscribedRef.current = true;
+        }
       });
       
       contactChannel.subscribe((status) => {
@@ -169,7 +172,6 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
 
       // Store channels for cleanup
       channelsRef.current = [attendanceChannel, contactChannel];
-      isSubscribedRef.current = true;
     }
   }, [cellId, isOpen]);
 

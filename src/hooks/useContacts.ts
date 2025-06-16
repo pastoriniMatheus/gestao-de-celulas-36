@@ -32,6 +32,7 @@ export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
 
   const fetchContacts = async () => {
     try {
@@ -244,43 +245,51 @@ export const useContacts = () => {
 
     // Clean up existing channel before creating new one
     if (channelRef.current) {
-      console.log('Removing existing channel...');
+      console.log('Removing existing contacts channel...');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
+      isSubscribedRef.current = false;
     }
 
-    // Create unique channel name to avoid conflicts
-    const channelName = `contacts-changes-${Date.now()}-${Math.random()}`;
-    console.log('Creating new channel:', channelName);
+    // Only create new subscription if not already subscribed
+    if (!isSubscribedRef.current) {
+      // Create unique channel name to avoid conflicts
+      const channelName = `contacts-changes-${Date.now()}-${Math.random()}`;
+      console.log('Creating new contacts channel:', channelName);
 
-    // Escutar mudanças na tabela contacts
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contacts'
-        },
-        (payload) => {
-          console.log('Contato alterado:', payload);
-          fetchContacts(); // Recarregar contatos quando houver mudanças
+      // Escutar mudanças na tabela contacts
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'contacts'
+          },
+          (payload) => {
+            console.log('Contato alterado:', payload);
+            fetchContacts(); // Recarregar contatos quando houver mudanças
+          }
+        );
+
+      // Subscribe and store reference
+      channel.subscribe((status) => {
+        console.log('Contacts channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isSubscribedRef.current = true;
         }
-      );
-
-    // Subscribe and store reference
-    channel.subscribe((status) => {
-      console.log('Channel subscription status:', status);
-    });
-    
-    channelRef.current = channel;
+      });
+      
+      channelRef.current = channel;
+    }
 
     return () => {
       console.log('Cleaning up contacts channel...');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+        isSubscribedRef.current = false;
       }
     };
   }, []);
