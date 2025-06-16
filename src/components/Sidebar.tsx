@@ -1,133 +1,109 @@
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Calendar, 
-  Users, 
   Home, 
-  MessageCircle, 
-  GitBranch,
-  Settings,
-  UserCog
-} from "lucide-react";
+  Users, 
+  MessageSquare, 
+  Calendar, 
+  QrCode, 
+  Settings, 
+  ChevronLeft, 
+  ChevronRight,
+  UserCog,
+  MapPin,
+  TrendingUp,
+  Contact
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
-interface SidebarProps {
-  activeSection: string;
-  onSectionChange: (section: string) => void;
-}
+const Sidebar = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const location = useLocation();
+  const permissions = useUserPermissions();
 
-const menuItems = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    description: 'Visão geral do sistema'
-  },
-  {
-    id: 'events',
-    label: 'Eventos & QR Codes',
-    icon: Calendar,
-    description: 'Gerenciar eventos e QR codes'
-  },
-  {
-    id: 'contacts',
-    label: 'Contatos',
-    icon: Users,
-    description: 'Visitantes e membros'
-  },
-  {
-    id: 'cells',
-    label: 'Células',
-    icon: Home,
-    description: 'Células domiciliares'
-  },
-  {
-    id: 'messaging',
-    label: 'Mensagens',
-    icon: MessageCircle,
-    description: 'Central de mensagens'
-  },
-  {
-    id: 'pipeline',
-    label: 'Pipeline',
-    icon: GitBranch,
-    description: 'Pipeline de conversão'
-  },
-  {
-    id: 'users',
-    label: 'Usuários',
-    icon: UserCog,
-    description: 'Gerenciar usuários'
-  },
-  {
-    id: 'settings',
-    label: 'Configurações',
-    icon: Settings,
-    description: 'Configurações do sistema'
-  }
-];
+  const menuItems = [
+    { icon: Home, label: 'Dashboard', path: '/', show: permissions.canAccessDashboard },
+    { icon: Contact, label: 'Contatos', path: '/contacts', show: permissions.canAccessContacts },
+    { icon: Users, label: 'Células', path: '/cells', show: permissions.canAccessCells },
+    { icon: TrendingUp, label: 'Pipeline', path: '/pipeline', show: permissions.canAccessPipeline },
+    { icon: MessageSquare, label: 'Mensagens', path: '/messaging', show: permissions.canAccessMessaging },
+    { icon: Calendar, label: 'Eventos', path: '/events', show: permissions.canAccessEvents },
+    { icon: QrCode, label: 'QR Codes', path: '/qr-codes', show: permissions.canAccessQRCodes },
+    { icon: MapPin, label: 'Localização', path: '/location', show: permissions.canAccessSettings },
+    { icon: UserCog, label: 'Usuários', path: '/users', show: permissions.canAccessUserManagement },
+    { icon: Settings, label: 'Configurações', path: '/settings', show: permissions.canAccessSettings },
+  ].filter(item => item.show);
 
-export const Sidebar = ({ activeSection, onSectionChange }: SidebarProps) => {
   return (
-    <div className="w-64 bg-white shadow-lg border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <Home className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">CellManager</h1>
-            <p className="text-sm text-gray-500">Sistema de Células</p>
-          </div>
+    <div className={cn(
+      "bg-white border-r border-gray-200 transition-all duration-300 flex flex-col",
+      isCollapsed ? "w-16" : "w-64"
+    )}>
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          {!isCollapsed && (
+            <h1 className="text-xl font-bold text-gray-800">Sistema</h1>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="ml-auto"
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeSection === item.id;
+          const isActive = location.pathname === item.path;
           
           return (
-            <Button
-              key={item.id}
-              variant={isActive ? "default" : "ghost"}
+            <Link
+              key={item.path}
+              to={item.path}
               className={cn(
-                "w-full justify-start gap-3 h-auto p-3 text-left",
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isActive 
-                  ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-blue-100 text-blue-700" 
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                isCollapsed && "justify-center"
               )}
-              onClick={() => onSectionChange(item.id)}
             >
-              <Icon className={cn(
-                "w-5 h-5 flex-shrink-0",
-                isActive ? "text-white" : "text-gray-500"
-              )} />
-              <div className="flex flex-col items-start">
-                <span className="font-medium">{item.label}</span>
-                <span className={cn(
-                  "text-xs",
-                  isActive ? "text-blue-100" : "text-gray-500"
-                )}>
-                  {item.description}
-                </span>
-              </div>
-            </Button>
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              {!isCollapsed && <span>{item.label}</span>}
+            </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-          <p className="text-sm font-medium text-gray-900 mb-1">
-            Sistema Ativo
-          </p>
-          <p className="text-xs text-gray-600">
-            Versão 1.0.0 - Gestão Inteligente de Células
-          </p>
+      {permissions.userProfile && (
+        <div className="p-4 border-t border-gray-200">
+          <div className={cn(
+            "text-xs text-gray-500",
+            isCollapsed && "text-center"
+          )}>
+            {!isCollapsed && (
+              <>
+                <div className="font-medium">{permissions.userProfile.name}</div>
+                <div className="capitalize">{permissions.userProfile.role}</div>
+              </>
+            )}
+            {isCollapsed && (
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                {permissions.userProfile.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
+
+export default Sidebar;
