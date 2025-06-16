@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,12 +13,19 @@ interface SystemSettings {
   site_logo: { url: string; alt: string };
   form_title: { text: string };
   form_description: { text: string };
+  church_name: { text: string };
 }
 
 interface Neighborhood {
   id: string;
   name: string;
   city_id: string;
+}
+
+interface City {
+  id: string;
+  name: string;
+  state: string;
 }
 
 interface EventData {
@@ -35,7 +41,6 @@ export const FormPage = () => {
   const [searchParams] = useSearchParams();
   const { keyword } = useParams();
   
-  // Buscar parâmetros tanto da URL quanto dos searchParams
   const evento = searchParams.get('evento');
   const cod = searchParams.get('cod') || keyword;
   
@@ -47,34 +52,30 @@ export const FormPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     whatsapp: '',
-    neighborhood: ''
+    neighborhood: '',
+    city_id: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
     site_logo: { url: '', alt: 'Logo da Igreja' },
     form_title: { text: 'Formulário de Contato' },
-    form_description: { text: 'Preencha seus dados para nos conectarmos com você' }
+    form_description: { text: 'Preencha seus dados para nos conectarmos com você' },
+    church_name: { text: 'Igreja' }
   });
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
-    console.log('FormPage: Iniciando com parâmetros:', { 
-      evento, 
-      cod, 
-      keyword, 
-      allSearchParams: Object.fromEntries(searchParams.entries()),
-      currentURL: window.location.href
-    });
+    console.log('FormPage: Iniciando com parâmetros:', { evento, cod });
     
     loadSystemSettings();
     loadNeighborhoods();
+    loadCities();
     
-    // Se tem parâmetros, processar evento
     if (evento || cod) {
       handleItemScan();
     } else {
-      // Se não tem parâmetros, mostrar formulário diretamente
       console.log('FormPage: Nenhum parâmetro encontrado, mostrando formulário padrão');
       setShowForm(true);
       setLoading(false);
@@ -87,15 +88,13 @@ export const FormPage = () => {
       const { data, error } = await supabase
         .from('system_settings')
         .select('key, value')
-        .in('key', ['site_logo', 'form_title', 'form_description']);
+        .in('key', ['site_logo', 'form_title', 'form_description', 'church_name']);
 
       if (error) {
         console.error('FormPage: Erro ao carregar configurações:', error);
         return;
       }
 
-      console.log('FormPage: Configurações carregadas:', data);
-      
       if (data && data.length > 0) {
         const settings: any = {};
         data.forEach(item => {
@@ -112,7 +111,6 @@ export const FormPage = () => {
 
   const loadNeighborhoods = async () => {
     try {
-      console.log('FormPage: Carregando bairros...');
       const { data, error } = await supabase
         .from('neighborhoods')
         .select('id, name, city_id')
@@ -124,64 +122,67 @@ export const FormPage = () => {
         return;
       }
 
-      console.log('FormPage: Bairros carregados:', data);
       setNeighborhoods(data || []);
     } catch (error) {
       console.error('FormPage: Erro crítico ao carregar bairros:', error);
     }
   };
 
+  const loadCities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('id, name, state')
+        .eq('active', true)
+        .order('name');
+
+      if (error) {
+        console.error('FormPage: Erro ao carregar cidades:', error);
+        return;
+      }
+
+      setCities(data || []);
+    } catch (error) {
+      console.error('FormPage: Erro crítico ao carregar cidades:', error);
+    }
+  };
+
   const handleItemScan = async () => {
     try {
-      console.log('FormPage: Processando scan com parâmetros:', { evento, cod });
       setLoading(true);
       setError(null);
 
       let eventData: EventData | null = null;
 
-      // Primeira tentativa: buscar por ID do evento (se evento estiver presente)
       if (evento) {
-        console.log('FormPage: Buscando evento por ID:', evento);
         const { data, error: eventError } = await supabase
           .from('events')
           .select('*')
           .eq('id', evento)
-          .eq('active', true) // Só buscar eventos ativos
+          .eq('active', true)
           .maybeSingle();
-
-        console.log('FormPage: Resultado busca por ID:', { data, error: eventError });
 
         if (data && !eventError) {
           eventData = data;
-          console.log('FormPage: Evento encontrado por ID:', eventData);
         }
       }
 
-      // Segunda tentativa: buscar por keyword/código (se não encontrou por ID ou se só tem cod)
       if (!eventData && cod) {
         const normalizedCod = cod.toLowerCase().trim();
-        console.log('FormPage: Buscando evento por keyword:', normalizedCod);
         
         const { data, error: keywordError } = await supabase
           .from('events')
           .select('*')
           .eq('keyword', normalizedCod)
-          .eq('active', true) // Só buscar eventos ativos
+          .eq('active', true)
           .maybeSingle();
-
-        console.log('FormPage: Resultado busca por keyword:', { data, error: keywordError });
 
         if (data && !keywordError) {
           eventData = data;
-          console.log('FormPage: Evento encontrado por keyword:', eventData);
         }
       }
 
-      // Verificar se encontrou evento válido
       if (eventData) {
-        console.log('FormPage: Evento válido encontrado, incrementando contador...');
-        
-        // Incrementar contador de scan do evento
         const { error: updateError } = await supabase
           .from('events')
           .update({ scan_count: (eventData.scan_count || 0) + 1 })
@@ -203,8 +204,6 @@ export const FormPage = () => {
         return;
       }
 
-      // Se chegou até aqui, não encontrou nada
-      console.log('FormPage: Nenhum evento encontrado para os parâmetros:', { evento, cod });
       setError('Evento não encontrado ou inativo');
     } catch (error) {
       console.error('FormPage: Erro crítico ao processar código:', error);
@@ -220,7 +219,7 @@ export const FormPage = () => {
     if (!formData.name.trim() || !formData.whatsapp.trim() || !formData.neighborhood.trim()) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos.",
+        description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive",
       });
       return;
@@ -228,14 +227,13 @@ export const FormPage = () => {
 
     setSubmitting(true);
     try {
-      console.log('FormPage: Enviando dados do contato:', formData);
-      
       const { data, error } = await supabase
         .from('contacts')
         .insert([{
           name: formData.name.trim(),
           whatsapp: formData.whatsapp.trim(),
           neighborhood: formData.neighborhood.trim(),
+          city_id: formData.city_id || null,
           status: 'pending'
         }])
         .select()
@@ -251,13 +249,11 @@ export const FormPage = () => {
         return;
       }
 
-      console.log('FormPage: Contato criado com sucesso:', data);
       toast({
         title: "Sucesso",
         description: "Seus dados foram enviados com sucesso!",
       });
 
-      // Mostrar tela de sucesso
       setShowForm(false);
       setShowSuccess(true);
     } catch (error) {
@@ -281,6 +277,10 @@ export const FormPage = () => {
     });
   };
 
+  const filteredNeighborhoods = formData.city_id 
+    ? neighborhoods.filter(n => n.city_id === formData.city_id)
+    : neighborhoods;
+
   if (loading || loadingSettings) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
@@ -289,13 +289,6 @@ export const FormPage = () => {
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Carregando formulário...</h3>
             <p className="text-sm text-gray-500">Aguarde um momento</p>
-            {(evento || cod) && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-500">
-                <p className="font-medium mb-1">Parâmetros de Debug:</p>
-                <p>evento: {evento || 'não fornecido'}</p>
-                <p>cod: {cod || 'não fornecido'}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -307,6 +300,15 @@ export const FormPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardHeader className="pb-4">
+            {systemSettings.site_logo.url && (
+              <div className="mx-auto mb-4">
+                <img 
+                  src={systemSettings.site_logo.url} 
+                  alt={systemSettings.site_logo.alt}
+                  className="h-16 w-auto mx-auto rounded-lg shadow-md"
+                />
+              </div>
+            )}
             <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
@@ -314,17 +316,6 @@ export const FormPage = () => {
             <CardDescription className="text-red-600">{error}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-red-800 mb-3">Parâmetros recebidos:</p>
-              <div className="space-y-1 text-sm text-red-700">
-                <p>• evento: {evento || 'não fornecido'}</p>
-                <p>• cod: {cod || 'não fornecido'}</p>
-                <p>• keyword: {keyword || 'não fornecido'}</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">
-              Verifique se o código é válido ou entre em contato com o organizador.
-            </p>
             <div className="flex gap-2">
               <Button
                 onClick={() => window.location.reload()}
@@ -484,20 +475,51 @@ export const FormPage = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="city" className="flex items-center gap-2 text-sm font-medium">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                  Cidade
+                </Label>
+                <Select 
+                  value={formData.city_id || "no-city"} 
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    city_id: value === "no-city" ? "" : value,
+                    neighborhood: "" 
+                  }))}
+                >
+                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
+                    <SelectValue placeholder="Selecione a cidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-city">Selecione uma cidade</SelectItem>
+                    {cities.map((city) => (
+                      <SelectItem key={city.id} value={city.id}>
+                        {city.name} - {city.state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="neighborhood" className="flex items-center gap-2 text-sm font-medium">
                   <MapPin className="w-4 h-4 text-blue-600" />
                   Bairro *
                 </Label>
                 <Select 
-                  value={formData.neighborhood} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
+                  value={formData.neighborhood || "no-neighborhood"} 
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    neighborhood: value === "no-neighborhood" ? "" : value 
+                  }))}
                   required
                 >
                   <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
                     <SelectValue placeholder="Selecione seu bairro" />
                   </SelectTrigger>
                   <SelectContent>
-                    {neighborhoods.map((neighborhood) => (
+                    <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
+                    {filteredNeighborhoods.map((neighborhood) => (
                       <SelectItem key={neighborhood.id} value={neighborhood.name}>
                         {neighborhood.name}
                       </SelectItem>

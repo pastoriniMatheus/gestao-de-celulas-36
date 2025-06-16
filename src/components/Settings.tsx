@@ -1,8 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings as SettingsIcon, Shield } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Tabs } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { SystemSettingsManager } from './SystemSettingsManager';
+import { AppearanceSettings } from './AppearanceSettings';
+import { LocationManager } from './LocationManager';
+import { Tabs as UITabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -18,7 +21,6 @@ export const Settings = () => {
       try {
         console.log('Verificando perfil do usuário:', user.id);
         
-        // Verificar se perfil existe
         const { data: existingProfile, error: fetchError } = await supabase
           .from('profiles')
           .select('*')
@@ -32,7 +34,6 @@ export const Settings = () => {
           return;
         }
 
-        // Se não existe perfil, criar um como admin
         if (!existingProfile) {
           console.log('Criando perfil admin para usuário:', user.id);
           
@@ -60,7 +61,6 @@ export const Settings = () => {
               title: "Sucesso",
               description: "Perfil de administrador criado",
             });
-            // Recarregar a página para atualizar o contexto de auth
             window.location.reload();
           }
         }
@@ -103,7 +103,6 @@ export const Settings = () => {
     );
   }
 
-  // Verificar se é admin por email ou por perfil
   const isAdmin = userProfile?.role === 'admin' || user.email === 'admin@sistema.com';
 
   if (!isAdmin) {
@@ -127,7 +126,38 @@ export const Settings = () => {
 
   return (
     <div className="space-y-6">
-      <SystemSettingsManager />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SettingsIcon className="h-5 w-5 text-blue-600" />
+            Configurações do Sistema
+          </CardTitle>
+          <CardDescription>
+            Gerencie todas as configurações do sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UITabs defaultValue="appearance" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="appearance">Aparência</TabsTrigger>
+              <TabsTrigger value="locations">Bairros/Cidades</TabsTrigger>
+              <TabsTrigger value="form">Formulário</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="appearance" className="space-y-6 mt-6">
+              <AppearanceSettings />
+            </TabsContent>
+            
+            <TabsContent value="locations" className="space-y-6 mt-6">
+              <LocationManager />
+            </TabsContent>
+            
+            <TabsContent value="form" className="space-y-6 mt-6">
+              <SystemSettingsManager />
+            </TabsContent>
+          </UITabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

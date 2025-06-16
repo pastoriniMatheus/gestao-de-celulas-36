@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,9 +10,7 @@ import { useContactDialogData } from '@/hooks/useContactDialogData';
 import { BasicInfoFields } from './contact-form/BasicInfoFields';
 import { LocationFields } from './contact-form/LocationFields';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
-
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
-import { NeighborhoodSelectField } from './contact-form/NeighborhoodSelectField';
 
 export const AddContactDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,12 +24,9 @@ export const AddContactDialog = () => {
     cities, 
     contacts, 
     profiles, 
-    neighborhoods, // Importante para montar o Select de bairros
+    neighborhoods,
     getFilteredNeighborhoods 
   } = useContactDialogData(isOpen);
-
-  // Busca bairros filtrados pela cidade, se algum selecionado ou todos
-  const neighborhoodsToShow = formData.city_id ? neighborhoods.filter(n => n.city_id === formData.city_id) : neighborhoods;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +48,7 @@ export const AddContactDialog = () => {
         cell_id: formData.cell_id === 'none' ? null : formData.cell_id || null,
         status: 'pending',
         age: formData.age ? Number(formData.age) : null,
-        encounter_with_god: !!formData.encounter_with_god, // força boolean
+        encounter_with_god: !!formData.encounter_with_god,
       };
       await addContact(contactToAdd);
       toast({
@@ -88,16 +84,11 @@ export const AddContactDialog = () => {
           <BasicInfoFields
             formData={formData}
             onUpdateFormData={updateFormData}
-            showAge={true} // Garante que o campo idade estará presente
+            showAge={true}
           />
           <EncounterWithGodField
             checked={!!formData.encounter_with_god}
             onChange={checked => updateFormData({ encounter_with_god: checked })}
-          />
-          <NeighborhoodSelectField
-            neighborhood={formData.neighborhood}
-            onChange={neigh => updateFormData({ neighborhood: neigh })}
-            neighborhoods={neighborhoodsToShow}
           />
           <LocationFields
             formData={formData}
