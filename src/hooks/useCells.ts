@@ -53,6 +53,7 @@ export const useCells = () => {
         throw error;
       }
 
+      // Atualizar estado local imediatamente
       setCells(prev => [...prev, data]);
       return data;
     } catch (error) {
@@ -75,6 +76,7 @@ export const useCells = () => {
         throw error;
       }
 
+      // Atualizar estado local imediatamente
       setCells(prev => prev.map(cell => cell.id === id ? data : cell));
       return data;
     } catch (error) {
@@ -95,6 +97,7 @@ export const useCells = () => {
         throw error;
       }
 
+      // Atualizar estado local imediatamente
       setCells(prev => prev.filter(cell => cell.id !== id));
     } catch (error) {
       console.error('Erro ao deletar célula:', error);
@@ -105,9 +108,9 @@ export const useCells = () => {
   useEffect(() => {
     fetchCells();
 
-    // Configurar real-time updates
+    // Configurar real-time updates melhorado
     const channel = supabase
-      .channel('cells-changes')
+      .channel('cells-realtime-changes')
       .on(
         'postgres_changes',
         {
@@ -116,8 +119,17 @@ export const useCells = () => {
           table: 'cells'
         },
         (payload) => {
-          console.log('Célula alterada:', payload);
-          fetchCells();
+          console.log('Célula alterada em tempo real:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setCells(prev => [...prev, payload.new as Cell]);
+          } else if (payload.eventType === 'UPDATE') {
+            setCells(prev => prev.map(cell => 
+              cell.id === payload.new.id ? payload.new as Cell : cell
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setCells(prev => prev.filter(cell => cell.id !== payload.old.id));
+          }
         }
       )
       .subscribe();

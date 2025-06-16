@@ -32,16 +32,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ stats }) => {
     { name: "Outros Membros", value: stats.totalMembers - stats.totalEncounter },
   ];
 
-  // Bar: Células ativas vs total
-  const cellsData = [
-    {
-      name: "Células",
-      Ativas: stats.activeCells,
-      Inativas: stats.totalCells - stats.activeCells,
-    },
-  ];
-
-  // Bar: Bairros X Cidades X Líderes
+  // Bar: Bairros X Cidades X Líderes X Células
   const miscData = [
     {
       name: "Bairros com membros",
@@ -58,6 +49,10 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ stats }) => {
     {
       name: "Líderes",
       value: stats.totalLeaders,
+    },
+    {
+      name: "Total de Células",
+      value: stats.totalCells,
     },
   ];
 
@@ -85,22 +80,9 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ stats }) => {
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <div className="rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center">
-        <h3 className="font-semibold mb-2 text-center">Células Ativas vs Inativas</h3>
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={cellsData}>
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="Ativas" fill="#10b981" />
-            <Bar dataKey="Inativas" fill="#fbbf24" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="col-span-full rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center mt-6">
-        <h3 className="font-semibold mb-2 text-center">Outros Indicadores</h3>
-        <ResponsiveContainer width="100%" height={220}>
+      <div className="col-span-full rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center">
+        <h3 className="font-semibold mb-2 text-center">Indicadores Gerais</h3>
+        <ResponsiveContainer width="100%" height={300}>
           <BarChart data={miscData}>
             <XAxis dataKey="name" />
             <YAxis />

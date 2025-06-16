@@ -61,6 +61,8 @@ export const useContacts = () => {
         description: "Contato criado com sucesso!"
       });
 
+      // Atualizar estado local imediatamente
+      setContacts(prev => [data, ...prev]);
       return data;
     } catch (error) {
       console.error('Erro ao criar contato:', error);
@@ -87,6 +89,8 @@ export const useContacts = () => {
         description: "Contato atualizado com sucesso!"
       });
 
+      // Atualizar estado local imediatamente
+      setContacts(prev => prev.map(contact => contact.id === id ? data : contact));
       return data;
     } catch (error) {
       console.error('Erro ao atualizar contato:', error);
@@ -110,6 +114,9 @@ export const useContacts = () => {
         title: "Sucesso",
         description: "Contato deletado com sucesso!"
       });
+
+      // Atualizar estado local imediatamente
+      setContacts(prev => prev.filter(contact => contact.id !== id));
     } catch (error) {
       console.error('Erro ao deletar contato:', error);
       throw error;
@@ -119,9 +126,9 @@ export const useContacts = () => {
   useEffect(() => {
     fetchContacts();
 
-    // Configurar real-time updates
+    // Configurar real-time updates melhorado
     const channel = supabase
-      .channel('contacts-changes')
+      .channel('contacts-realtime-changes')
       .on(
         'postgres_changes',
         {
@@ -130,8 +137,17 @@ export const useContacts = () => {
           table: 'contacts'
         },
         (payload) => {
-          console.log('Contato alterado:', payload);
-          fetchContacts();
+          console.log('Contato alterado em tempo real:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setContacts(prev => [payload.new as Contact, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setContacts(prev => prev.map(contact => 
+              contact.id === payload.new.id ? payload.new as Contact : contact
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setContacts(prev => prev.filter(contact => contact.id !== payload.old.id));
+          }
         }
       )
       .subscribe();

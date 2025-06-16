@@ -116,27 +116,32 @@ export const AuthPage = () => {
     );
   }
 
+  // Usar configurações do sistema ou fallbacks
+  const displayTitle = config.church_name?.text || config.form_title?.text || 'Sistema de Células';
+  const logoUrl = config.site_logo?.url;
+  const logoAlt = config.site_logo?.alt || 'Logo';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            {config.site_logo?.url ? (
+            {logoUrl ? (
               <img 
-                src={config.site_logo.url} 
-                alt={config.site_logo.alt || 'Logo'}
+                src={logoUrl} 
+                alt={logoAlt}
                 className="w-12 h-12 object-contain"
               />
             ) : (
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">
-                  {config.form_title?.text?.charAt(0) || 'S'}
+                  {displayTitle.charAt(0)}
                 </span>
               </div>
             )}
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {config.form_title?.text || 'Sistema de Células'}
+                {displayTitle}
               </h1>
               <p className="text-sm text-gray-600">Sistema de Gestão de Células</p>
             </div>

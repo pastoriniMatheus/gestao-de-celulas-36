@@ -26,7 +26,7 @@ export const Header = () => {
           />
         )}
         <h1 className="text-xl font-semibold text-gray-800">
-          {config.form_title?.text || 'Sistema de Células'}
+          {config.church_name?.text || config.form_title?.text || 'Sistema de Células'}
         </h1>
       </div>
     </header>

@@ -3,175 +3,70 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MapPin, Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { MapPin, Edit, Trash2, Save, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { AddCityDialog } from './AddCityDialog';
 import { AddNeighborhoodDialog } from './AddNeighborhoodDialog';
-
-interface City {
-  id: string;
-  name: string;
-  state: string;
-  active: boolean;
-}
-
-interface Neighborhood {
-  id: string;
-  name: string;
-  city_id: string;
-  active: boolean;
-}
+import { useLocationManager } from '@/hooks/useLocationManager';
 
 export const LocationManager = () => {
-  const [cities, setCities] = useState<City[]>([]);
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    cities,
+    neighborhoods,
+    loading,
+    deleteCity,
+    deleteNeighborhood,
+    updateCity,
+    updateNeighborhood,
+    refreshData
+  } = useLocationManager();
+
   const [editingCity, setEditingCity] = useState<string | null>(null);
   const [editingNeighborhood, setEditingNeighborhood] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const handleUpdateCity = async (id: string, updates: any) => {
     try {
-      setLoading(true);
-      
-      const [citiesResult, neighborhoodsResult] = await Promise.all([
-        supabase.from('cities').select('*').order('name'),
-        supabase.from('neighborhoods').select('*').order('name')
-      ]);
-
-      if (citiesResult.error) throw citiesResult.error;
-      if (neighborhoodsResult.error) throw neighborhoodsResult.error;
-
-      setCities(citiesResult.data || []);
-      setNeighborhoods(neighborhoodsResult.data || []);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar cidades e bairros",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateCity = async (id: string, updates: Partial<City>) => {
-    try {
-      const { error } = await supabase
-        .from('cities')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Cidade atualizada com sucesso!",
-      });
-
+      await updateCity(id, updates);
       setEditingCity(null);
       setEditValues({});
-      loadData();
     } catch (error) {
-      console.error('Erro ao atualizar cidade:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar cidade",
-        variant: "destructive",
-      });
+      // Error already handled in hook
     }
   };
 
-  const updateNeighborhood = async (id: string, updates: Partial<Neighborhood>) => {
+  const handleUpdateNeighborhood = async (id: string, updates: any) => {
     try {
-      const { error } = await supabase
-        .from('neighborhoods')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Bairro atualizado com sucesso!",
-      });
-
+      await updateNeighborhood(id, updates);
       setEditingNeighborhood(null);
       setEditValues({});
-      loadData();
     } catch (error) {
-      console.error('Erro ao atualizar bairro:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar bairro",
-        variant: "destructive",
-      });
+      // Error already handled in hook
     }
   };
 
-  const deleteCity = async (id: string) => {
+  const handleDeleteCity = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta cidade? Isso também excluirá todos os bairros relacionados.')) {
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('cities')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Cidade excluída com sucesso!",
-      });
-
-      loadData();
+      await deleteCity(id);
     } catch (error) {
-      console.error('Erro ao excluir cidade:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir cidade",
-        variant: "destructive",
-      });
+      // Error already handled in hook
     }
   };
 
-  const deleteNeighborhood = async (id: string) => {
+  const handleDeleteNeighborhood = async (id: string, name: string) => {
     if (!confirm('Tem certeza que deseja excluir este bairro?')) {
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('neighborhoods')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Bairro excluído com sucesso!",
-      });
-
-      loadData();
+      await deleteNeighborhood(id, name);
     } catch (error) {
-      console.error('Erro ao excluir bairro:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir bairro",
-        variant: "destructive",
-      });
+      // Error already handled in hook
     }
   };
 
@@ -208,7 +103,7 @@ export const LocationManager = () => {
                 Gerencie as cidades do sistema
               </CardDescription>
             </div>
-            <AddCityDialog onCityAdded={loadData} />
+            <AddCityDialog onCityAdded={refreshData} />
           </div>
         </CardHeader>
         <CardContent>
@@ -258,7 +153,7 @@ export const LocationManager = () => {
                         <>
                           <Button
                             size="sm"
-                            onClick={() => updateCity(city.id, editValues)}
+                            onClick={() => handleUpdateCity(city.id, editValues)}
                           >
                             <Save className="w-4 h-4" />
                           </Button>
@@ -288,7 +183,7 @@ export const LocationManager = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => deleteCity(city.id)}
+                            onClick={() => handleDeleteCity(city.id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -316,7 +211,7 @@ export const LocationManager = () => {
                 Gerencie os bairros do sistema
               </CardDescription>
             </div>
-            <AddNeighborhoodDialog cities={cities} onNeighborhoodAdded={loadData} />
+            <AddNeighborhoodDialog cities={cities} onNeighborhoodAdded={refreshData} />
           </div>
         </CardHeader>
         <CardContent>
@@ -355,7 +250,7 @@ export const LocationManager = () => {
                         <>
                           <Button
                             size="sm"
-                            onClick={() => updateNeighborhood(neighborhood.id, editValues)}
+                            onClick={() => handleUpdateNeighborhood(neighborhood.id, editValues)}
                           >
                             <Save className="w-4 h-4" />
                           </Button>
@@ -385,7 +280,7 @@ export const LocationManager = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => deleteNeighborhood(neighborhood.id)}
+                            onClick={() => handleDeleteNeighborhood(neighborhood.id, neighborhood.name)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

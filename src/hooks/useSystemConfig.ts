@@ -6,13 +6,15 @@ interface SystemConfig {
   site_logo: { url: string; alt: string };
   form_title: { text: string };
   form_description: { text: string };
+  church_name: { text: string };
 }
 
 export const useSystemConfig = () => {
   const [config, setConfig] = useState<SystemConfig>({
     site_logo: { url: '', alt: 'Logo da Igreja' },
     form_title: { text: 'Sistema de Células' },
-    form_description: { text: 'Preencha seus dados para nos conectarmos com você' }
+    form_description: { text: 'Preencha seus dados para nos conectarmos com você' },
+    church_name: { text: '' }
   });
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +26,7 @@ export const useSystemConfig = () => {
         const { data, error } = await supabase
           .from('system_settings')
           .select('key, value')
-          .in('key', ['site_logo', 'form_title', 'form_description']);
+          .in('key', ['site_logo', 'form_title', 'form_description', 'church_name']);
 
         if (error) {
           console.error('Erro ao carregar configurações:', error);
@@ -52,6 +54,27 @@ export const useSystemConfig = () => {
     };
 
     loadConfig();
+
+    // Configurar real-time updates para configurações
+    const channel = supabase
+      .channel('system-config-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'system_settings'
+        },
+        (payload) => {
+          console.log('Configuração alterada em tempo real:', payload);
+          loadConfig(); // Recarregar configurações
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const updateFavicon = (logoUrl: string) => {
