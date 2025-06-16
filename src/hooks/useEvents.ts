@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -98,7 +97,10 @@ export const useEvents = () => {
 
       // Gerar URL com parâmetros usando o ID do evento
       const baseUrl = window.location.origin;
+      // Usar o endpoint /form diretamente com parâmetros
       const redirectUrl = `${baseUrl}/form?evento=${newEvent.id}&cod=${normalizedKeyword}`;
+      
+      console.log('useEvents: Gerando QR code para URL:', redirectUrl);
       
       // Gerar QR code data
       const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
@@ -149,6 +151,8 @@ export const useEvents = () => {
         const normalizedKeyword = updates.keyword.toLowerCase().trim();
         const baseUrl = window.location.origin;
         const redirectUrl = `${baseUrl}/form?evento=${id}&cod=${normalizedKeyword}`;
+        
+        console.log('useEvents: Atualizando QR code para URL:', redirectUrl);
         
         const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
           width: 300,
