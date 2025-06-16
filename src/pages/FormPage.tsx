@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -111,6 +112,7 @@ export const FormPage = () => {
 
   const loadNeighborhoods = async () => {
     try {
+      console.log('FormPage: Carregando bairros...');
       const { data, error } = await supabase
         .from('neighborhoods')
         .select('id, name, city_id')
@@ -122,6 +124,7 @@ export const FormPage = () => {
         return;
       }
 
+      console.log('FormPage: Bairros carregados:', data);
       setNeighborhoods(data || []);
     } catch (error) {
       console.error('FormPage: Erro crítico ao carregar bairros:', error);
@@ -130,6 +133,7 @@ export const FormPage = () => {
 
   const loadCities = async () => {
     try {
+      console.log('FormPage: Carregando cidades...');
       const { data, error } = await supabase
         .from('cities')
         .select('id, name, state')
@@ -141,6 +145,7 @@ export const FormPage = () => {
         return;
       }
 
+      console.log('FormPage: Cidades carregadas:', data);
       setCities(data || []);
     } catch (error) {
       console.error('FormPage: Erro crítico ao carregar cidades:', error);
@@ -151,10 +156,13 @@ export const FormPage = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('FormPage: Processando QR code com parâmetros:', { evento, cod });
 
       let eventData: EventData | null = null;
 
+      // Primeiro tentar por ID do evento
       if (evento) {
+        console.log('FormPage: Buscando evento por ID:', evento);
         const { data, error: eventError } = await supabase
           .from('events')
           .select('*')
@@ -163,12 +171,17 @@ export const FormPage = () => {
           .maybeSingle();
 
         if (data && !eventError) {
+          console.log('FormPage: Evento encontrado por ID:', data);
           eventData = data;
+        } else {
+          console.log('FormPage: Evento não encontrado por ID:', eventError);
         }
       }
 
+      // Se não encontrou por ID, tentar por keyword
       if (!eventData && cod) {
         const normalizedCod = cod.toLowerCase().trim();
+        console.log('FormPage: Buscando evento por keyword:', normalizedCod);
         
         const { data, error: keywordError } = await supabase
           .from('events')
@@ -178,11 +191,16 @@ export const FormPage = () => {
           .maybeSingle();
 
         if (data && !keywordError) {
+          console.log('FormPage: Evento encontrado por keyword:', data);
           eventData = data;
+        } else {
+          console.log('FormPage: Evento não encontrado por keyword:', keywordError);
         }
       }
 
       if (eventData) {
+        console.log('FormPage: Evento válido encontrado, incrementando contador');
+        // Incrementar contador de scans
         const { error: updateError } = await supabase
           .from('events')
           .update({ scan_count: (eventData.scan_count || 0) + 1 })
@@ -204,6 +222,7 @@ export const FormPage = () => {
         return;
       }
 
+      console.log('FormPage: Nenhum evento encontrado');
       setError('Evento não encontrado ou inativo');
     } catch (error) {
       console.error('FormPage: Erro crítico ao processar código:', error);
@@ -227,6 +246,8 @@ export const FormPage = () => {
 
     setSubmitting(true);
     try {
+      console.log('FormPage: Enviando contato:', formData);
+      
       const { data, error } = await supabase
         .from('contacts')
         .insert([{
@@ -249,6 +270,8 @@ export const FormPage = () => {
         return;
       }
 
+      console.log('FormPage: Contato criado com sucesso:', data);
+      
       toast({
         title: "Sucesso",
         description: "Seus dados foram enviados com sucesso!",
@@ -506,26 +529,38 @@ export const FormPage = () => {
                   <MapPin className="w-4 h-4 text-blue-600" />
                   Bairro *
                 </Label>
-                <Select 
-                  value={formData.neighborhood || "no-neighborhood"} 
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    neighborhood: value === "no-neighborhood" ? "" : value 
-                  }))}
-                  required
-                >
-                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
-                    <SelectValue placeholder="Selecione seu bairro" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
-                    {filteredNeighborhoods.map((neighborhood) => (
-                      <SelectItem key={neighborhood.id} value={neighborhood.name}>
-                        {neighborhood.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {formData.city_id && formData.city_id !== "no-city" ? (
+                  <Select 
+                    value={formData.neighborhood || "no-neighborhood"} 
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      neighborhood: value === "no-neighborhood" ? "" : value 
+                    }))}
+                    required
+                  >
+                    <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
+                      <SelectValue placeholder="Selecione seu bairro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
+                      {filteredNeighborhoods.map((neighborhood) => (
+                        <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                          {neighborhood.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="neighborhood"
+                    type="text"
+                    value={formData.neighborhood}
+                    onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
+                    placeholder="Digite o nome do bairro"
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
+                    required
+                  />
+                )}
               </div>
 
               <Button 

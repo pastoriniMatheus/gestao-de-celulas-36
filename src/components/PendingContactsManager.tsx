@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useMemo, useState as useReactState } from 'react';
 
-// Buscar os líderes pelo id (Adjust as needed)
-// Pode-se usar um hook ou consultar profiles diretamente aqui.
-// Para simplificar vou montar um hook dentro deste arquivo para buscar os perfis rapidamente.
+// Buscar os líderes pelo id
 const useCellLeaders = (cells) => {
-  // ids unicos dos líderes
   const leaderIds = useMemo(
     () =>
       Array.from(
@@ -28,7 +26,6 @@ const useCellLeaders = (cells) => {
   useEffect(() => {
     const fetchLeaders = async () => {
       if (leaderIds.length === 0) return setLeaders({});
-      // --- Cast leaderIds as string[] to solve TS2345 error ---
       const ids = leaderIds as string[];
       const { data, error } = await supabase
         .from('profiles')
@@ -63,7 +60,6 @@ export const PendingContactsManager = () => {
   const activeCells = cells.filter(cell => cell.active);
 
   // Buscar bairros das células por neighborhood_id, e nomes dos bairros
-  // Construímos um mapa neighborhood_id => neighborhood_name
   const [neighborhoods, setNeighborhoods] = useReactState<{ [id: string]: string }>({});
   useEffect(() => {
     const fetchNeighborhoods = async () => {
@@ -80,7 +76,6 @@ export const PendingContactsManager = () => {
       }
     };
     fetchNeighborhoods();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCells.map(c => c.neighborhood_id).join(',')]);
 
   // Agrupar células por bairro
@@ -103,31 +98,27 @@ export const PendingContactsManager = () => {
 
     setUpdating(contactId);
     try {
+      console.log('PendingContactsManager: Atribuindo contato à célula:', { contactId, cellId });
+      
       const { error } = await supabase
         .from('contacts')
         .update({ 
           cell_id: cellId,
-          status: 'assigned' // Agora aceito pelo banco
+          status: 'member' // Mudança de 'assigned' para 'member'
         })
         .eq('id', contactId);
 
       if (error) {
-        let description = `Erro ao atribuir célula: ${error.message}`;
-        if (
-          error.message &&
-          error.message.toLowerCase().includes("violates check constraint")
-        ) {
-          description =
-            "O status do contato não foi aceito pelo banco de dados. Por favor, acione o suporte ou revise os status aceitos.";
-        }
+        console.error('PendingContactsManager: Erro ao atribuir célula:', error);
         toast({
           title: "Erro",
-          description,
+          description: `Erro ao atribuir célula: ${error.message}`,
           variant: "destructive"
         });
         return;
       }
 
+      console.log('PendingContactsManager: Contato atribuído com sucesso');
       toast({
         title: "Sucesso",
         description: "Contato atribuído à célula com sucesso!"
@@ -135,6 +126,7 @@ export const PendingContactsManager = () => {
 
       await fetchContacts();
     } catch (error: any) {
+      console.error('PendingContactsManager: Erro inesperado:', error);
       toast({
         title: "Erro",
         description: `Erro inesperado: ${error?.message || 'Tente novamente'}`,

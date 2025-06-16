@@ -28,13 +28,16 @@ export const QRRedirect = () => {
     // Priorizar evento se existir
     if (evento) {
       params.set('evento', evento);
+      console.log('QRRedirect: Adicionando parâmetro evento:', evento);
     }
 
     // Adicionar cod se existir, ou usar keyword
     if (cod) {
       params.set('cod', cod);
+      console.log('QRRedirect: Adicionando parâmetro cod:', cod);
     } else if (keyword) {
       params.set('cod', keyword);
+      console.log('QRRedirect: Usando keyword como cod:', keyword);
     }
 
     // Se há parâmetros, adicionar à URL

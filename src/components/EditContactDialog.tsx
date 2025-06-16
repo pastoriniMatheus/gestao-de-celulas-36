@@ -62,7 +62,9 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Preparar dados para atualização mantendo a célula original se não foi alterada
+      console.log('EditContactDialog: Salvando contato com dados:', form);
+      
+      // Preparar dados para atualização mantendo a célula original
       const updateData = {
         name: form.name,
         whatsapp: form.whatsapp,
@@ -71,10 +73,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         age: form.age ? parseInt(form.age) : null,
         encounter_with_god: !!form.encounter_with_god,
         status: form.status,
-        // Manter cell_id original se não foi alterado explicitamente
+        // Manter cell_id atual se não foi alterado explicitamente
         cell_id: form.cell_id || contact.cell_id || null,
       };
 
+      console.log('EditContactDialog: Dados de atualização:', updateData);
+      
       await updateContact(contact.id, updateData);
       toast({
         title: "Sucesso",
@@ -82,7 +86,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       });
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao atualizar contato:', error);
+      console.error('EditContactDialog: Erro ao atualizar contato:', error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar contato",
@@ -96,6 +100,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const handleTransformToMember = async () => {
     setSaving(true);
     try {
+      console.log('EditContactDialog: Transformando visitante em membro');
+      
       await updateContact(contact.id, {
         status: 'member',
         // Manter a célula atual
@@ -107,7 +113,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       });
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao transformar em membro:', error);
+      console.error('EditContactDialog: Erro ao transformar em membro:', error);
       toast({
         title: "Erro",
         description: "Erro ao transformar visitante em membro",
@@ -121,6 +127,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const handleTransferCell = async () => {
     setSaving(true);
     try {
+      console.log('EditContactDialog: Transferindo membro para nova célula');
+      
       await updateContact(contact.id, {
         cell_id: form.cell_id || null,
       });
@@ -130,7 +138,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       });
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao transferir célula:', error);
+      console.error('EditContactDialog: Erro ao transferir célula:', error);
       toast({
         title: "Erro",
         description: "Erro ao transferir membro para célula",
@@ -149,6 +157,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   // Determinar quais botões mostrar baseado no contexto e status
   const isVisitor = contact?.status === 'visitor';
   const isMember = contact?.status === 'member';
+  const isPending = contact?.status === 'pending';
   
   // Botão "Transformar em Membro" só aparece para visitantes no contexto de células
   const showTransformButton = context === 'cell' && isVisitor;
@@ -159,14 +168,23 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   // Campo de célula aparece para membros ou no contexto de contatos
   const showCellField = isMember || context === 'contacts';
 
+  // Função para determinar o texto do badge baseado no status
+  const getStatusBadge = () => {
+    if (isMember) return { variant: 'default', text: 'Membro' };
+    if (isVisitor) return { variant: 'secondary', text: 'Visitante' };
+    return { variant: 'outline', text: 'Pendente' };
+  };
+
+  const statusBadge = getStatusBadge();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Editar {isMember ? 'Membro' : isVisitor ? 'Visitante' : 'Contato'}
-            <Badge variant={isMember ? 'default' : isVisitor ? 'secondary' : 'outline'}>
-              {isMember ? 'Membro' : isVisitor ? 'Visitante' : 'Pendente'}
+            Editar {statusBadge.text}
+            <Badge variant={statusBadge.variant as any}>
+              {statusBadge.text}
             </Badge>
           </DialogTitle>
         </DialogHeader>
