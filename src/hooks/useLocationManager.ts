@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -97,22 +98,15 @@ export const useLocationManager = () => {
         console.error('Erro ao atualizar contatos:', contactsError);
       }
 
-      // 3. Remover referências em células se houver campo city_id
+      // 3. Remover referências em células (definir neighborhood_id como null)
       console.log('Verificando células...');
-      const { data: cellsData } = await supabase
+      const { error: cellsError } = await supabase
         .from('cells')
-        .select('id')
-        .eq('city_id', id);
+        .update({ neighborhood_id: null })
+        .eq('neighborhood_id', id);
 
-      if (cellsData && cellsData.length > 0) {
-        const { error: cellsError } = await supabase
-          .from('cells')
-          .update({ city_id: null })
-          .eq('city_id', id);
-
-        if (cellsError) {
-          console.error('Erro ao atualizar células:', cellsError);
-        }
+      if (cellsError) {
+        console.error('Erro ao atualizar células:', cellsError);
       }
 
       // 4. Finalmente, deletar a cidade
@@ -204,7 +198,7 @@ export const useLocationManager = () => {
     }
   };
 
-  const addCity = async (cityData: Omit<City, 'id' | 'created_at' | 'updated_at'>) => {
+  const addCity = async (cityData: Pick<City, 'name' | 'state' | 'active'>) => {
     try {
       const { data, error } = await supabase
         .from('cities')
@@ -233,7 +227,7 @@ export const useLocationManager = () => {
     }
   };
 
-  const addNeighborhood = async (neighborhoodData: Omit<Neighborhood, 'id' | 'created_at' | 'updated_at'>) => {
+  const addNeighborhood = async (neighborhoodData: Pick<Neighborhood, 'name' | 'city_id' | 'active'>) => {
     try {
       const { data, error } = await supabase
         .from('neighborhoods')
@@ -262,7 +256,7 @@ export const useLocationManager = () => {
     }
   };
 
-  const updateCity = async (id: string, updates: Partial<City>) => {
+  const updateCity = async (id: string, updates: Partial<Pick<City, 'name' | 'state' | 'active'>>) => {
     try {
       const { data, error } = await supabase
         .from('cities')
@@ -292,7 +286,7 @@ export const useLocationManager = () => {
     }
   };
 
-  const updateNeighborhood = async (id: string, updates: Partial<Neighborhood>) => {
+  const updateNeighborhood = async (id: string, updates: Partial<Pick<Neighborhood, 'name' | 'active'>>) => {
     try {
       const { data, error } = await supabase
         .from('neighborhoods')
