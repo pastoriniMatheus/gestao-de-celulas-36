@@ -131,8 +131,6 @@ export const useQRCodes = () => {
         description: "QR code criado com sucesso!"
       });
 
-      // Atualizar a lista automaticamente
-      await fetchQRCodes();
       return data;
     } catch (error: any) {
       console.error('Erro crítico ao criar QR code:', error);
@@ -203,53 +201,32 @@ export const useQRCodes = () => {
 
   // Configurar atualização em tempo real
   useEffect(() => {
-    // Clean up existing channel before creating new one
-    if (channelRef.current) {
-      console.log('Removing existing QR codes channel...');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-      isSubscribedRef.current = false;
-    }
+    if (!user) return;
 
-    // Only create new subscription if not already subscribed
-    if (!isSubscribedRef.current) {
-      const channelName = `qr_codes_changes_${Date.now()}_${Math.random()}`;
-      console.log('Creating new QR codes channel:', channelName);
+    const channelName = `qr_codes_changes_${Date.now()}`;
+    console.log('Creating QR codes channel:', channelName);
 
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'qr_codes'
-          },
-          (payload) => {
-            console.log('QR code alterado:', payload);
-            fetchQRCodes();
-          }
-        );
-
-      channel.subscribe((status) => {
-        console.log('QR codes channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isSubscribedRef.current = true;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'qr_codes'
+        },
+        (payload) => {
+          console.log('QR code alterado:', payload);
+          fetchQRCodes();
         }
-      });
-
-      channelRef.current = channel;
-    }
+      )
+      .subscribe();
 
     return () => {
       console.log('Cleaning up QR codes channel...');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-        isSubscribedRef.current = false;
-      }
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
   return {
     qrCodes,

@@ -54,6 +54,30 @@ export type Database = {
           },
         ]
       }
+      birthday_webhooks: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       cells: {
         Row: {
           active: boolean
@@ -251,6 +275,42 @@ export type Database = {
           qr_url?: string
           scan_count?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      message_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          message: string
+          name: string
+          subject: string | null
+          template_type: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          message: string
+          name: string
+          subject?: string | null
+          template_type: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          message?: string
+          name?: string
+          subject?: string | null
+          template_type?: string
+          updated_at?: string
+          variables?: Json | null
         }
         Relationships: []
       }
@@ -453,6 +513,39 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_configs: {
+        Row: {
+          active: boolean
+          created_at: string
+          event_type: string
+          headers: Json | null
+          id: string
+          name: string
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          event_type: string
+          headers?: Json | null
+          id?: string
+          name: string
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          event_type?: string
+          headers?: Json | null
+          id?: string
+          name?: string
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       neighborhood_stats: {
@@ -476,6 +569,10 @@ export type Database = {
       can_delete_neighborhood: {
         Args: { neighborhood_name: string }
         Returns: boolean
+      }
+      check_birthdays_and_trigger_webhooks: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       increment_qr_scan_count: {
         Args: { qr_id: string; user_ip?: unknown; user_agent_string?: string }

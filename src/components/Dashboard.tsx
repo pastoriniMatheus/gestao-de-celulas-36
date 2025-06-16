@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
 } from '@/components/ui/card';
 import {
   Users,
-  UsersRound,
   CircleCheck,
   Home,
   CalendarDays,
@@ -17,14 +17,13 @@ import {
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import DashboardCharts from "./DashboardCharts";
+import { DashboardPipeline } from './DashboardPipeline';
 
-// Ícones Lucide disponíveis: "Users", "UsersRound", "CircleCheck", "Home", "CalendarDays", "ChartBar", "ChartPie"
 export const Dashboard = () => {
   const [stats, setStats] = useState({
     totalMembers: 0,
     totalEncounter: 0,
     totalCells: 0,
-    activeCells: 0,
     neighborhoodsWithMembers: 0,
     totalNeighborhoods: 0,
     totalCities: 0,
@@ -34,6 +33,70 @@ export const Dashboard = () => {
 
   useEffect(() => {
     fetchStats();
+    
+    // Configurar real-time updates
+    const channel = supabase
+      .channel('dashboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contacts'
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cells'
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'neighborhoods'
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cities'
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchStats = async () => {
@@ -53,7 +116,6 @@ export const Dashboard = () => {
     const totalMembers = contactsData?.length ?? 0;
     const totalEncounter = contactsData?.filter(c => c.encounter_with_god)?.length ?? 0;
     const totalCells = cellsData?.length ?? 0;
-    const activeCells = cellsData?.filter(c => c.active)?.length ?? 0;
 
     // Quantos bairros têm pelo menos um membro
     let neighborhoodsWithMembers = 0;
@@ -72,7 +134,6 @@ export const Dashboard = () => {
       totalMembers,
       totalEncounter,
       totalCells,
-      activeCells,
       neighborhoodsWithMembers,
       totalNeighborhoods,
       totalCities,
@@ -93,83 +154,51 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-10 max-w-6xl mx-auto py-6">
-      <h1 className="text-2xl font-bold text-center mb-3">Painel de Indicadores</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
+    <div className="space-y-8 max-w-7xl mx-auto py-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900">Painel de Indicadores</h1>
+        <p className="text-gray-600 mt-2">Visão geral dos dados do sistema</p>
+      </div>
+      
+      {/* Cards de Métricas */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
             <Users className="h-6 w-6 text-blue-700" />
-            <CardTitle>Membros</CardTitle>
+            <CardTitle className="text-lg">Membros</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-800">{stats.totalMembers}</div>
             <CardDescription>Membros cadastrados</CardDescription>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
+        
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
             <CircleCheck className="h-6 w-6 text-green-600" />
-            <CardTitle>Encontro com Deus</CardTitle>
+            <CardTitle className="text-lg">Encontro com Deus</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-700">{stats.totalEncounter}</div>
             <CardDescription>Já fizeram Encontro com Deus</CardDescription>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
+        
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
             <Home className="h-6 w-6 text-indigo-600" />
-            <CardTitle>Células</CardTitle>
+            <CardTitle className="text-lg">Células</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-indigo-700">{stats.totalCells}</div>
             <CardDescription>Total de células</CardDescription>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <UsersRound className="h-6 w-6 text-teal-600" />
-            <CardTitle>Células Ativas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-teal-700">{stats.activeCells}</div>
-            <CardDescription>Células ativas</CardDescription>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <ChartPie className="h-6 w-6 text-pink-600" />
-            <CardTitle>Bairros com membros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-pink-700">{stats.neighborhoodsWithMembers}</div>
-            <CardDescription>Quantos bairros têm membros</CardDescription>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <ChartBar className="h-6 w-6 text-orange-600" />
-            <CardTitle>Bairros cadastrados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-orange-700">{stats.totalNeighborhoods}</div>
-            <CardDescription>Total de bairros</CardDescription>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
-            <CalendarDays className="h-6 w-6 text-violet-600" />
-            <CardTitle>Cidades</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-violet-700">{stats.totalCities}</div>
-            <CardDescription>Cidades cadastradas</CardDescription>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2">
+        
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
             <Users className="h-6 w-6 text-yellow-600" />
-            <CardTitle>Líderes</CardTitle>
+            <CardTitle className="text-lg">Líderes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-yellow-700">{stats.totalLeaders}</div>
@@ -177,8 +206,48 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-      {/* Bloco bonito de gráficos logo abaixo dos cards */}
-      <DashboardCharts stats={stats} />
+
+      {/* Segunda linha de cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <ChartPie className="h-6 w-6 text-pink-600" />
+            <CardTitle className="text-lg">Bairros Ativos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-pink-700">{stats.neighborhoodsWithMembers}</div>
+            <CardDescription>Bairros com membros</CardDescription>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <ChartBar className="h-6 w-6 text-orange-600" />
+            <CardTitle className="text-lg">Bairros Cadastrados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-700">{stats.totalNeighborhoods}</div>
+            <CardDescription>Total de bairros</CardDescription>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <CalendarDays className="h-6 w-6 text-violet-600" />
+            <CardTitle className="text-lg">Cidades</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-violet-700">{stats.totalCities}</div>
+            <CardDescription>Cidades cadastradas</CardDescription>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pipeline de Contatos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DashboardPipeline />
+        <DashboardCharts stats={stats} />
+      </div>
     </div>
   );
 };

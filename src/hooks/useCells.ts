@@ -104,6 +104,27 @@ export const useCells = () => {
 
   useEffect(() => {
     fetchCells();
+
+    // Configurar real-time updates
+    const channel = supabase
+      .channel('cells-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cells'
+        },
+        (payload) => {
+          console.log('Célula alterada:', payload);
+          fetchCells();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {

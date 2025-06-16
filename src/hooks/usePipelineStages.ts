@@ -135,7 +135,7 @@ export const usePipelineStages = () => {
 
     // Escutar mudanças na tabela pipeline_stages
     const channel = supabase
-      .channel('pipeline-stages-changes')
+      .channel(`pipeline-stages-changes-${Date.now()}`)
       .on(
         'postgres_changes',
         {

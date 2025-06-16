@@ -5,6 +5,8 @@ import { useAuth } from './AuthProvider';
 import { SystemSettingsManager } from './SystemSettingsManager';
 import { AppearanceSettings } from './AppearanceSettings';
 import { LocationManager } from './LocationManager';
+import { WebhookManager } from './WebhookManager';
+import { MessageTemplateManager } from './MessageTemplateManager';
 import { Tabs as UITabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -138,10 +140,12 @@ export const Settings = () => {
         </CardHeader>
         <CardContent>
           <UITabs defaultValue="appearance" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="appearance">Aparência</TabsTrigger>
               <TabsTrigger value="locations">Bairros/Cidades</TabsTrigger>
               <TabsTrigger value="form">Formulário</TabsTrigger>
+              <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+              <TabsTrigger value="messages">Mensagens</TabsTrigger>
             </TabsList>
             
             <TabsContent value="appearance" className="space-y-6 mt-6">
@@ -154,6 +158,14 @@ export const Settings = () => {
             
             <TabsContent value="form" className="space-y-6 mt-6">
               <SystemSettingsManager />
+            </TabsContent>
+            
+            <TabsContent value="webhooks" className="space-y-6 mt-6">
+              <WebhookManager />
+            </TabsContent>
+            
+            <TabsContent value="messages" className="space-y-6 mt-6">
+              <MessageTemplateManager />
             </TabsContent>
           </UITabs>
         </CardContent>
