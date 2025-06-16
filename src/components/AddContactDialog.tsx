@@ -86,7 +86,7 @@ export const AddContactDialog = () => {
           <BasicInfoFields
             formData={formData}
             onUpdateFormData={updateFormData}
-            showAge={false}
+            showBirthDate={false}
           />
           <div>
             <Label htmlFor="add-contact-birth-date">Data de Nascimento</Label>
