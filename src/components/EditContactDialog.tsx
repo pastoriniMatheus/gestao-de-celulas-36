@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -80,6 +79,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         city_id: form.city_id || null,
         birth_date: form.birth_date || null,
         encounter_with_god: !!form.encounter_with_god,
+        // Manter os valores atuais do contato para estes campos
         status: contact.status,
         cell_id: contact.cell_id,
       };
@@ -87,10 +87,6 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       console.log('EditContactDialog: Dados de atualização:', updateData);
       
       await updateContact(contact.id, updateData);
-      toast({
-        title: "Sucesso",
-        description: "Contato atualizado com sucesso!",
-      });
       onOpenChange(false);
     } catch (error) {
       console.error('EditContactDialog: Erro ao atualizar contato:', error);
@@ -113,10 +109,6 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         status: 'member'
       });
       
-      toast({
-        title: "Sucesso",
-        description: "Visitante transformado em membro com sucesso!",
-      });
       onOpenChange(false);
     } catch (error) {
       console.error('EditContactDialog: Erro ao transformar em membro:', error);
@@ -137,10 +129,6 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       
       await updateContact(contact.id, {
         cell_id: form.cell_id || null,
-      });
-      toast({
-        title: "Sucesso",
-        description: "Membro transferido para nova célula com sucesso!",
       });
       onOpenChange(false);
     } catch (error) {

@@ -173,6 +173,7 @@ export type Database = {
         Row: {
           age: number | null
           attendance_code: string | null
+          birth_date: string | null
           cell_id: string | null
           city_id: string | null
           created_at: string
@@ -188,6 +189,7 @@ export type Database = {
         Insert: {
           age?: number | null
           attendance_code?: string | null
+          birth_date?: string | null
           cell_id?: string | null
           city_id?: string | null
           created_at?: string
@@ -203,6 +205,7 @@ export type Database = {
         Update: {
           age?: number | null
           attendance_code?: string | null
+          birth_date?: string | null
           cell_id?: string | null
           city_id?: string | null
           created_at?: string

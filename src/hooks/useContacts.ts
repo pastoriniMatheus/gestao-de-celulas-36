@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -49,7 +48,7 @@ export const useContacts = () => {
         encounter_with_god: contact.encounter_with_god,
         pipeline_stage_id: contact.pipeline_stage_id,
         age: contact.age,
-        birth_date: (contact as any).birth_date || null,
+        birth_date: contact.birth_date,
         attendance_code: contact.attendance_code,
         created_at: contact.created_at,
         updated_at: contact.updated_at
@@ -93,7 +92,7 @@ export const useContacts = () => {
         encounter_with_god: data.encounter_with_god,
         pipeline_stage_id: data.pipeline_stage_id,
         age: data.age,
-        birth_date: (data as any).birth_date || null,
+        birth_date: data.birth_date,
         attendance_code: data.attendance_code,
         created_at: data.created_at,
         updated_at: data.updated_at
@@ -109,6 +108,8 @@ export const useContacts = () => {
 
   const updateContact = async (id: string, updates: Partial<Contact>) => {
     try {
+      console.log('useContacts: Atualizando contato com dados:', { id, updates });
+      
       const { data, error } = await supabase
         .from('contacts')
         .update(updates)
@@ -117,9 +118,11 @@ export const useContacts = () => {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar contato:', error);
+        console.error('useContacts: Erro ao atualizar contato:', error);
         throw error;
       }
+
+      console.log('useContacts: Contato atualizado com sucesso:', data);
 
       toast({
         title: "Sucesso",
@@ -138,7 +141,7 @@ export const useContacts = () => {
         encounter_with_god: data.encounter_with_god,
         pipeline_stage_id: data.pipeline_stage_id,
         age: data.age,
-        birth_date: (data as any).birth_date || null,
+        birth_date: data.birth_date,
         attendance_code: data.attendance_code,
         created_at: data.created_at,
         updated_at: data.updated_at
@@ -147,7 +150,7 @@ export const useContacts = () => {
       setContacts(prev => prev.map(contact => contact.id === id ? transformedContact : contact));
       return transformedContact;
     } catch (error) {
-      console.error('Erro ao atualizar contato:', error);
+      console.error('useContacts: Erro ao atualizar contato:', error);
       throw error;
     }
   };
@@ -208,7 +211,7 @@ export const useContacts = () => {
               encounter_with_god: payload.new.encounter_with_god,
               pipeline_stage_id: payload.new.pipeline_stage_id,
               age: payload.new.age,
-              birth_date: (payload.new as any).birth_date || null,
+              birth_date: payload.new.birth_date,
               attendance_code: payload.new.attendance_code,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
@@ -226,7 +229,7 @@ export const useContacts = () => {
               encounter_with_god: payload.new.encounter_with_god,
               pipeline_stage_id: payload.new.pipeline_stage_id,
               age: payload.new.age,
-              birth_date: (payload.new as any).birth_date || null,
+              birth_date: payload.new.birth_date,
               attendance_code: payload.new.attendance_code,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
