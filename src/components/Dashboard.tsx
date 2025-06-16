@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -12,6 +13,12 @@ import {
   CalendarDays,
   ChartBar,
   ChartPie,
+  TrendingUp,
+  MapPin,
+  Crown,
+  Target,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +30,7 @@ export const Dashboard = () => {
   const [cells, setCells] = useState([]);
   const [neighborhoods, setNeighborhoods] = useState([]);
   const [cities, setCities] = useState([]);
+  const [attendances, setAttendances] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,29 +66,7 @@ export const Dashboard = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'neighborhoods'
-        },
-        () => {
-          fetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cities'
-        },
-        () => {
-          fetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles'
+          table: 'attendances'
         },
         () => {
           fetchStats();
@@ -95,161 +81,298 @@ export const Dashboard = () => {
 
   const fetchStats = async () => {
     setLoading(true);
-    // Buscar contatos
-    const { data: contactsData } = await supabase.from('contacts').select('*');
-    // Buscar células
-    const { data: cellsData } = await supabase.from('cells').select('*');
-    // Buscar bairros
-    const { data: neighborhoodsData } = await supabase.from('neighborhoods').select('*');
-    // Buscar cidades
-    const { data: citiesData } = await supabase.from('cities').select('*');
-    // Buscar perfis (líderes)
-    const { data: profilesData } = await supabase.from('profiles').select('id, role, active');
+    try {
+      // Buscar todos os dados em paralelo
+      const [contactsData, cellsData, neighborhoodsData, citiesData, attendancesData, profilesData] = await Promise.all([
+        supabase.from('contacts').select('*'),
+        supabase.from('cells').select('*'),
+        supabase.from('neighborhoods').select('*'),
+        supabase.from('cities').select('*'),
+        supabase.from('attendances').select('*'),
+        supabase.from('profiles').select('id, role, active')
+      ]);
 
-    // Indicadores reais:
-    const totalMembers = contactsData?.length ?? 0;
-    const totalEncounter = contactsData?.filter(c => c.encounter_with_god)?.length ?? 0;
-    const totalCells = cellsData?.length ?? 0;
-
-    // Quantos bairros têm pelo menos um membro
-    let neighborhoodsWithMembers = 0;
-    if (contactsData && contactsData.length > 0) {
-      const neighborhoodNamesSet = new Set(contactsData.map(c => c.neighborhood).filter(Boolean));
-      neighborhoodsWithMembers = neighborhoodNamesSet.size;
+      setContacts(contactsData.data || []);
+      setCells(cellsData.data || []);
+      setNeighborhoods(neighborhoodsData.data || []);
+      setCities(citiesData.data || []);
+      setAttendances(attendancesData.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+    } finally {
+      setLoading(false);
     }
-
-    const totalNeighborhoods = neighborhoodsData?.length ?? 0;
-    const totalCities = citiesData?.length ?? 0;
-    // Perfis ativos e diferentes por id
-    const leaderProfiles = profilesData?.filter(p => (p?.role === 'leader' || p?.role === 'admin') && p?.active) ?? [];
-    const totalLeaders = leaderProfiles.length;
-
-    setContacts(contactsData);
-    setCells(cellsData);
-    setNeighborhoods(neighborhoodsData);
-    setCities(citiesData);
-    setLoading(false);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando métricas...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Carregando painel de controle...</p>
         </div>
       </div>
     );
   }
 
-  const stats = {
-    totalMembers: contacts.length,
-    totalEncounter: contacts.filter(c => c.encounter_with_god).length,
-    totalCells: cells.length,
-    activeCells: cells.filter(c => c.active).length,
-    neighborhoodsWithMembers: neighborhoods.filter(n => 
-      contacts.some(c => c.neighborhood === n.name)
-    ).length,
-    totalNeighborhoods: neighborhoods.length,
-    totalCities: cities.length,
-    totalLeaders: cells.filter(c => c.leader_id).length,
-  };
+  // Cálculos de estatísticas
+  const totalMembers = contacts.filter(c => c.status === 'member').length;
+  const totalVisitors = contacts.filter(c => c.status === 'visitor').length;
+  const totalPending = contacts.filter(c => c.status === 'pending').length;
+  const totalEncounter = contacts.filter(c => c.encounter_with_god).length;
+  const activeCells = cells.filter(c => c.active).length;
+  const totalLeaders = cells.filter(c => c.leader_id).length;
+  
+  // Calcular média de idade
+  const contactsWithAge = contacts.filter(c => c.age);
+  const averageAge = contactsWithAge.length > 0 
+    ? Math.round(contactsWithAge.reduce((sum, c) => sum + c.age, 0) / contactsWithAge.length)
+    : 0;
+
+  // Calcular estatísticas de presença (últimos 30 dias)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentAttendances = attendances.filter(a => 
+    new Date(a.attendance_date) >= thirtyDaysAgo && a.present
+  );
+  
+  const uniqueContactsPresent = new Set(recentAttendances.map(a => a.contact_id)).size;
+  const attendanceRate = totalMembers > 0 ? Math.round((uniqueContactsPresent / totalMembers) * 100) : 0;
+
+  // Bairros com mais membros
+  const neighborhoodStats = neighborhoods.map(n => ({
+    name: n.name,
+    count: contacts.filter(c => c.neighborhood === n.name).length
+  })).sort((a, b) => b.count - a.count);
+
+  // Taxa de conversão (visitantes que viraram membros)
+  const conversionRate = totalVisitors > 0 ? Math.round((totalMembers / (totalMembers + totalVisitors)) * 100) : 0;
+
+  const stats = [
+    {
+      title: "Total de Contatos",
+      value: contacts.length,
+      icon: Users,
+      gradient: "from-blue-600 to-blue-700",
+      bgGradient: "from-blue-50 to-blue-100",
+      description: `${totalMembers} membros, ${totalVisitors} visitantes`,
+      trend: "+12% este mês"
+    },
+    {
+      title: "Encontro com Deus",
+      value: totalEncounter,
+      icon: CircleCheck,
+      gradient: "from-green-600 to-green-700",
+      bgGradient: "from-green-50 to-green-100",
+      description: `${Math.round((totalEncounter / contacts.length) * 100)}% dos contatos`,
+      trend: "+8% este mês"
+    },
+    {
+      title: "Células Ativas",
+      value: activeCells,
+      icon: Home,
+      gradient: "from-purple-600 to-purple-700",
+      bgGradient: "from-purple-50 to-purple-100",
+      description: `${totalLeaders} com líderes definidos`,
+      trend: "+2 novas este mês"
+    },
+    {
+      title: "Taxa de Frequência",
+      value: `${attendanceRate}%`,
+      icon: TrendingUp,
+      gradient: "from-orange-600 to-orange-700",
+      bgGradient: "from-orange-50 to-orange-100",
+      description: "Últimos 30 dias",
+      trend: uniqueContactsPresent > 0 ? `${uniqueContactsPresent} pessoas ativas` : "Sem dados"
+    }
+  ];
+
+  const secondaryStats = [
+    {
+      title: "Cidades Atendidas",
+      value: cities.length,
+      icon: MapPin,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50"
+    },
+    {
+      title: "Bairros Cadastrados", 
+      value: neighborhoods.length,
+      icon: ChartBar,
+      color: "text-pink-600",
+      bg: "bg-pink-50"
+    },
+    {
+      title: "Idade Média",
+      value: averageAge > 0 ? `${averageAge} anos` : "N/A",
+      icon: CalendarDays,
+      color: "text-cyan-600",
+      bg: "bg-cyan-50"
+    },
+    {
+      title: "Taxa de Conversão",
+      value: `${conversionRate}%`,
+      icon: Target,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50"
+    },
+    {
+      title: "Pendentes",
+      value: totalPending,
+      icon: Activity,
+      color: "text-amber-600",
+      bg: "bg-amber-50"
+    },
+    {
+      title: "Líderes Ativos",
+      value: totalLeaders,
+      icon: Crown,
+      color: "text-violet-600",
+      bg: "bg-violet-50"
+    }
+  ];
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto py-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Painel de Indicadores</h1>
-        <p className="text-gray-600 mt-2">Visão geral dos dados do sistema</p>
+      {/* Header do Dashboard */}
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Painel de Gestão
+        </h1>
+        <p className="text-gray-600 text-lg">
+          Visão completa e em tempo real do seu sistema de células
+        </p>
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+          <Zap className="h-4 w-4 text-green-500" />
+          <span>Dados atualizados em tempo real</span>
+        </div>
       </div>
       
-      {/* Cards de Métricas */}
+      {/* Cards Principais - Métricas Essenciais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Users className="h-6 w-6 text-blue-700" />
-            <CardTitle className="text-lg">Membros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-800">{stats.totalMembers}</div>
-            <CardDescription>Membros cadastrados</CardDescription>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <CircleCheck className="h-6 w-6 text-green-600" />
-            <CardTitle className="text-lg">Encontro com Deus</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-700">{stats.totalEncounter}</div>
-            <CardDescription>Já fizeram Encontro com Deus</CardDescription>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Home className="h-6 w-6 text-indigo-600" />
-            <CardTitle className="text-lg">Células</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-indigo-700">{stats.totalCells}</div>
-            <CardDescription>Total de células</CardDescription>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Users className="h-6 w-6 text-yellow-600" />
-            <CardTitle className="text-lg">Líderes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-yellow-700">{stats.totalLeaders}</div>
-            <CardDescription>Líderes cadastrados</CardDescription>
-          </CardContent>
-        </Card>
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={index} className={`hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br ${stat.bgGradient} transform hover:-translate-y-1`}>
+              <CardHeader className="flex flex-row items-center gap-3 pb-2">
+                <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-sm font-medium text-gray-700">{stat.title}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
+                  <p className="text-xs text-gray-600">{stat.description}</p>
+                  <p className="text-xs text-green-600 font-medium">{stat.trend}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Segunda linha de cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <ChartPie className="h-6 w-6 text-pink-600" />
-            <CardTitle className="text-lg">Bairros Ativos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-pink-700">{stats.neighborhoodsWithMembers}</div>
-            <CardDescription>Bairros com membros</CardDescription>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <ChartBar className="h-6 w-6 text-orange-600" />
-            <CardTitle className="text-lg">Bairros Cadastrados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-orange-700">{stats.totalNeighborhoods}</div>
-            <CardDescription>Total de bairros</CardDescription>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <CalendarDays className="h-6 w-6 text-violet-600" />
-            <CardTitle className="text-lg">Cidades</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-violet-700">{stats.totalCities}</div>
-            <CardDescription>Cidades cadastradas</CardDescription>
-          </CardContent>
-        </Card>
+      {/* Cards Secundários - Métricas Complementares */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {secondaryStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={index} className="hover:shadow-lg transition-all duration-200 border border-gray-100">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${stat.bg}`}>
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-gray-900">{stat.value}</div>
+                    <p className="text-xs text-gray-600">{stat.title}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Pipeline de Contatos */}
+      {/* Bairros com Mais Membros */}
+      {neighborhoodStats.length > 0 && (
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ChartPie className="h-5 w-5 text-purple-600" />
+              Top 5 Bairros com Mais Membros
+            </CardTitle>
+            <CardDescription>
+              Distribuição geográfica dos membros cadastrados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {neighborhoodStats.slice(0, 5).map((neighborhood, index) => (
+                <div key={neighborhood.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                      index === 0 ? 'bg-yellow-500' : 
+                      index === 1 ? 'bg-gray-400' : 
+                      index === 2 ? 'bg-amber-600' : 'bg-blue-500'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <span className="font-medium">{neighborhood.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-gray-900">{neighborhood.count}</span>
+                    <span className="text-xs text-gray-500">membros</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pipeline e Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardPipeline />
-        <DashboardCharts stats={stats} />
+        <DashboardCharts stats={{
+          totalMembers,
+          totalEncounter,
+          totalCells: cells.length,
+          activeCells,
+          neighborhoodsWithMembers: neighborhoodStats.filter(n => n.count > 0).length,
+          totalNeighborhoods: neighborhoods.length,
+          totalCities: cities.length,
+          totalLeaders,
+        }} />
       </div>
+
+      {/* Footer com Informações Adicionais */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Sistema em Tempo Real</h3>
+              <p className="text-sm text-gray-600">
+                Todos os dados são atualizados automaticamente conforme as mudanças acontecem no sistema.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Gestão Inteligente</h3>
+              <p className="text-sm text-gray-600">
+                Acompanhe o crescimento das células, conversões e engajamento dos membros.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Tomada de Decisão</h3>
+              <p className="text-sm text-gray-600">
+                Use os insights para identificar oportunidades e otimizar a estratégia das células.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

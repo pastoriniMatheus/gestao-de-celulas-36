@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -48,7 +47,6 @@ export const useLocationManager = () => {
 
   const deleteCity = async (id: string) => {
     try {
-      // Usar force delete para remover todas as dependências
       await forceDeleteCity(id);
     } catch (error) {
       console.error('Erro ao deletar cidade:', error);
@@ -62,7 +60,6 @@ export const useLocationManager = () => {
 
   const deleteNeighborhood = async (id: string, name: string) => {
     try {
-      // Usar force delete para remover todas as dependências
       await forceDeleteNeighborhood(id, name);
     } catch (error) {
       console.error('Erro ao deletar bairro:', error);
@@ -78,7 +75,8 @@ export const useLocationManager = () => {
     try {
       console.log('Iniciando exclusão forçada da cidade:', id);
       
-      // Primeiro, deletar todos os bairros da cidade
+      // 1. Primeiro, deletar todos os bairros da cidade
+      console.log('Deletando bairros da cidade...');
       const { error: neighborhoodsError } = await supabase
         .from('neighborhoods')
         .delete()
@@ -88,7 +86,8 @@ export const useLocationManager = () => {
         console.error('Erro ao deletar bairros:', neighborhoodsError);
       }
 
-      // Remover referências em contatos
+      // 2. Remover referências em contatos (definir city_id como null)
+      console.log('Removendo referências em contatos...');
       const { error: contactsError } = await supabase
         .from('contacts')
         .update({ city_id: null })
@@ -98,7 +97,26 @@ export const useLocationManager = () => {
         console.error('Erro ao atualizar contatos:', contactsError);
       }
 
-      // Finalmente, deletar a cidade
+      // 3. Remover referências em células se houver campo city_id
+      console.log('Verificando células...');
+      const { data: cellsData } = await supabase
+        .from('cells')
+        .select('id')
+        .eq('city_id', id);
+
+      if (cellsData && cellsData.length > 0) {
+        const { error: cellsError } = await supabase
+          .from('cells')
+          .update({ city_id: null })
+          .eq('city_id', id);
+
+        if (cellsError) {
+          console.error('Erro ao atualizar células:', cellsError);
+        }
+      }
+
+      // 4. Finalmente, deletar a cidade
+      console.log('Deletando cidade...');
       const { error: cityError } = await supabase
         .from('cities')
         .delete()
@@ -122,7 +140,7 @@ export const useLocationManager = () => {
       console.error('Erro ao deletar cidade:', error);
       toast({
         title: "Erro",
-        description: "Erro ao deletar cidade. Tente novamente.",
+        description: "Erro ao deletar cidade. Verifique se não há dados vinculados.",
         variant: "destructive"
       });
       throw error;
@@ -131,9 +149,10 @@ export const useLocationManager = () => {
 
   const forceDeleteNeighborhood = async (id: string, name: string) => {
     try {
-      console.log('Iniciando exclusão forçada do bairro:', id);
+      console.log('Iniciando exclusão forçada do bairro:', id, name);
       
-      // Primeiro, atualizar contatos que usam este bairro
+      // 1. Primeiro, atualizar contatos que usam este bairro
+      console.log('Removendo referências em contatos...');
       const { error: contactsError } = await supabase
         .from('contacts')
         .update({ neighborhood: '' })
@@ -143,7 +162,8 @@ export const useLocationManager = () => {
         console.error('Erro ao atualizar contatos:', contactsError);
       }
 
-      // Remover referências de células
+      // 2. Remover referências de células
+      console.log('Removendo referências em células...');
       const { error: cellsError } = await supabase
         .from('cells')
         .update({ neighborhood_id: null })
@@ -153,7 +173,8 @@ export const useLocationManager = () => {
         console.error('Erro ao atualizar células:', cellsError);
       }
 
-      // Finalmente, deletar o bairro
+      // 3. Finalmente, deletar o bairro
+      console.log('Deletando bairro...');
       const { error: neighborhoodError } = await supabase
         .from('neighborhoods')
         .delete()
@@ -176,7 +197,7 @@ export const useLocationManager = () => {
       console.error('Erro ao deletar bairro:', error);
       toast({
         title: "Erro",
-        description: "Erro ao deletar bairro. Tente novamente.",
+        description: "Erro ao deletar bairro. Verifique se não há dados vinculados.",
         variant: "destructive"
       });
       throw error;

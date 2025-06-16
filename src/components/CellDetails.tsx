@@ -414,6 +414,10 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
   const presentCount = todayAttendances.filter(att => att.present).length;
   const visitorCount = todayAttendances.filter(att => att.present && att.visitor).length;
 
+  // Separar membros efetivos de visitantes - membros que viraram member não devem aparecer como visitantes
+  const actualMembers = members.filter(m => m.status === 'member');
+  const actualVisitors = members.filter(m => m.status === 'visitor');
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -432,7 +436,7 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                     <Users className="h-8 w-8 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-600">Total de Membros</p>
-                      <p className="text-2xl font-bold">{members.filter(m => m.status !== 'visitor').length}</p>
+                      <p className="text-2xl font-bold">{actualMembers.length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -518,11 +522,11 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                 {/* Lista de Membros */}
                 <div className="space-y-2">
                   <h4 className="font-medium">Membros:</h4>
-                  {members.filter(m => m.status !== 'visitor').length === 0 ? (
+                  {actualMembers.length === 0 ? (
                     <p className="text-gray-500">Nenhum membro cadastrado nesta célula.</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {members.filter(member => member.status !== 'visitor').map((member) => {
+                      {actualMembers.map((member) => {
                         const attendance = todayAttendances.find(att => att.contact_id === member.id);
                         const isPresent = attendance?.present || false;
                         const isLoading = isUpdating === member.id;
@@ -601,16 +605,18 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                 </div>
 
                 {/* Visitantes do Dia */}
-                {visitorCount > 0 && (
+                {actualVisitors.length > 0 && (
                   <div className="space-y-2 pt-4 border-t">
-                    <h4 className="font-medium">Visitantes Presentes:</h4>
+                    <h4 className="font-medium">Visitantes da Célula:</h4>
                     <div className="space-y-1">
-                      {todayAttendances
-                        .filter(att => att.visitor && att.present)
-                        .map(att => {
-                          const visitor = members.find(m => m.id === att.contact_id);
-                          return visitor ? (
-                            <div key={att.id} className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
+                      {actualVisitors.map(visitor => {
+                        const attendance = todayAttendances.find(att => att.contact_id === visitor.id);
+                        const isPresent = attendance?.present || false;
+                        const isLoading = isUpdating === visitor.id;
+                        
+                        return (
+                          <div key={visitor.id} className="flex items-center justify-between p-2 bg-orange-50 rounded border border-orange-200">
+                            <div className="flex items-center gap-2">
                               <UserPlus className="h-4 w-4 text-orange-600" />
                               <span>{visitor.name}</span>
                               {visitor.attendance_code && (
@@ -625,8 +631,24 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
                                 <svg width="16" height="16" fill="none" stroke="currentColor"><path d="M15.232 2.12a3 3 0 0 1 0 4.243l-8.61 8.611a2 2 0 0 1-1.049.555l-4.077.68.68-4.078a2 2 0 0 1 .555-1.048l8.61-8.611a3 3 0 0 1 4.244 0Z"></path></svg>
                               </Button>
                             </div>
-                          ) : null;
-                        })}
+                            <Button
+                              size="sm"
+                              variant={isPresent ? "default" : "outline"}
+                              onClick={() => toggleAttendance(visitor.id)}
+                              disabled={isLoading}
+                              className={isPresent ? "bg-green-600 hover:bg-green-700" : ""}
+                            >
+                              {isLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                              ) : isPresent ? (
+                                <UserCheck className="h-4 w-4" />
+                              ) : (
+                                <Users className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
