@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +48,7 @@ export const FormPage = () => {
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
-    console.log('FormPage carregado com parâmetros:', { 
+    console.log('FormPage: Carregado com parâmetros:', { 
       evento, 
       cod, 
       keyword, 
@@ -63,7 +62,7 @@ export const FormPage = () => {
     if (evento || cod) {
       handleItemScan();
     } else {
-      console.log('Nenhum parâmetro válido encontrado');
+      console.log('FormPage: Nenhum parâmetro válido encontrado');
       setError('Parâmetros não encontrados na URL');
       setLoading(false);
     }
@@ -71,18 +70,18 @@ export const FormPage = () => {
 
   const loadSystemSettings = async () => {
     try {
-      console.log('Carregando configurações do sistema...');
+      console.log('FormPage: Carregando configurações do sistema...');
       const { data, error } = await supabase
         .from('system_settings')
         .select('key, value')
         .in('key', ['site_logo', 'form_title', 'form_description']);
 
       if (error) {
-        console.error('Erro ao carregar configurações:', error);
+        console.error('FormPage: Erro ao carregar configurações:', error);
         return;
       }
 
-      console.log('Configurações carregadas:', data);
+      console.log('FormPage: Configurações carregadas:', data);
       
       if (data && data.length > 0) {
         const settings: any = {};
@@ -92,7 +91,7 @@ export const FormPage = () => {
         setSystemSettings(prev => ({ ...prev, ...settings }));
       }
     } catch (error) {
-      console.error('Erro crítico ao carregar configurações:', error);
+      console.error('FormPage: Erro crítico ao carregar configurações:', error);
     } finally {
       setLoadingSettings(false);
     }
@@ -100,7 +99,7 @@ export const FormPage = () => {
 
   const loadNeighborhoods = async () => {
     try {
-      console.log('Carregando bairros...');
+      console.log('FormPage: Carregando bairros...');
       const { data, error } = await supabase
         .from('neighborhoods')
         .select('id, name, city_id')
@@ -108,26 +107,26 @@ export const FormPage = () => {
         .order('name');
 
       if (error) {
-        console.error('Erro ao carregar bairros:', error);
+        console.error('FormPage: Erro ao carregar bairros:', error);
         return;
       }
 
-      console.log('Bairros carregados:', data);
+      console.log('FormPage: Bairros carregados:', data);
       setNeighborhoods(data || []);
     } catch (error) {
-      console.error('Erro crítico ao carregar bairros:', error);
+      console.error('FormPage: Erro crítico ao carregar bairros:', error);
     }
   };
 
   const handleItemScan = async () => {
     try {
-      console.log('Processando scan com parâmetros:', { evento, cod });
+      console.log('FormPage: Processando scan com parâmetros:', { evento, cod });
       setLoading(true);
       setError(null);
 
       // Se tem ID do evento, buscar diretamente
       if (evento) {
-        console.log('Buscando evento por ID:', evento);
+        console.log('FormPage: Buscando evento por ID:', evento);
         const { data: eventData, error: eventError } = await supabase
           .from('events')
           .select('*')
@@ -135,10 +134,10 @@ export const FormPage = () => {
           .eq('active', true)
           .maybeSingle();
 
-        console.log('Resultado busca evento por ID:', { eventData, eventError });
+        console.log('FormPage: Resultado busca evento por ID:', { eventData, eventError });
 
         if (eventData && !eventError) {
-          console.log('Evento encontrado por ID:', eventData);
+          console.log('FormPage: Evento encontrado por ID:', eventData);
           
           // Incrementar contador de scan do evento
           await supabase
@@ -161,7 +160,7 @@ export const FormPage = () => {
       // Se não encontrou por ID, ou se só tem código, tentar por keyword
       if (cod) {
         const normalizedCod = cod.toLowerCase().trim();
-        console.log('Buscando por código normalizado:', normalizedCod);
+        console.log('FormPage: Buscando por código normalizado:', normalizedCod);
         
         // Buscar evento por keyword
         const { data: eventData, error: eventError } = await supabase
@@ -171,10 +170,10 @@ export const FormPage = () => {
           .eq('active', true)
           .maybeSingle();
 
-        console.log('Resultado busca evento por código:', { eventData, eventError });
+        console.log('FormPage: Resultado busca evento por código:', { eventData, eventError });
 
         if (eventData && !eventError) {
-          console.log('Evento encontrado por código:', eventData);
+          console.log('FormPage: Evento encontrado por código:', eventData);
           
           // Incrementar contador de scan do evento
           await supabase
@@ -201,10 +200,10 @@ export const FormPage = () => {
           .eq('active', true)
           .maybeSingle();
 
-        console.log('Resultado busca QR code:', { qrCodeData, qrError });
+        console.log('FormPage: Resultado busca QR code:', { qrCodeData, qrError });
 
         if (qrCodeData && !qrError) {
-          console.log('QR code encontrado:', qrCodeData);
+          console.log('FormPage: QR code encontrado:', qrCodeData);
           
           // Incrementar contador de scan
           await supabase
@@ -224,10 +223,10 @@ export const FormPage = () => {
         }
       }
 
-      console.log('Nenhum evento ou QR code encontrado para os parâmetros:', { evento, cod });
+      console.log('FormPage: Nenhum evento ou QR code encontrado para os parâmetros:', { evento, cod });
       setError('Código não encontrado ou inativo');
     } catch (error) {
-      console.error('Erro crítico ao processar código:', error);
+      console.error('FormPage: Erro crítico ao processar código:', error);
       setError('Erro ao processar código');
     } finally {
       setLoading(false);
@@ -248,7 +247,7 @@ export const FormPage = () => {
 
     setSubmitting(true);
     try {
-      console.log('Enviando dados do contato:', formData);
+      console.log('FormPage: Enviando dados do contato:', formData);
       
       const { data, error } = await supabase
         .from('contacts')
@@ -262,7 +261,7 @@ export const FormPage = () => {
         .single();
 
       if (error) {
-        console.error('Erro ao criar contato:', error);
+        console.error('FormPage: Erro ao criar contato:', error);
         toast({
           title: "Erro",
           description: "Erro ao enviar dados. Tente novamente.",
@@ -271,7 +270,7 @@ export const FormPage = () => {
         return;
       }
 
-      console.log('Contato criado com sucesso:', data);
+      console.log('FormPage: Contato criado com sucesso:', data);
       toast({
         title: "Sucesso",
         description: "Seus dados foram enviados com sucesso!",
@@ -281,7 +280,7 @@ export const FormPage = () => {
       setFormData({ name: '', whatsapp: '', neighborhood: '' });
       setShowForm(false);
     } catch (error) {
-      console.error('Erro crítico ao enviar contato:', error);
+      console.error('FormPage: Erro crítico ao enviar contato:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado. Tente novamente.",
@@ -298,7 +297,7 @@ export const FormPage = () => {
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando...</p>
+            <p className="text-gray-600">Carregando formulário...</p>
             <div className="mt-4 text-xs text-gray-500">
               <p>Parâmetros: evento={evento}, cod={cod}</p>
             </div>
