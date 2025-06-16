@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, CheckCircle, AlertCircle, ExternalLink, User, Phone, MapPin, Calendar, Clock } from 'lucide-react';
+import { QrCode, CheckCircle, AlertCircle, ExternalLink, User, Phone, MapPin, Calendar, Clock, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -40,7 +40,7 @@ export const FormPage = () => {
   const cod = searchParams.get('cod') || keyword;
   
   const [itemData, setItemData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -70,11 +70,13 @@ export const FormPage = () => {
     loadSystemSettings();
     loadNeighborhoods();
     
+    // Se tem parâmetros, processar evento
     if (evento || cod) {
       handleItemScan();
     } else {
-      console.log('FormPage: Nenhum parâmetro válido encontrado');
-      setError('Parâmetros não encontrados na URL');
+      // Se não tem parâmetros, mostrar formulário diretamente
+      console.log('FormPage: Nenhum parâmetro encontrado, mostrando formulário padrão');
+      setShowForm(true);
       setLoading(false);
     }
   }, [evento, cod, keyword]);
@@ -137,16 +139,17 @@ export const FormPage = () => {
 
       let eventData: EventData | null = null;
 
-      // Primeira tentativa: buscar por ID do evento
+      // Primeira tentativa: buscar por ID do evento (se evento estiver presente)
       if (evento) {
         console.log('FormPage: Buscando evento por ID:', evento);
         const { data, error: eventError } = await supabase
           .from('events')
           .select('*')
           .eq('id', evento)
+          .eq('active', true) // Só buscar eventos ativos
           .maybeSingle();
 
-        console.log('FormPage: Resultado busca por ID:', { data, eventError });
+        console.log('FormPage: Resultado busca por ID:', { data, error: eventError });
 
         if (data && !eventError) {
           eventData = data;
@@ -154,7 +157,7 @@ export const FormPage = () => {
         }
       }
 
-      // Segunda tentativa: buscar por keyword/código
+      // Segunda tentativa: buscar por keyword/código (se não encontrou por ID ou se só tem cod)
       if (!eventData && cod) {
         const normalizedCod = cod.toLowerCase().trim();
         console.log('FormPage: Buscando evento por keyword:', normalizedCod);
@@ -163,9 +166,10 @@ export const FormPage = () => {
           .from('events')
           .select('*')
           .eq('keyword', normalizedCod)
+          .eq('active', true) // Só buscar eventos ativos
           .maybeSingle();
 
-        console.log('FormPage: Resultado busca por keyword:', { data, keywordError });
+        console.log('FormPage: Resultado busca por keyword:', { data, error: keywordError });
 
         if (data && !keywordError) {
           eventData = data;
@@ -173,15 +177,8 @@ export const FormPage = () => {
         }
       }
 
-      // Verificar se encontrou evento e se está ativo
+      // Verificar se encontrou evento válido
       if (eventData) {
-        if (!eventData.active) {
-          console.log('FormPage: Evento encontrado mas está inativo:', eventData);
-          setError('Este evento não está mais ativo');
-          setLoading(false);
-          return;
-        }
-
         console.log('FormPage: Evento válido encontrado, incrementando contador...');
         
         // Incrementar contador de scan do evento
@@ -287,16 +284,18 @@ export const FormPage = () => {
   if (loading || loadingSettings) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center shadow-lg border-0">
+        <Card className="w-full max-w-md text-center shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardContent className="p-8">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Carregando formulário...</h3>
             <p className="text-sm text-gray-500">Aguarde um momento</p>
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-500">
-              <p className="font-medium mb-1">Parâmetros de Debug:</p>
-              <p>evento: {evento || 'não fornecido'}</p>
-              <p>cod: {cod || 'não fornecido'}</p>
-            </div>
+            {(evento || cod) && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-500">
+                <p className="font-medium mb-1">Parâmetros de Debug:</p>
+                <p>evento: {evento || 'não fornecido'}</p>
+                <p>cod: {cod || 'não fornecido'}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -306,7 +305,7 @@ export const FormPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center shadow-lg border-0">
+        <Card className="w-full max-w-md text-center shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
               <AlertCircle className="w-8 h-8 text-red-600" />
@@ -326,13 +325,25 @@ export const FormPage = () => {
             <p className="text-sm text-gray-600">
               Verifique se o código é válido ou entre em contato com o organizador.
             </p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              className="w-full"
-            >
-              Tentar Novamente
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="flex-1"
+              >
+                Tentar Novamente
+              </Button>
+              <Button
+                onClick={() => {
+                  setError(null);
+                  setShowForm(true);
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Ir para Formulário
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -342,14 +353,14 @@ export const FormPage = () => {
   if (showSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center shadow-lg border-0">
+        <Card className="w-full max-w-md text-center shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardHeader className="pb-4">
             {systemSettings.site_logo.url && (
               <div className="mx-auto mb-6">
                 <img 
                   src={systemSettings.site_logo.url} 
                   alt={systemSettings.site_logo.alt}
-                  className="h-20 w-auto mx-auto"
+                  className="h-20 w-auto mx-auto rounded-lg shadow-md"
                 />
               </div>
             )}
@@ -388,7 +399,7 @@ export const FormPage = () => {
             </div>
 
             <Button
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 shadow-lg"
               onClick={() => window.close()}
             >
               <ExternalLink className="w-4 h-4 mr-2" />
@@ -403,14 +414,14 @@ export const FormPage = () => {
   if (showForm) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg border-0">
+        <Card className="w-full max-w-md shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardHeader className="text-center pb-4">
             {systemSettings.site_logo.url && (
               <div className="mx-auto mb-6">
                 <img 
                   src={systemSettings.site_logo.url} 
                   alt={systemSettings.site_logo.alt}
-                  className="h-20 w-auto mx-auto"
+                  className="h-20 w-auto mx-auto rounded-lg shadow-md"
                 />
               </div>
             )}
@@ -451,7 +462,7 @@ export const FormPage = () => {
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Seu nome completo"
-                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
                   required
                 />
               </div>
@@ -467,7 +478,7 @@ export const FormPage = () => {
                   value={formData.whatsapp}
                   onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
                   placeholder="(11) 99999-9999"
-                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
                   required
                 />
               </div>
@@ -482,7 +493,7 @@ export const FormPage = () => {
                   onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
                   required
                 >
-                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
                     <SelectValue placeholder="Selecione seu bairro" />
                   </SelectTrigger>
                   <SelectContent>
@@ -497,7 +508,7 @@ export const FormPage = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium shadow-lg transition-all duration-200 hover:shadow-xl"
                 disabled={submitting}
               >
                 {submitting ? (

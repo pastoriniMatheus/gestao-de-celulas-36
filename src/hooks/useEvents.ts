@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -104,12 +105,13 @@ export const useEvents = () => {
       
       // Gerar QR code data
       const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
-        width: 300,
+        width: 400,
         margin: 2,
         color: {
           dark: '#000000',
           light: '#FFFFFF'
-        }
+        },
+        errorCorrectionLevel: 'M'
       });
 
       // Atualizar evento com QR code e URL
@@ -149,18 +151,37 @@ export const useEvents = () => {
       // Se estiver atualizando keyword, regenerar QR code
       if (updates.keyword) {
         const normalizedKeyword = updates.keyword.toLowerCase().trim();
+        
+        // Verificar se keyword já existe (exceto no próprio evento)
+        const { data: existingEvent } = await supabase
+          .from('events')
+          .select('id')
+          .eq('keyword', normalizedKeyword)
+          .neq('id', id)
+          .maybeSingle();
+
+        if (existingEvent) {
+          toast({
+            title: "Erro",
+            description: "Esta palavra-chave já existe. Escolha outra.",
+            variant: "destructive"
+          });
+          throw new Error('Keyword já existe');
+        }
+
         const baseUrl = window.location.origin;
         const redirectUrl = `${baseUrl}/form?evento=${id}&cod=${normalizedKeyword}`;
         
         console.log('useEvents: Atualizando QR code para URL:', redirectUrl);
         
         const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
-          width: 300,
+          width: 400,
           margin: 2,
           color: {
             dark: '#000000',
             light: '#FFFFFF'
-          }
+          },
+          errorCorrectionLevel: 'M'
         });
 
         updates.keyword = normalizedKeyword;
