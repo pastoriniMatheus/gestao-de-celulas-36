@@ -17,7 +17,7 @@ export const MessageTemplateManager = () => {
   const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    template_type: 'custom' as const,
+    template_type: 'custom' as 'birthday' | 'welcome' | 'reminder' | 'custom',
     subject: '',
     message: '',
     variables: [] as string[],

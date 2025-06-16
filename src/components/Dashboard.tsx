@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -20,15 +19,10 @@ import DashboardCharts from "./DashboardCharts";
 import { DashboardPipeline } from './DashboardPipeline';
 
 export const Dashboard = () => {
-  const [stats, setStats] = useState({
-    totalMembers: 0,
-    totalEncounter: 0,
-    totalCells: 0,
-    neighborhoodsWithMembers: 0,
-    totalNeighborhoods: 0,
-    totalCities: 0,
-    totalLeaders: 0,
-  });
+  const [contacts, setContacts] = useState([]);
+  const [cells, setCells] = useState([]);
+  const [neighborhoods, setNeighborhoods] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -130,15 +124,10 @@ export const Dashboard = () => {
     const leaderProfiles = profilesData?.filter(p => (p?.role === 'leader' || p?.role === 'admin') && p?.active) ?? [];
     const totalLeaders = leaderProfiles.length;
 
-    setStats({
-      totalMembers,
-      totalEncounter,
-      totalCells,
-      neighborhoodsWithMembers,
-      totalNeighborhoods,
-      totalCities,
-      totalLeaders,
-    });
+    setContacts(contactsData);
+    setCells(cellsData);
+    setNeighborhoods(neighborhoodsData);
+    setCities(citiesData);
     setLoading(false);
   };
 
@@ -152,6 +141,19 @@ export const Dashboard = () => {
       </div>
     );
   }
+
+  const stats = {
+    totalMembers: contacts.length,
+    totalEncounter: contacts.filter(c => c.encounter_with_god).length,
+    totalCells: cells.length,
+    activeCells: cells.filter(c => c.active).length,
+    neighborhoodsWithMembers: neighborhoods.filter(n => 
+      contacts.some(c => c.neighborhood === n.name)
+    ).length,
+    totalNeighborhoods: neighborhoods.length,
+    totalCities: cities.length,
+    totalLeaders: cells.filter(c => c.leader_id).length,
+  };
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto py-6">

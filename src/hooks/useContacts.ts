@@ -14,6 +14,8 @@ interface Contact {
   encounter_with_god: boolean;
   pipeline_stage_id: string | null;
   age: number | null;
+  birth_date: string | null;
+  attendance_code: string | null;
   created_at: string;
   updated_at: string;
 }

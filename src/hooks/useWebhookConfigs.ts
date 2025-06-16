@@ -8,17 +8,17 @@ export interface WebhookConfig {
   name: string;
   webhook_url: string;
   event_type: 'birthday' | 'new_contact' | 'pipeline_change' | 'custom';
+  headers: any;
   active: boolean;
-  headers: Record<string, string>;
   created_at: string;
   updated_at: string;
 }
 
 export const useWebhookConfigs = () => {
-  const [configs, setConfigs] = useState<WebhookConfig[]>([]);
+  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchConfigs = async () => {
+  const fetchWebhooks = async () => {
     try {
       const { data, error } = await supabase
         .from('webhook_configs')
@@ -26,9 +26,16 @@ export const useWebhookConfigs = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setConfigs(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        event_type: item.event_type as 'birthday' | 'new_contact' | 'pipeline_change' | 'custom'
+      }));
+      
+      setWebhooks(transformedData);
     } catch (error) {
-      console.error('Erro ao buscar configurações:', error);
+      console.error('Erro ao buscar webhooks:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar configurações de webhook",
@@ -39,11 +46,11 @@ export const useWebhookConfigs = () => {
     }
   };
 
-  const addConfig = async (configData: Omit<WebhookConfig, 'id' | 'created_at' | 'updated_at'>) => {
+  const addWebhook = async (webhookData: Omit<WebhookConfig, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('webhook_configs')
-        .insert([configData])
+        .insert([webhookData])
         .select()
         .single();
 
@@ -51,22 +58,22 @@ export const useWebhookConfigs = () => {
 
       toast({
         title: "Sucesso",
-        description: "Configuração de webhook criada com sucesso!"
+        description: "Webhook criado com sucesso!"
       });
 
       return data;
     } catch (error) {
-      console.error('Erro ao criar configuração:', error);
+      console.error('Erro ao criar webhook:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar configuração de webhook",
+        description: "Erro ao criar webhook",
         variant: "destructive"
       });
       throw error;
     }
   };
 
-  const updateConfig = async (id: string, updates: Partial<WebhookConfig>) => {
+  const updateWebhook = async (id: string, updates: Partial<WebhookConfig>) => {
     try {
       const { error } = await supabase
         .from('webhook_configs')
@@ -77,19 +84,19 @@ export const useWebhookConfigs = () => {
 
       toast({
         title: "Sucesso",
-        description: "Configuração atualizada com sucesso!"
+        description: "Webhook atualizado com sucesso!"
       });
     } catch (error) {
-      console.error('Erro ao atualizar configuração:', error);
+      console.error('Erro ao atualizar webhook:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar configuração",
+        description: "Erro ao atualizar webhook",
         variant: "destructive"
       });
     }
   };
 
-  const deleteConfig = async (id: string) => {
+  const deleteWebhook = async (id: string) => {
     try {
       const { error } = await supabase
         .from('webhook_configs')
@@ -100,22 +107,22 @@ export const useWebhookConfigs = () => {
 
       toast({
         title: "Sucesso",
-        description: "Configuração deletada com sucesso!"
+        description: "Webhook deletado com sucesso!"
       });
     } catch (error) {
-      console.error('Erro ao deletar configuração:', error);
+      console.error('Erro ao deletar webhook:', error);
       toast({
         title: "Erro",
-        description: "Erro ao deletar configuração",
+        description: "Erro ao deletar webhook",
         variant: "destructive"
       });
     }
   };
 
   useEffect(() => {
-    fetchConfigs();
+    fetchWebhooks();
 
-    // Configurar real-time
+    // Real-time updates
     const channel = supabase
       .channel('webhook-configs-changes')
       .on(
@@ -126,7 +133,7 @@ export const useWebhookConfigs = () => {
           table: 'webhook_configs'
         },
         () => {
-          fetchConfigs();
+          fetchWebhooks();
         }
       )
       .subscribe();
@@ -137,11 +144,11 @@ export const useWebhookConfigs = () => {
   }, []);
 
   return {
-    configs,
+    webhooks,
     loading,
-    addConfig,
-    updateConfig,
-    deleteConfig,
-    refreshConfigs: fetchConfigs
+    addWebhook,
+    updateWebhook,
+    deleteWebhook,
+    refreshWebhooks: fetchWebhooks
   };
 };

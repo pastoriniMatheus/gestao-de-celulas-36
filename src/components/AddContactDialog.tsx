@@ -51,6 +51,9 @@ export const AddContactDialog = () => {
         status: 'pending',
         birth_date: formData.birth_date || null,
         encounter_with_god: !!formData.encounter_with_god,
+        pipeline_stage_id: null,
+        age: null,
+        attendance_code: null,
       };
       await addContact(contactToAdd);
       toast({

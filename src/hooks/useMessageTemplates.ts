@@ -27,7 +27,15 @@ export const useMessageTemplates = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTemplates(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        variables: Array.isArray(item.variables) ? item.variables : [],
+        template_type: item.template_type as 'birthday' | 'welcome' | 'reminder' | 'custom'
+      }));
+      
+      setTemplates(transformedData);
     } catch (error) {
       console.error('Erro ao buscar templates:', error);
       toast({
