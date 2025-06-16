@@ -127,7 +127,7 @@ export const useBirthdayWebhooks = () => {
           table: 'birthday_webhooks'
         },
         () => {
-          fetchTemplates();
+          fetchWebhooks();
         }
       )
       .subscribe((status) => {
