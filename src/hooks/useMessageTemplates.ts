@@ -29,10 +29,16 @@ export const useMessageTemplates = () => {
       if (error) throw error;
       
       // Transform the data to match our interface
-      const transformedData = (data || []).map(item => ({
-        ...item,
-        variables: Array.isArray(item.variables) ? item.variables : [],
-        template_type: item.template_type as 'birthday' | 'welcome' | 'reminder' | 'custom'
+      const transformedData: MessageTemplate[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        template_type: item.template_type as 'birthday' | 'welcome' | 'reminder' | 'custom',
+        subject: item.subject || undefined,
+        message: item.message,
+        variables: Array.isArray(item.variables) ? item.variables.filter(v => typeof v === 'string') : [],
+        active: item.active,
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
       
       setTemplates(transformedData);
@@ -124,7 +130,7 @@ export const useMessageTemplates = () => {
   useEffect(() => {
     fetchTemplates();
 
-    // Configurar real-time
+    // Real-time updates
     const channel = supabase
       .channel('message-templates-changes')
       .on(

@@ -37,7 +37,25 @@ export const useContacts = () => {
         return;
       }
 
-      setContacts(data || []);
+      // Transform the data to ensure all fields are properly typed
+      const transformedData: Contact[] = (data || []).map(contact => ({
+        id: contact.id,
+        name: contact.name,
+        whatsapp: contact.whatsapp,
+        neighborhood: contact.neighborhood,
+        city_id: contact.city_id,
+        cell_id: contact.cell_id,
+        status: contact.status,
+        encounter_with_god: contact.encounter_with_god,
+        pipeline_stage_id: contact.pipeline_stage_id,
+        age: contact.age,
+        birth_date: contact.birth_date,
+        attendance_code: contact.attendance_code,
+        created_at: contact.created_at,
+        updated_at: contact.updated_at
+      }));
+
+      setContacts(transformedData);
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
     } finally {
@@ -63,9 +81,26 @@ export const useContacts = () => {
         description: "Contato criado com sucesso!"
       });
 
-      // Atualizar estado local imediatamente
-      setContacts(prev => [data, ...prev]);
-      return data;
+      // Transform and update state
+      const transformedContact: Contact = {
+        id: data.id,
+        name: data.name,
+        whatsapp: data.whatsapp,
+        neighborhood: data.neighborhood,
+        city_id: data.city_id,
+        cell_id: data.cell_id,
+        status: data.status,
+        encounter_with_god: data.encounter_with_god,
+        pipeline_stage_id: data.pipeline_stage_id,
+        age: data.age,
+        birth_date: data.birth_date,
+        attendance_code: data.attendance_code,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      setContacts(prev => [transformedContact, ...prev]);
+      return transformedContact;
     } catch (error) {
       console.error('Erro ao criar contato:', error);
       throw error;
@@ -91,9 +126,26 @@ export const useContacts = () => {
         description: "Contato atualizado com sucesso!"
       });
 
-      // Atualizar estado local imediatamente
-      setContacts(prev => prev.map(contact => contact.id === id ? data : contact));
-      return data;
+      // Transform and update state
+      const transformedContact: Contact = {
+        id: data.id,
+        name: data.name,
+        whatsapp: data.whatsapp,
+        neighborhood: data.neighborhood,
+        city_id: data.city_id,
+        cell_id: data.cell_id,
+        status: data.status,
+        encounter_with_god: data.encounter_with_god,
+        pipeline_stage_id: data.pipeline_stage_id,
+        age: data.age,
+        birth_date: data.birth_date,
+        attendance_code: data.attendance_code,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      setContacts(prev => prev.map(contact => contact.id === id ? transformedContact : contact));
+      return transformedContact;
     } catch (error) {
       console.error('Erro ao atualizar contato:', error);
       throw error;
@@ -117,7 +169,6 @@ export const useContacts = () => {
         description: "Contato deletado com sucesso!"
       });
 
-      // Atualizar estado local imediatamente
       setContacts(prev => prev.filter(contact => contact.id !== id));
     } catch (error) {
       console.error('Erro ao deletar contato:', error);
@@ -128,7 +179,7 @@ export const useContacts = () => {
   useEffect(() => {
     fetchContacts();
 
-    // Configurar real-time updates melhorado
+    // Real-time updates
     const channel = supabase
       .channel('contacts-realtime-changes')
       .on(
@@ -142,10 +193,42 @@ export const useContacts = () => {
           console.log('Contato alterado em tempo real:', payload);
           
           if (payload.eventType === 'INSERT') {
-            setContacts(prev => [payload.new as Contact, ...prev]);
+            const transformedContact: Contact = {
+              id: payload.new.id,
+              name: payload.new.name,
+              whatsapp: payload.new.whatsapp,
+              neighborhood: payload.new.neighborhood,
+              city_id: payload.new.city_id,
+              cell_id: payload.new.cell_id,
+              status: payload.new.status,
+              encounter_with_god: payload.new.encounter_with_god,
+              pipeline_stage_id: payload.new.pipeline_stage_id,
+              age: payload.new.age,
+              birth_date: payload.new.birth_date,
+              attendance_code: payload.new.attendance_code,
+              created_at: payload.new.created_at,
+              updated_at: payload.new.updated_at
+            };
+            setContacts(prev => [transformedContact, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
+            const transformedContact: Contact = {
+              id: payload.new.id,
+              name: payload.new.name,
+              whatsapp: payload.new.whatsapp,
+              neighborhood: payload.new.neighborhood,
+              city_id: payload.new.city_id,
+              cell_id: payload.new.cell_id,
+              status: payload.new.status,
+              encounter_with_god: payload.new.encounter_with_god,
+              pipeline_stage_id: payload.new.pipeline_stage_id,
+              age: payload.new.age,
+              birth_date: payload.new.birth_date,
+              attendance_code: payload.new.attendance_code,
+              created_at: payload.new.created_at,
+              updated_at: payload.new.updated_at
+            };
             setContacts(prev => prev.map(contact => 
-              contact.id === payload.new.id ? payload.new as Contact : contact
+              contact.id === payload.new.id ? transformedContact : contact
             ));
           } else if (payload.eventType === 'DELETE') {
             setContacts(prev => prev.filter(contact => contact.id !== payload.old.id));

@@ -13,7 +13,7 @@ import { useWebhookConfigs } from '@/hooks/useWebhookConfigs';
 
 export const WebhookManager = () => {
   const { webhooks, loading: webhooksLoading, addWebhook, toggleWebhook, deleteWebhook } = useBirthdayWebhooks();
-  const { configs, loading: configsLoading, addConfig, updateConfig, deleteConfig } = useWebhookConfigs();
+  const { webhooks: configs, loading: configsLoading, addWebhook: addConfig, updateWebhook: updateConfig, deleteWebhook: deleteConfig } = useWebhookConfigs();
   
   const [newWebhookUrl, setNewWebhookUrl] = useState('');
   const [newConfig, setNewConfig] = useState({
