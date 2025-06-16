@@ -1,10 +1,11 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Home } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemConfig } from '@/hooks/useSystemConfig';
@@ -128,7 +129,9 @@ export const AuthPage = () => {
               />
             ) : (
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Home className="w-8 h-8 text-white" />
+                <span className="text-white font-bold text-xl">
+                  {config.form_title?.text?.charAt(0) || 'S'}
+                </span>
               </div>
             )}
             <div>

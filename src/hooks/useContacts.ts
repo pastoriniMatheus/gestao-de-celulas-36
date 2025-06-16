@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -9,9 +8,10 @@ interface Contact {
   whatsapp?: string;
   neighborhood: string;
   status: string;
-  age?: number;
+  birth_date?: string;
   city_id?: string;
   cell_id?: string;
+  pipeline_stage_id?: string;
   created_at: string;
   updated_at: string;
   encounter_with_god: boolean;
@@ -19,8 +19,7 @@ interface Contact {
 }
 
 function generateCode() {
-  // Gera um código aleatório curto de 4 a 6 caracteres (somente números)
-  const length = 6; // pode trocar para 4 a 6, conforme desejar
+  const length = 6;
   let code = "";
   for (let i = 0; i < length; i++) {
     code += Math.floor(Math.random() * 10).toString();
@@ -50,13 +49,11 @@ export const useContacts = () => {
       }
 
       console.log('Contatos encontrados:', data);
-      // Garantir que os dados estejam bem formatados
       const formattedContacts = await Promise.all(
         (data || []).map(async (contact) => {
           let attendance_code = contact.attendance_code;
           if (!attendance_code) {
             attendance_code = generateCode();
-            // Atualiza só se necessário no banco
             await supabase.from('contacts').update({ attendance_code }).eq('id', contact.id);
           }
           return {
@@ -105,7 +102,6 @@ export const useContacts = () => {
         description: "Contato adicionado com sucesso!",
       });
 
-      // Atualizar a lista completa para garantir sincronização
       await fetchContacts();
       return data;
     } catch (error) {
@@ -132,7 +128,6 @@ export const useContacts = () => {
 
       console.log('Contato atualizado com sucesso:', data);
       
-      // Atualizar a lista completa para garantir sincronização
       await fetchContacts();
       return data;
     } catch (error) {
@@ -162,7 +157,6 @@ export const useContacts = () => {
         description: "Contato removido com sucesso!",
       });
 
-      // Atualizar a lista completa para garantir sincronização
       await fetchContacts();
     } catch (error) {
       console.error('Erro ao deletar contato:', error);
@@ -171,7 +165,6 @@ export const useContacts = () => {
   };
 
   const canDeleteCell = async (cellId: string) => {
-    // Verifica se há algum contato vinculado a essa célula
     try {
       const { count, error } = await supabase
         .from('contacts')
@@ -190,7 +183,6 @@ export const useContacts = () => {
 
   const canDeleteCity = async (cityId: string) => {
     try {
-      // Verificar se há contatos usando esta cidade
       const { count: contactsCount, error: contactsError } = await supabase
         .from('contacts')
         .select('id', { count: 'exact', head: true })
@@ -201,7 +193,6 @@ export const useContacts = () => {
         return false;
       }
 
-      // Verificar se há bairros vinculados a esta cidade
       const { count: neighborhoodsCount, error: neighborhoodsError } = await supabase
         .from('neighborhoods')
         .select('id', { count: 'exact', head: true })
@@ -221,7 +212,6 @@ export const useContacts = () => {
 
   const canDeleteNeighborhood = async (neighborhoodName: string) => {
     try {
-      // Verificar se há contatos usando este bairro
       const { count, error } = await supabase
         .from('contacts')
         .select('id', { count: 'exact', head: true })
@@ -239,11 +229,9 @@ export const useContacts = () => {
     }
   };
 
-  // Configurar atualização em tempo real
   useEffect(() => {
     fetchContacts();
 
-    // Clean up existing channel before creating new one
     if (channelRef.current) {
       console.log('Removing existing contacts channel...');
       supabase.removeChannel(channelRef.current);
@@ -251,13 +239,10 @@ export const useContacts = () => {
       isSubscribedRef.current = false;
     }
 
-    // Only create new subscription if not already subscribed
     if (!isSubscribedRef.current) {
-      // Create unique channel name to avoid conflicts
       const channelName = `contacts-changes-${Date.now()}-${Math.random()}`;
       console.log('Creating new contacts channel:', channelName);
 
-      // Escutar mudanças na tabela contacts
       const channel = supabase
         .channel(channelName)
         .on(
@@ -269,11 +254,10 @@ export const useContacts = () => {
           },
           (payload) => {
             console.log('Contato alterado:', payload);
-            fetchContacts(); // Recarregar contatos quando houver mudanças
+            fetchContacts();
           }
         );
 
-      // Subscribe and store reference
       channel.subscribe((status) => {
         console.log('Contacts channel subscription status:', status);
         if (status === 'SUBSCRIBED') {

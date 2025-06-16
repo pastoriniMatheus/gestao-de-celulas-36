@@ -11,6 +11,8 @@ import { BasicInfoFields } from './contact-form/BasicInfoFields';
 import { LocationFields } from './contact-form/LocationFields';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export const AddContactDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +49,7 @@ export const AddContactDialog = () => {
         city_id: formData.city_id || null,
         cell_id: formData.cell_id === 'none' ? null : formData.cell_id || null,
         status: 'pending',
-        age: formData.age ? Number(formData.age) : null,
+        birth_date: formData.birth_date || null,
         encounter_with_god: !!formData.encounter_with_god,
       };
       await addContact(contactToAdd);
@@ -84,8 +86,17 @@ export const AddContactDialog = () => {
           <BasicInfoFields
             formData={formData}
             onUpdateFormData={updateFormData}
-            showAge={true}
+            showAge={false}
           />
+          <div>
+            <Label htmlFor="add-contact-birth-date">Data de Nascimento</Label>
+            <Input
+              id="add-contact-birth-date"
+              type="date"
+              value={formData.birth_date || ''}
+              onChange={e => updateFormData({ birth_date: e.target.value })}
+            />
+          </div>
           <EncounterWithGodField
             checked={!!formData.encounter_with_god}
             onChange={checked => updateFormData({ encounter_with_god: checked })}

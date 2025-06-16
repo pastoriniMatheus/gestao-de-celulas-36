@@ -156,6 +156,7 @@ export type Database = {
           id: string
           name: string
           neighborhood: string
+          pipeline_stage_id: string | null
           status: string
           updated_at: string
           whatsapp: string | null
@@ -170,6 +171,7 @@ export type Database = {
           id?: string
           name: string
           neighborhood: string
+          pipeline_stage_id?: string | null
           status?: string
           updated_at?: string
           whatsapp?: string | null
@@ -184,6 +186,7 @@ export type Database = {
           id?: string
           name?: string
           neighborhood?: string
+          pipeline_stage_id?: string | null
           status?: string
           updated_at?: string
           whatsapp?: string | null
@@ -201,6 +204,13 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_pipeline_stage_id_fkey"
+            columns: ["pipeline_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
             referencedColumns: ["id"]
           },
         ]
@@ -278,6 +288,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pipeline_stages: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          position: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
