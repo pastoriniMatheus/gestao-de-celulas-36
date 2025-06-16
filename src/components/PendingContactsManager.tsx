@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -93,7 +94,7 @@ export const PendingContactsManager = () => {
   }, [activeCells, neighborhoods]);
 
   const handleAssignCell = async (contactId: string, cellId: string) => {
-    if (!cellId || cellId === 'no-cell') return;
+    if (!cellId || cellId === 'placeholder-cell') return;
 
     setUpdating(contactId);
     try {
@@ -103,7 +104,7 @@ export const PendingContactsManager = () => {
         .from('contacts')
         .update({ 
           cell_id: cellId,
-          status: 'member' // Mudança de 'assigned' para 'member'
+          status: 'member'
         })
         .eq('id', contactId);
 
@@ -230,7 +231,7 @@ export const PendingContactsManager = () => {
                               <SelectValue placeholder="Selecione uma célula" />
                             </SelectTrigger>
                             <SelectContent className="z-[50] bg-white border rounded shadow-lg">
-                              <SelectItem value="no-cell">Nenhuma</SelectItem>
+                              <SelectItem value="placeholder-cell">Nenhuma</SelectItem>
                               {Object.entries(groupedCellsByNeighborhood).map(([neighborhood, cellsArr]) => (
                                 <div key={neighborhood}>
                                   <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b">

@@ -34,14 +34,14 @@ export const LocationFields = ({
       <div>
         <Label htmlFor="city">Cidade</Label>
         <Select 
-          value={formData.city_id || "no-city"} 
-          onValueChange={(value) => onUpdateFormData({ city_id: value === "no-city" ? "" : value, neighborhood: '' })}
+          value={formData.city_id || "placeholder-city"} 
+          onValueChange={(value) => onUpdateFormData({ city_id: value === "placeholder-city" ? "" : value, neighborhood: '' })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione a cidade" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="no-city">Selecione uma cidade</SelectItem>
+            <SelectItem value="placeholder-city">Selecione uma cidade</SelectItem>
             {cities.map((city) => (
               <SelectItem key={city.id} value={city.id}>
                 {city.name} - {city.state}
@@ -52,16 +52,16 @@ export const LocationFields = ({
       </div>
       <div>
         <Label htmlFor="neighborhood">Bairro *</Label>
-        {formData.city_id && formData.city_id !== "no-city" ? (
+        {formData.city_id && formData.city_id !== "placeholder-city" ? (
           <Select 
-            value={formData.neighborhood || "no-neighborhood"} 
-            onValueChange={(value) => onUpdateFormData({ neighborhood: value === "no-neighborhood" ? "" : value })}
+            value={formData.neighborhood || "placeholder-neighborhood"} 
+            onValueChange={(value) => onUpdateFormData({ neighborhood: value === "placeholder-neighborhood" ? "" : value })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione o bairro" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
+              <SelectItem value="placeholder-neighborhood">Selecione um bairro</SelectItem>
               {getFilteredNeighborhoods(formData.city_id).map((neighborhood) => (
                 <SelectItem key={neighborhood.id} value={neighborhood.name}>
                   {neighborhood.name}

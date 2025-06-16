@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -503,10 +502,10 @@ export const FormPage = () => {
                   Cidade
                 </Label>
                 <Select 
-                  value={formData.city_id || "no-city"} 
+                  value={formData.city_id || "placeholder-city"} 
                   onValueChange={(value) => setFormData(prev => ({ 
                     ...prev, 
-                    city_id: value === "no-city" ? "" : value,
+                    city_id: value === "placeholder-city" ? "" : value,
                     neighborhood: "" 
                   }))}
                 >
@@ -514,7 +513,7 @@ export const FormPage = () => {
                     <SelectValue placeholder="Selecione a cidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="no-city">Selecione uma cidade</SelectItem>
+                    <SelectItem value="placeholder-city">Selecione uma cidade</SelectItem>
                     {cities.map((city) => (
                       <SelectItem key={city.id} value={city.id}>
                         {city.name} - {city.state}
@@ -529,12 +528,12 @@ export const FormPage = () => {
                   <MapPin className="w-4 h-4 text-blue-600" />
                   Bairro *
                 </Label>
-                {formData.city_id && formData.city_id !== "no-city" ? (
+                {formData.city_id && formData.city_id !== "placeholder-city" ? (
                   <Select 
-                    value={formData.neighborhood || "no-neighborhood"} 
+                    value={formData.neighborhood || "placeholder-neighborhood"} 
                     onValueChange={(value) => setFormData(prev => ({ 
                       ...prev, 
-                      neighborhood: value === "no-neighborhood" ? "" : value 
+                      neighborhood: value === "placeholder-neighborhood" ? "" : value 
                     }))}
                     required
                   >
@@ -542,7 +541,7 @@ export const FormPage = () => {
                       <SelectValue placeholder="Selecione seu bairro" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
+                      <SelectItem value="placeholder-neighborhood">Selecione um bairro</SelectItem>
                       {filteredNeighborhoods.map((neighborhood) => (
                         <SelectItem key={neighborhood.id} value={neighborhood.name}>
                           {neighborhood.name}

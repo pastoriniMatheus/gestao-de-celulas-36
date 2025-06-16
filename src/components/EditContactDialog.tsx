@@ -199,11 +199,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-city">Cidade</Label>
             <Select
-              value={form.city_id || "no-city"}
+              value={form.city_id || "placeholder-city"}
               onValueChange={value => {
                 setForm(f => ({
                   ...f,
-                  city_id: value === "no-city" ? "" : value,
+                  city_id: value === "placeholder-city" ? "" : value,
                   neighborhood: "",
                 }));
               }}
@@ -212,7 +212,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-city">Selecione uma cidade</SelectItem>
+                <SelectItem value="placeholder-city">Selecione uma cidade</SelectItem>
                 {cities.map(city => (
                   <SelectItem key={city.id} value={city.id}>
                     {city.name} - {city.state}
@@ -224,11 +224,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-neighborhood">Bairro *</Label>
             <Select
-              value={form.neighborhood || "no-neighborhood"}
+              value={form.neighborhood || "placeholder-neighborhood"}
               onValueChange={value =>
                 setForm(f => ({
                   ...f,
-                  neighborhood: value === "no-neighborhood" ? "" : value,
+                  neighborhood: value === "placeholder-neighborhood" ? "" : value,
                 }))
               }
             >
@@ -236,7 +236,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione o bairro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
+                <SelectItem value="placeholder-neighborhood">Selecione um bairro</SelectItem>
                 {filteredNeighborhoods.map(nb => (
                   <SelectItem key={nb.id} value={nb.name}>
                     {nb.name}
@@ -250,11 +250,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
             <div>
               <Label htmlFor="edit-contact-cell">Célula</Label>
               <Select
-                value={form.cell_id || "no-cell"}
+                value={form.cell_id || "placeholder-cell"}
                 onValueChange={value =>
                   setForm(f => ({
                     ...f,
-                    cell_id: value === "no-cell" ? "" : value,
+                    cell_id: value === "placeholder-cell" ? "" : value,
                   }))
                 }
               >
@@ -262,7 +262,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                   <SelectValue placeholder="Selecione a célula" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no-cell">Sem célula</SelectItem>
+                  <SelectItem value="placeholder-cell">Sem célula</SelectItem>
                   {cells.map(cell => (
                     <SelectItem key={cell.id} value={cell.id}>
                       {cell.name}

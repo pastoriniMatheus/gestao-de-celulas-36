@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -229,7 +228,7 @@ export const UsersManager = () => {
                       <Select
                         value={user.role || "user"}
                         onValueChange={(newRole) => updateUserRole(user.id, newRole)}
-                        disabled={user.user_id === userProfile?.user_id} // Não permitir alterar próprio papel
+                        disabled={user.user_id === userProfile?.user_id}
                       >
                         <SelectTrigger className="w-[140px]">
                           <SelectValue />
@@ -253,7 +252,7 @@ export const UsersManager = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => toggleUserStatus(user.id, user.active)}
-                          disabled={user.user_id === userProfile?.user_id} // Não permitir desativar próprio usuário
+                          disabled={user.user_id === userProfile?.user_id}
                         >
                           {user.active ? 'Desativar' : 'Ativar'}
                         </Button>
