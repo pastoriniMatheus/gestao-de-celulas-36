@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface Contact {
   id: string;
@@ -39,13 +40,38 @@ export const useMessaging = () => {
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const { userProfile, isLeader, isAdmin } = useUserPermissions();
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      let contactsQuery = supabase.from('contacts').select('*').order('name');
+      let cellsQuery = supabase.from('cells').select('id, name').eq('active', true).order('name');
+      
+      // Se for líder, filtrar apenas suas células e contatos
+      if (isLeader && !isAdmin && userProfile?.id) {
+        cellsQuery = cellsQuery.eq('leader_id', userProfile.id);
+        
+        // Primeiro buscar as células do líder
+        const { data: leaderCells } = await cellsQuery;
+        const cellIds = leaderCells?.map(cell => cell.id) || [];
+        
+        if (cellIds.length > 0) {
+          contactsQuery = contactsQuery.in('cell_id', cellIds);
+        } else {
+          // Se não tem células, não tem contatos
+          setContacts([]);
+          setCells([]);
+          setPipelineStages([]);
+          setFilteredContacts([]);
+          return;
+        }
+      }
+
       const [contactsData, cellsData, stagesData] = await Promise.all([
-        supabase.from('contacts').select('*').order('name'),
-        supabase.from('cells').select('id, name').eq('active', true).order('name'),
+        contactsQuery,
+        cellsQuery,
         supabase.from('pipeline_stages').select('id, name').eq('active', true).order('position')
       ]);
 
@@ -97,40 +123,89 @@ export const useMessaging = () => {
     setFilteredContacts(filtered);
   };
 
-  const sendMessage = async (contactIds: string[], message: string, templateId?: string) => {
+  const sendMessage = async (contactIds: string[], message: string) => {
     try {
+      // Buscar webhook de mensagens ativo
+      const { data: webhookData, error: webhookError } = await supabase
+        .from('webhook_configs')
+        .select('webhook_url')
+        .eq('event_type', 'messaging')
+        .eq('active', true)
+        .single();
+
+      if (webhookError || !webhookData) {
+        toast({
+          title: "Erro",
+          description: "Webhook de mensagens não configurado. Configure na seção de webhooks.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       const contactsToMessage = contacts.filter(c => contactIds.includes(c.id));
-      const messagesToSend = contactsToMessage.map(contact => ({
+      
+      // Preparar dados para envio via webhook
+      const messageData = contactsToMessage
+        .filter(contact => contact.whatsapp) // Apenas contatos com WhatsApp
+        .map(contact => ({
+          id: contact.id,
+          name: contact.name,
+          whatsapp: contact.whatsapp,
+          message: message
+        }));
+
+      if (messageData.length === 0) {
+        toast({
+          title: "Aviso",
+          description: "Nenhum contato selecionado possui WhatsApp válido.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Enviar para webhook
+      const response = await fetch(webhookData.webhook_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event_type: 'messaging',
+          contacts: messageData,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      // Salvar mensagens enviadas no banco
+      const messagesToSave = contactsToMessage.map(contact => ({
         contact_id: contact.id,
-        template_id: templateId || null,
         message_content: message,
         phone_number: contact.whatsapp,
-        status: contact.whatsapp ? 'pending' : 'failed'
+        status: contact.whatsapp ? 'sent' : 'failed'
       }));
 
-      const { error } = await supabase.from('sent_messages').insert(messagesToSend);
+      const { error: saveError } = await supabase
+        .from('sent_messages')
+        .insert(messagesToSave);
 
-      if (error) throw error;
+      if (saveError) {
+        console.error('Erro ao salvar mensagens:', saveError);
+      }
 
-      // Abrir WhatsApp para cada contato com WhatsApp
-      const contactsWithWhatsapp = contactsToMessage.filter(c => c.whatsapp);
-      
-      contactsWithWhatsapp.forEach(contact => {
-        const whatsappUrl = `https://wa.me/55${contact.whatsapp!.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-      });
-
-      toast({
-        title: "Mensagens enviadas",
-        description: `${contactsWithWhatsapp.length} mensagens enviadas via WhatsApp`
-      });
-
-      return true;
+      if (response.ok) {
+        toast({
+          title: "Mensagens enviadas",
+          description: `${messageData.length} mensagens enviadas via webhook`
+        });
+        return true;
+      } else {
+        throw new Error(`Webhook retornou status ${response.status}`);
+      }
     } catch (error) {
       console.error('Erro ao enviar mensagens:', error);
       toast({
         title: "Erro",
-        description: "Erro ao enviar mensagens",
+        description: "Erro ao enviar mensagens via webhook",
         variant: "destructive"
       });
       return false;
@@ -138,8 +213,10 @@ export const useMessaging = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (userProfile) {
+      fetchData();
+    }
+  }, [userProfile, isLeader, isAdmin]);
 
   return {
     contacts: filteredContacts,

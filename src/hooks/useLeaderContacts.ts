@@ -102,7 +102,8 @@ export const useLeaderContacts = () => {
 
               const cellIds = leaderCells?.map(cell => cell.id) || [];
               
-              if (payload.new && !cellIds.includes(payload.new.cell_id)) {
+              const newData = payload.new as any;
+              if (newData && !cellIds.includes(newData.cell_id)) {
                 return; // Não processar se não for contato das células do líder
               }
             }

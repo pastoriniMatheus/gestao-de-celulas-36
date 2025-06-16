@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Sidebar } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { EventsManager } from '@/components/EventsManager';
 import { ContactsManager } from '@/components/ContactsManager';

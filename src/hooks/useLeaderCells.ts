@@ -65,7 +65,8 @@ export const useLeaderCells = () => {
             
             // Se for líder, filtrar apenas suas células
             if (isLeader && !isAdmin) {
-              if (payload.new && payload.new.leader_id !== userProfile.id) {
+              const newData = payload.new as any;
+              if (newData && newData.leader_id !== userProfile.id) {
                 return; // Não processar se não for célula do líder
               }
             }

@@ -265,7 +265,6 @@ export const CellsManager = () => {
 
       {selectedCell && (
         <CellQrCode
-          cell={selectedCell}
           isOpen={showQrCode}
           onClose={() => {
             setShowQrCode(false);

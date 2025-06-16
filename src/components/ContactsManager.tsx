@@ -234,10 +234,10 @@ export const ContactsManager = () => {
       {selectedContact && (
         <EditContactDialog
           contact={selectedContact}
-          isOpen={showEditDialog}
-          onClose={() => {
-            setShowEditDialog(false);
-            setSelectedContact(null);
+          open={showEditDialog}
+          onOpenChange={(open) => {
+            setShowEditDialog(open);
+            if (!open) setSelectedContact(null);
           }}
         />
       )}
