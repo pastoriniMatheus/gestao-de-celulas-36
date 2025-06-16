@@ -1,12 +1,12 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, MapPin, Phone, User, Home, Calendar } from 'lucide-react';
-import { useLeaderContacts } from '@/hooks/useLeaderContacts';
-import { useLeaderCells } from '@/hooks/useLeaderCells';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useContacts } from '@/hooks/useContacts';
+import { useCells } from '@/hooks/useCells';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useMemo, useState as useReactState } from 'react';
@@ -43,9 +43,8 @@ const useCellLeaders = (cells) => {
 };
 
 export const PendingContactsManager = () => {
-  const { contacts, fetchContacts } = useLeaderContacts();
-  const { cells, loading: cellsLoading } = useLeaderCells();
-  const permissions = useUserPermissions();
+  const { contacts, fetchContacts } = useContacts();
+  const { cells, loading: cellsLoading } = useCells();
   const { toast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -53,12 +52,11 @@ export const PendingContactsManager = () => {
   const cellLeaders = useCellLeaders(cells);
 
   // Filtrar contatos pendentes (sem célula atribuída)
-  // Para líderes, mostrar apenas contatos sem célula que são do seu bairro/região
   const pendingContacts = contacts.filter(contact => 
     contact.status === 'pending' && !contact.cell_id
   );
 
-  // Filtrar apenas células ativas (para líderes, apenas suas células)
+  // Filtrar apenas células ativas
   const activeCells = cells.filter(cell => cell.active);
 
   // Buscar bairros das células por neighborhood_id, e nomes dos bairros
@@ -96,20 +94,7 @@ export const PendingContactsManager = () => {
   }, [activeCells, neighborhoods]);
 
   const handleAssignCell = async (contactId: string, cellId: string) => {
-    if (!cellId || cellId === 'no-cell') return;
-
-    // Se for líder, verificar se a célula pertence a ele
-    if (permissions.isLeader && !permissions.isAdmin) {
-      const cell = cells.find(c => c.id === cellId);
-      if (!cell || cell.leader_id !== permissions.userProfile?.id) {
-        toast({
-          title: "Erro",
-          description: "Você só pode atribuir contatos às suas próprias células",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
+    if (!cellId || cellId === 'placeholder-cell') return;
 
     setUpdating(contactId);
     try {
@@ -188,22 +173,14 @@ export const PendingContactsManager = () => {
             Contatos Pendentes
           </CardTitle>
           <CardDescription>
-            {permissions.isLeader && !permissions.isAdmin 
-              ? `Contatos pendentes que podem ser atribuídos às suas células (${pendingContacts.length} pendentes)`
-              : `Contatos aguardando atribuição de célula (${pendingContacts.length} pendentes)`
-            }
+            Contatos aguardando atribuição de célula ({pendingContacts.length} pendentes)
           </CardDescription>
         </CardHeader>
         <CardContent>
           {pendingContacts.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">
-                {permissions.isLeader && !permissions.isAdmin 
-                  ? 'Nenhum contato pendente disponível para suas células no momento.'
-                  : 'Nenhum contato pendente no momento.'
-                }
-              </p>
+              <p className="text-gray-500">Nenhum contato pendente no momento.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -244,12 +221,7 @@ export const PendingContactsManager = () => {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 min-w-[220px]">
-                        <label className="text-sm font-medium">
-                          {permissions.isLeader && !permissions.isAdmin 
-                            ? 'Atribuir à Minha Célula:' 
-                            : 'Atribuir à Célula:'
-                          }
-                        </label>
+                        <label className="text-sm font-medium">Atribuir à Célula:</label>
                         <div className="flex gap-2">
                           <Select
                             onValueChange={(value) => handleAssignCell(contact.id, value)}
@@ -259,7 +231,7 @@ export const PendingContactsManager = () => {
                               <SelectValue placeholder="Selecione uma célula" />
                             </SelectTrigger>
                             <SelectContent className="z-[50] bg-white border rounded shadow-lg">
-                              <SelectItem value="no-cell">Nenhuma</SelectItem>
+                              <SelectItem value="placeholder-cell">Nenhuma</SelectItem>
                               {Object.entries(groupedCellsByNeighborhood).map(([neighborhood, cellsArr]) => (
                                 <div key={neighborhood}>
                                   <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b">
@@ -292,10 +264,7 @@ export const PendingContactsManager = () => {
                         )}
                         {activeCells.length === 0 && (
                           <p className="text-xs text-red-600">
-                            {permissions.isLeader && !permissions.isAdmin 
-                              ? 'Você não possui células ativas cadastradas'
-                              : 'Nenhuma célula ativa cadastrada'
-                            }
+                            Nenhuma célula ativa cadastrada
                           </p>
                         )}
                       </div>

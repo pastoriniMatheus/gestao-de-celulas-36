@@ -1,235 +1,268 @@
 
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Plus } from 'lucide-react';
-import { useCells } from '@/hooks/useCells';
-import { useLocationManager } from '@/hooks/useLocationManager';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState, useEffect } from "react";
+import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export const AddCellDialog = () => {
-  const { addCell } = useCells();
-  const { neighborhoods } = useLocationManager();
-  const [open, setOpen] = useState(false);
-  const [leaders, setLeaders] = useState<any[]>([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    meeting_day: '',
-    meeting_time: '',
-    leader_id: '',
-    neighborhood_id: '',
-    active: true
+interface Leader {
+  id: string;
+  name: string;
+}
+
+interface Neighborhood {
+  id: string;
+  name: string;
+}
+
+interface AddCellDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCellAdded: () => void;
+}
+
+export const AddCellDialog = ({
+  isOpen,
+  onClose,
+  onCellAdded,
+}: AddCellDialogProps) => {
+  const [formState, setFormState] = useState({
+    name: "",
+    address: "",
+    leader_id: "",
+    neighborhood_id: "",
+    meeting_day: "",
+    meeting_time: "",
   });
-
-  const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const [leaders, setLeaders] = useState<Leader[]>([]);
+  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchLeaders = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, name, email, role')
-          .in('role', ['admin', 'leader'])
-          .eq('active', true)
-          .order('name');
+      // Buscar os líderes na tabela profiles onde role='leader'
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .eq('role', 'leader')
+        .eq('active', true);
 
-        if (error) throw error;
+      if (error) {
+        toast({
+          title: "Erro ao buscar líderes.",
+          description: "Por favor, tente novamente.",
+          variant: "destructive",
+        });
+      } else {
         setLeaders(data || []);
-      } catch (error) {
-        console.error('Erro ao buscar líderes:', error);
       }
     };
 
-    if (open) {
-      fetchLeaders();
+    const fetchNeighborhoods = async () => {
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('id, name')
+        .eq('active', true);
+
+      if (error) {
+        toast({
+          title: "Erro ao buscar bairros.",
+          description: "Por favor, tente novamente.",
+          variant: "destructive",
+        });
+      } else {
+        setNeighborhoods(data || []);
+      }
+    };
+
+    if (isOpen) {
+      setLoading(true);
+      Promise.all([fetchLeaders(), fetchNeighborhoods()])
+        .finally(() => setLoading(false));
     }
-  }, [open]);
+  }, [isOpen]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormState({ ...formState, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.address || !formData.meeting_day || !formData.meeting_time) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios",
-        variant: "destructive"
-      });
+    if (!formState.leader_id) {
+      toast({ title: "Selecione o líder da célula." });
       return;
     }
+    if (!formState.neighborhood_id) {
+      toast({ title: "Selecione o bairro da célula." });
+      return;
+    }
+    if (!formState.meeting_day) {
+      toast({ title: "Selecione o dia da reunião." });
+      return;
+    }
+    if (!formState.meeting_time) {
+      toast({ title: "Informe o horário da reunião." });
+      return;
+    }
+    // meeting_day deve ser number, meeting_time string formato "19:00"
+    const meeting_day = parseInt(formState.meeting_day);
 
-    try {
-      await addCell({
-        name: formData.name,
-        address: formData.address,
-        meeting_day: parseInt(formData.meeting_day),
-        meeting_time: formData.meeting_time,
-        leader_id: formData.leader_id || null,
-        neighborhood_id: formData.neighborhood_id || null,
-        active: formData.active
-      });
+    const { data, error } = await supabase
+      .from('cells')
+      .insert([
+        {
+          name: formState.name,
+          address: formState.address,
+          leader_id: formState.leader_id,
+          neighborhood_id: formState.neighborhood_id,
+          meeting_day: meeting_day,
+          meeting_time: formState.meeting_time,
+        },
+      ])
+      .select();
 
+    if (error) {
       toast({
-        title: "Sucesso",
-        description: "Célula criada com sucesso!"
+        title: "Erro ao criar célula.",
+        description: "Por favor, tente novamente.",
+        variant: "destructive",
       });
-
-      setFormData({
-        name: '',
-        address: '',
-        meeting_day: '',
-        meeting_time: '',
-        leader_id: '',
-        neighborhood_id: '',
-        active: true
-      });
-      
-      setOpen(false);
-    } catch (error: any) {
-      console.error('Erro ao criar célula:', error);
+    } else {
       toast({
-        title: "Erro",
-        description: error.message || "Erro ao criar célula",
-        variant: "destructive"
+        title: "Célula criada com sucesso!",
       });
+      onCellAdded();
+      onClose();
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Célula
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Criar Nova Célula</DialogTitle>
-          <DialogDescription>
-            Preencha as informações da nova célula
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nome da Célula *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Ex: Célula da Paz"
-              required
-            />
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Adicionar Nova Célula</AlertDialogTitle>
+          <AlertDialogDescription>
+            Preencha os campos abaixo para adicionar uma nova célula.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
-
-          <div>
-            <Label htmlFor="address">Endereço *</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              placeholder="Endereço completo"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="neighborhood">Bairro</Label>
-            <Select 
-              value={formData.neighborhood_id || "no-neighborhood"} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood_id: value === "no-neighborhood" ? "" : value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o bairro" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-neighborhood">Nenhum bairro</SelectItem>
-                {neighborhoods.map((neighborhood) => (
-                  <SelectItem key={neighborhood.id} value={neighborhood.id}>
-                    {neighborhood.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="leader">Líder</Label>
-            <Select 
-              value={formData.leader_id || "no-leader"} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value === "no-leader" ? "" : value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o líder" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-leader">Nenhum líder</SelectItem>
-                {leaders.map((leader) => (
-                  <SelectItem key={leader.id} value={leader.id}>
-                    {leader.name} ({leader.role === 'admin' ? 'Admin' : 'Líder'})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="meeting_day">Dia da Reunião *</Label>
-              <Select 
-                value={formData.meeting_day || "no-day"} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value === "no-day" ? "" : value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o dia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-day">Selecione um dia</SelectItem>
-                  {weekDays.map((day, index) => (
-                    <SelectItem key={index} value={index.toString()}>
-                      {day}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="meeting_time">Horário *</Label>
+              <Label htmlFor="name">Nome da Célula</Label>
               <Input
-                id="meeting_time"
-                type="time"
-                value={formData.meeting_time}
-                onChange={(e) => setFormData(prev => ({ ...prev, meeting_time: e.target.value }))}
+                type="text"
+                id="name"
+                name="name"
+                value={formState.name}
+                onChange={handleChange}
                 required
               />
             </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="active"
-              checked={formData.active}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
-            />
-            <Label htmlFor="active">Célula ativa</Label>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              Criar Célula
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div>
+              <Label htmlFor="address">Endereço</Label>
+              <Input
+                type="text"
+                id="address"
+                name="address"
+                value={formState.address}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label className="block font-medium">Líder da Célula *</label>
+              <select
+                required
+                name="leader_id"
+                value={formState.leader_id}
+                onChange={handleChange}
+                className="input w-full border rounded px-2 py-2 bg-white"
+              >
+                <option value="" disabled>
+                  Selecione um líder
+                </option>
+                {leaders.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-medium">Bairro *</label>
+              <select
+                required
+                name="neighborhood_id"
+                value={formState.neighborhood_id}
+                onChange={handleChange}
+                className="input w-full border rounded px-2 py-2 bg-white"
+              >
+                <option value="" disabled>
+                  Selecione um bairro
+                </option>
+                {neighborhoods.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="meeting_day">Dia da reunião *</Label>
+              <select
+                id="meeting_day"
+                name="meeting_day"
+                value={formState.meeting_day}
+                onChange={handleChange}
+                required
+                className="input w-full border rounded px-2 py-2 bg-white"
+              >
+                <option value="" disabled>
+                  Selecione o dia da semana
+                </option>
+                <option value="0">Domingo</option>
+                <option value="1">Segunda-feira</option>
+                <option value="2">Terça-feira</option>
+                <option value="3">Quarta-feira</option>
+                <option value="4">Quinta-feira</option>
+                <option value="5">Sexta-feira</option>
+                <option value="6">Sábado</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="meeting_time">Horário da reunião *</Label>
+              <Input
+                type="time"
+                id="meeting_time"
+                name="meeting_time"
+                value={formState.meeting_time}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction type="submit">Adicionar</AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        )}
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
