@@ -14,6 +14,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useLocationManager } from '@/hooks/useLocationManager';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export const CellsManager = () => {
   const { cells, loading } = useLeaderCells();
@@ -262,15 +263,18 @@ export const CellsManager = () => {
         </CardContent>
       </Card>
 
-      {selectedCell && showQrCode && (
-        <CellQrCode
-          cellId={selectedCell.id}
-          onClose={() => {
-            setShowQrCode(false);
-            setSelectedCell(null);
-          }}
-        />
-      )}
+      <Dialog open={showQrCode} onOpenChange={setShowQrCode}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>QR Code - {selectedCell?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            {selectedCell && (
+              <CellQrCode cellId={selectedCell.id} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
