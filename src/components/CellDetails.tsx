@@ -107,90 +107,83 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
   const [filteredAttendances, setFilteredAttendances] = useState<Attendance[]>([]);
 
   useEffect(() => {
-    if (isOpen && cellId && !isSubscribedRef.current) {
+    if (isOpen && cellId) {
       fetchCellData();
 
       // Clean up existing channels before creating new ones
-      channelsRef.current.forEach(channel => {
-        console.log('Removing existing cell channel...');
-        supabase.removeChannel(channel);
-      });
-      channelsRef.current = [];
+      if (channelsRef.current.length > 0) {
+        console.log('Cleaning up existing cell detail channels...');
+        channelsRef.current.forEach(channel => {
+          supabase.removeChannel(channel);
+        });
+        channelsRef.current = [];
+        isSubscribedRef.current = false;
+      }
 
-      // Create unique channel names to avoid conflicts
-      const timestamp = Date.now();
-      const random = Math.random();
-      const attendanceChannelName = `attendance-changes-${cellId}-${timestamp}-${random}`;
-      const contactChannelName = `contact-changes-${cellId}-${timestamp}-${random}`;
-      
-      console.log('Creating cell channels:', { attendanceChannelName, contactChannelName });
+      // Only create new subscriptions if not already subscribed
+      if (!isSubscribedRef.current) {
+        const timestamp = Date.now();
+        const random = Math.random();
+        const attendanceChannelName = `attendance-${cellId}-${timestamp}-${random}`;
+        const contactChannelName = `contact-${cellId}-${timestamp}-${random}`;
+        
+        console.log('Creating cell detail channels:', { attendanceChannelName, contactChannelName });
 
-      // Configurar atualização em tempo real
-      const attendanceChannel = supabase
-        .channel(attendanceChannelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'attendances',
-            filter: `cell_id=eq.${cellId}`
-          },
-          (payload) => {
-            console.log('Presença alterada:', payload);
-            fetchCellData();
+        // Configurar atualização em tempo real
+        const attendanceChannel = supabase
+          .channel(attendanceChannelName)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'attendances',
+              filter: `cell_id=eq.${cellId}`
+            },
+            (payload) => {
+              console.log('Presença alterada:', payload);
+              fetchCellData();
+            }
+          );
+
+        const contactChannel = supabase
+          .channel(contactChannelName)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'contacts',
+              filter: `cell_id=eq.${cellId}`
+            },
+            (payload) => {
+              console.log('Contato alterado:', payload);
+              fetchCellData();
+            }
+          );
+
+        // Subscribe channels
+        attendanceChannel.subscribe((status) => {
+          console.log('Attendance channel subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            isSubscribedRef.current = true;
           }
-        );
+        });
+        
+        contactChannel.subscribe((status) => {
+          console.log('Contact channel subscription status:', status);
+        });
 
-      const contactChannel = supabase
-        .channel(contactChannelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'contacts',
-            filter: `cell_id=eq.${cellId}`
-          },
-          (payload) => {
-            console.log('Contato alterado:', payload);
-            fetchCellData();
-          }
-        );
-
-      // Subscribe channels
-      attendanceChannel.subscribe((status) => {
-        console.log('Attendance channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          isSubscribedRef.current = true;
-        }
-      });
-      
-      contactChannel.subscribe((status) => {
-        console.log('Contact channel subscription status:', status);
-      });
-
-      // Store channels for cleanup
-      channelsRef.current = [attendanceChannel, contactChannel];
+        // Store channels for cleanup
+        channelsRef.current = [attendanceChannel, contactChannel];
+      }
     }
   }, [cellId, isOpen]);
 
-  // Cleanup when dialog closes
-  useEffect(() => {
-    if (!isOpen && isSubscribedRef.current) {
-      console.log('Cleaning up cell channels due to dialog close...');
-      channelsRef.current.forEach(channel => {
-        supabase.removeChannel(channel);
-      });
-      channelsRef.current = [];
-      isSubscribedRef.current = false;
-    }
-  }, [isOpen]);
-
-  // Cleanup on unmount
+  // Cleanup when dialog closes or unmounts
   useEffect(() => {
     return () => {
-      console.log('Cleaning up cell channels on unmount...');
+      console.log('Cleaning up cell detail channels on unmount...');
       channelsRef.current.forEach(channel => {
         supabase.removeChannel(channel);
       });

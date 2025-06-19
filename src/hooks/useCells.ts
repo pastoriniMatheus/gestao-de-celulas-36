@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Cell {
@@ -18,6 +18,8 @@ export interface Cell {
 export const useCells = () => {
   const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
 
   const fetchCells = async () => {
     try {
@@ -108,41 +110,60 @@ export const useCells = () => {
   useEffect(() => {
     fetchCells();
 
-    // Create a unique channel name to prevent conflicts
-    const channelName = `cells-realtime-changes-${Date.now()}-${Math.random()}`;
-    console.log('Creating cells channel:', channelName);
+    // Clean up existing channel before creating new one
+    if (channelRef.current) {
+      console.log('Cleaning up existing cells channel...');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      isSubscribedRef.current = false;
+    }
 
-    // Configurar real-time updates melhorado
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cells'
-        },
-        (payload) => {
-          console.log('Célula alterada em tempo real:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            setCells(prev => [...prev, payload.new as Cell]);
-          } else if (payload.eventType === 'UPDATE') {
-            setCells(prev => prev.map(cell => 
-              cell.id === payload.new.id ? payload.new as Cell : cell
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setCells(prev => prev.filter(cell => cell.id !== payload.old.id));
+    // Only create new subscription if not already subscribed
+    if (!isSubscribedRef.current) {
+      const channelName = `cells-realtime-${Date.now()}-${Math.random()}`;
+      console.log('Creating cells channel:', channelName);
+
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cells'
+          },
+          (payload) => {
+            console.log('Célula alterada em tempo real:', payload);
+            
+            if (payload.eventType === 'INSERT') {
+              setCells(prev => [...prev, payload.new as Cell]);
+            } else if (payload.eventType === 'UPDATE') {
+              setCells(prev => prev.map(cell => 
+                cell.id === payload.new.id ? payload.new as Cell : cell
+              ));
+            } else if (payload.eventType === 'DELETE') {
+              setCells(prev => prev.filter(cell => cell.id !== payload.old.id));
+            }
           }
-        }
-      )
-      .subscribe((status) => {
+        );
+
+      channel.subscribe((status) => {
         console.log('Cells channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          isSubscribedRef.current = true;
+        }
       });
 
+      channelRef.current = channel;
+    }
+
     return () => {
-      console.log('Cleaning up cells channel...');
-      supabase.removeChannel(channel);
+      console.log('Cleaning up cells channel on unmount...');
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
     };
   }, []);
 
