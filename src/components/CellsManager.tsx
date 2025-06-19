@@ -263,10 +263,9 @@ export const CellsManager = () => {
         </CardContent>
       </Card>
 
-      {selectedCell && (
+      {selectedCell && showQrCode && (
         <CellQrCode
           cell={selectedCell}
-          isOpen={showQrCode}
           onClose={() => {
             setShowQrCode(false);
             setSelectedCell(null);

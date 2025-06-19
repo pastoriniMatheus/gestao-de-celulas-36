@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Sidebar } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { EventsManager } from '@/components/EventsManager';
 import { ContactsManager } from '@/components/ContactsManager';
@@ -45,7 +45,7 @@ const Index = () => {
       <ProtectedRoute>
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
-            <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+            <Sidebar />
             <main className="flex-1 p-6 overflow-auto">
               <div className="max-w-7xl mx-auto">
                 <div className="flex justify-end mb-4">
