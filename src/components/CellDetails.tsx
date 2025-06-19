@@ -143,6 +143,20 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
 
     const setupSubscriptions = async () => {
       try {
+        // Clean up any existing channels first
+        if (channelsRef.current.length > 0) {
+          console.log('Cleaning up existing cell detail channels...');
+          channelsRef.current.forEach(channel => {
+            try {
+              supabase.removeChannel(channel);
+            } catch (error) {
+              console.error('Error removing channel:', error);
+            }
+          });
+          channelsRef.current = [];
+          isSubscribedRef.current = false;
+        }
+
         const timestamp = Date.now();
         const random = Math.random().toString(36).substr(2, 9);
         const attendanceChannelName = `attendance-${cellId}-${timestamp}-${random}`;

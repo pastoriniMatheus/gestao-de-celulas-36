@@ -21,23 +21,27 @@ export const QRRedirect = () => {
       currentOrigin: window.location.origin
     });
 
-    // Construir URL de redirecionamento
+    // Construir URL de redirecionamento correta
     let redirectUrl = '/form';
     const params = new URLSearchParams();
 
-    // Priorizar evento se existir
+    // Priorizar evento se existir - esta é a lógica correta para eventos
     if (evento) {
       params.set('evento', evento);
       console.log('QRRedirect: Adicionando parâmetro evento:', evento);
-    }
-
-    // Adicionar cod se existir, ou usar keyword
-    if (cod) {
-      params.set('cod', cod);
-      console.log('QRRedirect: Adicionando parâmetro cod:', cod);
+      
+      // Para eventos, usar cod se existir, senão usar keyword
+      if (cod) {
+        params.set('cod', cod);
+        console.log('QRRedirect: Adicionando parâmetro cod:', cod);
+      } else if (keyword) {
+        params.set('cod', keyword);
+        console.log('QRRedirect: Usando keyword como cod:', keyword);
+      }
     } else if (keyword) {
+      // Para QR codes simples, usar apenas cod
       params.set('cod', keyword);
-      console.log('QRRedirect: Usando keyword como cod:', keyword);
+      console.log('QRRedirect: QR code simples com keyword:', keyword);
     }
 
     // Se há parâmetros, adicionar à URL
@@ -47,10 +51,8 @@ export const QRRedirect = () => {
 
     console.log('QRRedirect: URL final de redirecionamento:', redirectUrl);
     
-    // Pequeno delay para garantir que o console.log seja visível
-    setTimeout(() => {
-      navigate(redirectUrl, { replace: true });
-    }, 100);
+    // Redirecionamento imediato
+    navigate(redirectUrl, { replace: true });
   }, [keyword, searchParams, navigate]);
 
   return (

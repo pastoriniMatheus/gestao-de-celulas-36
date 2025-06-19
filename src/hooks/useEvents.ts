@@ -44,7 +44,7 @@ export const useEvents = () => {
 
       console.log('Eventos encontrados:', data);
       
-      // Atualizar URLs dinamicamente com domínio atual
+      // Atualizar URLs dinamicamente com domínio atual - URL correta para scan direto
       const updatedData = (data || []).map(event => ({
         ...event,
         qr_url: `${window.location.origin}/form?evento=${event.id}&cod=${event.keyword}`
@@ -104,13 +104,13 @@ export const useEvents = () => {
         throw insertError;
       }
 
-      // Gerar URL com parâmetros usando o ID do evento
+      // Gerar URL correta para scan direto do QR code
       const baseUrl = window.location.origin;
       const redirectUrl = `${baseUrl}/form?evento=${newEvent.id}&cod=${normalizedKeyword}`;
       
-      console.log('useEvents: Gerando QR code para URL:', redirectUrl);
+      console.log('useEvents: Gerando QR code para URL correta:', redirectUrl);
       
-      // Gerar QR code data
+      // Gerar QR code data com a URL correta
       const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
         width: 400,
         margin: 2,
@@ -121,7 +121,7 @@ export const useEvents = () => {
         errorCorrectionLevel: 'M'
       });
 
-      // Atualizar evento com QR code e URL
+      // Atualizar evento com QR code e URL corretos
       const { data: updatedEvent, error: updateError } = await supabase
         .from('events')
         .update({
@@ -137,7 +137,7 @@ export const useEvents = () => {
         throw updateError;
       }
 
-      console.log('Evento criado com sucesso:', updatedEvent);
+      console.log('Evento criado com sucesso - URL correta:', updatedEvent);
       
       toast({
         title: "Sucesso",
@@ -155,7 +155,7 @@ export const useEvents = () => {
 
   const updateEvent = async (id: string, updates: Partial<Event>) => {
     try {
-      // Se estiver atualizando keyword, regenerar QR code
+      // Se estiver atualizando keyword, regenerar QR code com URL correta
       if (updates.keyword) {
         const normalizedKeyword = updates.keyword.toLowerCase().trim();
         
@@ -179,7 +179,7 @@ export const useEvents = () => {
         const baseUrl = window.location.origin;
         const redirectUrl = `${baseUrl}/form?evento=${id}&cod=${normalizedKeyword}`;
         
-        console.log('useEvents: Atualizando QR code para URL:', redirectUrl);
+        console.log('useEvents: Atualizando QR code para URL correta:', redirectUrl);
         
         const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
           width: 400,

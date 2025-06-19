@@ -144,6 +144,14 @@ export const useCells = () => {
 
     const setupSubscription = async () => {
       try {
+        // Clean up any existing channel first
+        if (channelRef.current) {
+          console.log('Cleaning up existing cells channel...');
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+          isSubscribedRef.current = false;
+        }
+
         const channelName = `cells-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         console.log('Creating cells subscription:', channelName);
 

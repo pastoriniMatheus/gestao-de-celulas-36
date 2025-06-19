@@ -82,6 +82,14 @@ export const useLeaderCells = () => {
 
     const setupSubscription = async () => {
       try {
+        // Clean up any existing channel first
+        if (channelRef.current) {
+          console.log('Cleaning up existing leader cells channel...');
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+          isSubscribedRef.current = false;
+        }
+
         const channelName = `leader-cells-${userProfile.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         console.log('Creating leader cells subscription:', channelName);
 
