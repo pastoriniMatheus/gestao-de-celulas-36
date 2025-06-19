@@ -23,12 +23,24 @@ const App = () => (
           {cellRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
+          
+          {/* Rotas principais - todas apontam para Index */}
           <Route path="/" element={<Index />} />
+          <Route path="/contacts" element={<Index />} />
+          <Route path="/cells" element={<Index />} />
+          <Route path="/pipeline" element={<Index />} />
+          <Route path="/messaging" element={<Index />} />
+          <Route path="/events" element={<Index />} />
+          <Route path="/settings" element={<Index />} />
+          <Route path="/users" element={<Index />} />
+          
           {/* Rota do formulário principal */}
           <Route path="/form" element={<FormPage />} />
           <Route path="/form/:keyword" element={<FormPage />} />
+          
           {/* Rota de redirecionamento QR - deve redirecionar para /form */}
           <Route path="/qr/:keyword" element={<QRRedirect />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

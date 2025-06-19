@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Users, 
@@ -21,6 +21,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
   const permissions = useUserPermissions();
 
@@ -36,6 +37,10 @@ const Sidebar = () => {
     { icon: UserCog, label: 'Usuários', path: '/users', show: permissions.canAccessUserManagement },
     { icon: Settings, label: 'Configurações', path: '/settings', show: permissions.canAccessSettings },
   ].filter(item => item.show);
+
+  const handleMenuClick = (path: string) => {
+    navigate(path);
+  };
 
   return (
     <div className={cn(
@@ -64,11 +69,11 @@ const Sidebar = () => {
           const isActive = location.pathname === item.path;
           
           return (
-            <Link
+            <button
               key={item.path}
-              to={item.path}
+              onClick={() => handleMenuClick(item.path)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-left",
                 isActive 
                   ? "bg-blue-100 text-blue-700" 
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
@@ -77,7 +82,7 @@ const Sidebar = () => {
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
               {!isCollapsed && <span>{item.label}</span>}
-            </Link>
+            </button>
           );
         })}
       </nav>

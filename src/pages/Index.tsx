@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { EventsManager } from '@/components/EventsManager';
@@ -15,7 +16,27 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { UserMenu } from '@/components/UserMenu';
 
 const Index = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
+
+  // Mapear as rotas para as seções
+  const pathToSection: { [key: string]: string } = {
+    '/': 'dashboard',
+    '/contacts': 'contacts',
+    '/cells': 'cells',
+    '/pipeline': 'pipeline',
+    '/messaging': 'messaging',
+    '/events': 'events',
+    '/settings': 'settings',
+    '/users': 'users'
+  };
+
+  // Atualizar a seção ativa baseada na URL
+  useEffect(() => {
+    const section = pathToSection[location.pathname] || 'dashboard';
+    setActiveSection(section);
+  }, [location.pathname]);
 
   const renderContent = () => {
     switch (activeSection) {
