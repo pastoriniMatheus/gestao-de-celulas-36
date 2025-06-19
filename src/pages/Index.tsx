@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { EventsManager } from '@/components/EventsManager';
@@ -17,7 +17,6 @@ import { UserMenu } from '@/components/UserMenu';
 
 const Index = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
 
   // Mapear as rotas para as seções
@@ -36,9 +35,11 @@ const Index = () => {
   useEffect(() => {
     const section = pathToSection[location.pathname] || 'dashboard';
     setActiveSection(section);
+    console.log('Seção ativa:', section, 'URL atual:', location.pathname);
   }, [location.pathname]);
 
   const renderContent = () => {
+    console.log('Renderizando conteúdo para seção:', activeSection);
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard />;
@@ -57,6 +58,7 @@ const Index = () => {
       case 'users':
         return <UsersManager />;
       default:
+        console.log('Seção não encontrada, retornando Dashboard');
         return <Dashboard />;
     }
   };

@@ -27,13 +27,11 @@ const Sidebar = () => {
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/', show: permissions.canAccessDashboard },
+    { icon: Calendar, label: 'Eventos & QR Codes', path: '/events', show: permissions.canAccessEvents },
     { icon: Contact, label: 'Contatos', path: '/contacts', show: permissions.canAccessContacts },
     { icon: Users, label: 'Células', path: '/cells', show: permissions.canAccessCells },
-    { icon: TrendingUp, label: 'Pipeline', path: '/pipeline', show: permissions.canAccessPipeline },
     { icon: MessageSquare, label: 'Mensagens', path: '/messaging', show: permissions.canAccessMessaging },
-    { icon: Calendar, label: 'Eventos', path: '/events', show: permissions.canAccessEvents },
-    { icon: QrCode, label: 'QR Codes', path: '/qr-codes', show: permissions.canAccessQRCodes },
-    { icon: MapPin, label: 'Localização', path: '/location', show: permissions.canAccessSettings },
+    { icon: TrendingUp, label: 'Pipeline', path: '/pipeline', show: permissions.canAccessPipeline },
     { icon: UserCog, label: 'Usuários', path: '/users', show: permissions.canAccessUserManagement },
     { icon: Settings, label: 'Configurações', path: '/settings', show: permissions.canAccessSettings },
   ].filter(item => item.show);
