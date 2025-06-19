@@ -26,14 +26,62 @@ const Sidebar = () => {
   const permissions = useUserPermissions();
 
   const menuItems = [
-    { icon: Home, label: 'Dashboard', path: '/', show: permissions.canAccessDashboard },
-    { icon: Calendar, label: 'Eventos & QR Codes', path: '/events', show: permissions.canAccessEvents },
-    { icon: Contact, label: 'Contatos', path: '/contacts', show: permissions.canAccessContacts },
-    { icon: Users, label: 'Células', path: '/cells', show: permissions.canAccessCells },
-    { icon: MessageSquare, label: 'Mensagens', path: '/messaging', show: permissions.canAccessMessaging },
-    { icon: TrendingUp, label: 'Pipeline', path: '/pipeline', show: permissions.canAccessPipeline },
-    { icon: UserCog, label: 'Usuários', path: '/users', show: permissions.canAccessUserManagement },
-    { icon: Settings, label: 'Configurações', path: '/settings', show: permissions.canAccessSettings },
+    { 
+      icon: Home, 
+      label: 'Dashboard', 
+      description: 'Visão geral do sistema',
+      path: '/', 
+      show: permissions.canAccessDashboard 
+    },
+    { 
+      icon: Calendar, 
+      label: 'Eventos & QR Codes', 
+      description: 'Gerenciar eventos e QR codes',
+      path: '/events', 
+      show: permissions.canAccessEvents 
+    },
+    { 
+      icon: Contact, 
+      label: 'Contatos', 
+      description: 'Visitantes e membros',
+      path: '/contacts', 
+      show: permissions.canAccessContacts 
+    },
+    { 
+      icon: Users, 
+      label: 'Células', 
+      description: 'Células domiciliares',
+      path: '/cells', 
+      show: permissions.canAccessCells 
+    },
+    { 
+      icon: MessageSquare, 
+      label: 'Mensagens', 
+      description: 'Central de mensagens',
+      path: '/messaging', 
+      show: permissions.canAccessMessaging 
+    },
+    { 
+      icon: TrendingUp, 
+      label: 'Pipeline', 
+      description: 'Pipeline de conversão',
+      path: '/pipeline', 
+      show: permissions.canAccessPipeline 
+    },
+    { 
+      icon: UserCog, 
+      label: 'Usuários', 
+      description: 'Gerenciar usuários',
+      path: '/users', 
+      show: permissions.canAccessUserManagement 
+    },
+    { 
+      icon: Settings, 
+      label: 'Configurações', 
+      description: 'Configurações do sistema',
+      path: '/settings', 
+      show: permissions.canAccessSettings 
+    },
   ].filter(item => item.show);
 
   const handleMenuClick = (path: string) => {
@@ -72,15 +120,25 @@ const Sidebar = () => {
               key={item.path}
               onClick={() => handleMenuClick(item.path)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-left",
+                "w-full flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors text-left group",
                 isActive 
                   ? "bg-blue-100 text-blue-700" 
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-                isCollapsed && "justify-center"
+                isCollapsed ? "justify-center py-2" : "flex-col items-start"
               )}
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              {!isCollapsed && <span>{item.label}</span>}
+              <div className={cn(
+                "flex items-center gap-3 w-full",
+                isCollapsed && "justify-center"
+              )}>
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                {!isCollapsed && <span className="font-medium">{item.label}</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="text-xs text-gray-500 mt-1 ml-8">
+                  {item.description}
+                </span>
+              )}
             </button>
           );
         })}
