@@ -25,6 +25,8 @@ const Sidebar = () => {
   const location = useLocation();
   const permissions = useUserPermissions();
 
+  console.log('Sidebar - permissions recebidas:', permissions);
+
   const menuItems = [
     { 
       icon: Home, 
@@ -82,7 +84,14 @@ const Sidebar = () => {
       path: '/settings', 
       show: permissions.canAccessSettings 
     },
-  ].filter(item => item.show);
+  ];
+
+  console.log('Sidebar - todos os menuItems antes do filtro:', menuItems);
+  
+  const filteredMenuItems = menuItems.filter(item => item.show);
+  
+  console.log('Sidebar - menuItems após filtro:', filteredMenuItems);
+  console.log('Sidebar - quantidade de itens visíveis:', filteredMenuItems.length);
 
   const handleMenuClick = (path: string) => {
     console.log('Navegando para:', path);
@@ -111,9 +120,11 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => {
+        {filteredMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
+          
+          console.log('Renderizando item do menu:', item.label, 'show:', item.show);
           
           return (
             <button

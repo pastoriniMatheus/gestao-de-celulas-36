@@ -4,10 +4,17 @@ import { useAuth } from '@/components/AuthProvider';
 export const useUserPermissions = () => {
   const { userProfile } = useAuth();
 
+  console.log('useUserPermissions - userProfile:', userProfile);
+  console.log('useUserPermissions - role:', userProfile?.role);
+
   // Admin tem acesso a tudo
   const isAdmin = userProfile?.role === 'admin';
   const isLeader = userProfile?.role === 'leader';
 
+  console.log('useUserPermissions - isAdmin:', isAdmin);
+  console.log('useUserPermissions - isLeader:', isLeader);
+
+  // Para admin, todas as permissões devem ser true
   const canAccessUserManagement = isAdmin;
   const canAccessSettings = isAdmin;
   const canAccessEvents = isAdmin;
@@ -18,7 +25,7 @@ export const useUserPermissions = () => {
   const canAccessCells = true; // Sempre permitir acesso às células
   const canAccessPipeline = true; // Sempre permitir acesso ao pipeline
 
-  return {
+  const permissions = {
     canAccessUserManagement,
     canAccessSettings,
     canAccessEvents,
@@ -32,4 +39,8 @@ export const useUserPermissions = () => {
     isAdmin,
     userProfile
   };
+
+  console.log('useUserPermissions - todas as permissões:', permissions);
+
+  return permissions;
 };
