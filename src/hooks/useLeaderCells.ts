@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserPermissions } from './useUserPermissions';
@@ -22,7 +23,6 @@ export const useLeaderCells = () => {
   const permissions = useUserPermissions();
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
-  const subscriptionStatusRef = useRef<string>('');
 
   const fetchCells = async () => {
     try {
@@ -67,7 +67,6 @@ export const useLeaderCells = () => {
         if (channelRef.current) {
           await supabase.removeChannel(channelRef.current);
           channelRef.current = null;
-          subscriptionStatusRef.current = '';
         }
 
         // Create new channel with unique name
@@ -76,7 +75,7 @@ export const useLeaderCells = () => {
         channelRef.current = channel;
 
         // Subscribe to changes
-        const subscriptionStatus = channel
+        channel
           .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'cells' },
             (payload) => {
@@ -86,11 +85,9 @@ export const useLeaderCells = () => {
               fetchCells(); // Refresh data when changes occur
             }
           )
-          .subscribe();
-
-        // Store subscription status
-        subscriptionStatusRef.current = await subscriptionStatus;
-        console.log('Leader cells subscription status:', subscriptionStatusRef.current);
+          .subscribe((status) => {
+            console.log('Leader cells subscription status:', status);
+          });
 
       } catch (error) {
         console.error('Error setting up leader cells subscription:', error);
@@ -101,10 +98,9 @@ export const useLeaderCells = () => {
 
     return () => {
       mountedRef.current = false;
-      if (channelRef.current && subscriptionStatusRef.current === 'SUBSCRIBED') {
+      if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
-        subscriptionStatusRef.current = '';
       }
     };
   }, [permissions.userProfile?.id]);

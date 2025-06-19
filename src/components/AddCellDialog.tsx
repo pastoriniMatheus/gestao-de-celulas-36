@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -141,13 +142,13 @@ export const AddCellDialog = () => {
             <Label htmlFor="neighborhood">Bairro</Label>
             <Select 
               value={formData.neighborhood_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood_id: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood_id: value === 'nenhum' ? '' : value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o bairro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum bairro</SelectItem>
+                <SelectItem value="nenhum">Nenhum bairro</SelectItem>
                 {neighborhoods.map((neighborhood) => (
                   <SelectItem key={neighborhood.id} value={neighborhood.id}>
                     {neighborhood.name}
@@ -161,13 +162,13 @@ export const AddCellDialog = () => {
             <Label htmlFor="leader">Líder</Label>
             <Select 
               value={formData.leader_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value === 'nenhum' ? '' : value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o líder" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum líder</SelectItem>
+                <SelectItem value="nenhum">Nenhum líder</SelectItem>
                 {leaders.map((leader) => (
                   <SelectItem key={leader.id} value={leader.id}>
                     {leader.name} ({leader.role === 'admin' ? 'Admin' : 'Líder'})

@@ -177,14 +177,14 @@ export const MessagingCenter = () => {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-1 block">Encontro com Deus</label>
-                    <Select value={filters.encounterWithGod?.toString() || 'all'} onValueChange={(value) => 
-                      handleFilterChange('encounterWithGod', value === 'all' ? undefined : value === 'true')
+                    <Select value={filters.encounterWithGod?.toString() || 'todos'} onValueChange={(value) => 
+                      handleFilterChange('encounterWithGod', value === 'todos' ? undefined : value === 'true')
                     }>
                       <SelectTrigger>
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="todos">Todos</SelectItem>
                         <SelectItem value="true">Sim</SelectItem>
                         <SelectItem value="false">Não</SelectItem>
                       </SelectContent>
@@ -193,12 +193,12 @@ export const MessagingCenter = () => {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-1 block">Célula</label>
-                    <Select value={filters.cellId || 'all'} onValueChange={(value) => handleFilterChange('cellId', value === 'all' ? '' : value)}>
+                    <Select value={filters.cellId || 'todas'} onValueChange={(value) => handleFilterChange('cellId', value === 'todas' ? '' : value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todas as células" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todas as células</SelectItem>
+                        <SelectItem value="todas">Todas as células</SelectItem>
                         {cells.map(cell => (
                           <SelectItem key={cell.id} value={cell.id}>{cell.name}</SelectItem>
                         ))}
@@ -208,12 +208,12 @@ export const MessagingCenter = () => {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-1 block">Estágio Pipeline</label>
-                    <Select value={filters.pipelineStageId || 'all'} onValueChange={(value) => handleFilterChange('pipelineStageId', value === 'all' ? '' : value)}>
+                    <Select value={filters.pipelineStageId || 'todos'} onValueChange={(value) => handleFilterChange('pipelineStageId', value === 'todos' ? '' : value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todos os estágios" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos os estágios</SelectItem>
+                        <SelectItem value="todos">Todos os estágios</SelectItem>
                         {pipelineStages.map(stage => (
                           <SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>
                         ))}
@@ -223,12 +223,12 @@ export const MessagingCenter = () => {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-1 block">Status</label>
-                    <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}>
+                    <Select value={filters.status || 'todos'} onValueChange={(value) => handleFilterChange('status', value === 'todos' ? '' : value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todos os status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
+                        <SelectItem value="todos">Todos os status</SelectItem>
                         <SelectItem value="member">Membro</SelectItem>
                         <SelectItem value="visitor">Visitante</SelectItem>
                         <SelectItem value="pending">Pendente</SelectItem>
@@ -302,7 +302,7 @@ export const MessagingCenter = () => {
                       <SelectValue placeholder="Selecione um template" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum template</SelectItem>
+                      <SelectItem value="nenhum">Nenhum template</SelectItem>
                       {templates.filter(t => t.active).map(template => (
                         <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                       ))}

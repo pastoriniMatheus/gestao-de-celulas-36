@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,9 +40,9 @@ export const CellDetails = () => {
   const [cell, setCell] = useState<CellDetails | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
-  const subscriptionStatusRef = useRef<string>('');
 
   const fetchCellDetails = async () => {
     if (!id) return;
@@ -99,7 +100,6 @@ export const CellDetails = () => {
         if (channelRef.current) {
           await supabase.removeChannel(channelRef.current);
           channelRef.current = null;
-          subscriptionStatusRef.current = '';
         }
 
         // Create new channel with unique name
@@ -108,7 +108,7 @@ export const CellDetails = () => {
         channelRef.current = channel;
 
         // Subscribe to changes
-        const subscriptionStatus = channel
+        channel
           .on('postgres_changes', 
             { 
               event: '*', 
@@ -136,11 +136,9 @@ export const CellDetails = () => {
               fetchCellDetails();
             }
           )
-          .subscribe();
-
-        // Store subscription status
-        subscriptionStatusRef.current = await subscriptionStatus;
-        console.log('Cell details subscription status:', subscriptionStatusRef.current);
+          .subscribe((status) => {
+            console.log('Cell details subscription status:', status);
+          });
 
       } catch (error) {
         console.error('Error setting up cell details subscription:', error);
@@ -151,10 +149,9 @@ export const CellDetails = () => {
 
     return () => {
       mountedRef.current = false;
-      if (channelRef.current && subscriptionStatusRef.current === 'SUBSCRIBED') {
+      if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
-        subscriptionStatusRef.current = '';
       }
     };
   }, [id]);
@@ -229,7 +226,12 @@ export const CellDetails = () => {
           </div>
           <div className="flex justify-end gap-2">
             <CellQrCode cellId={cell.id} />
-            <EditCellDialog cell={cell} onCellUpdated={fetchCellDetails} />
+            <EditCellDialog 
+              cell={cell} 
+              onCellUpdated={fetchCellDetails}
+              isOpen={editDialogOpen}
+              onClose={() => setEditDialogOpen(false)}
+            />
           </div>
         </CardContent>
       </Card>

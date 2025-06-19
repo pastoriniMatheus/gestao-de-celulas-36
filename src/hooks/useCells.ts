@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -20,7 +21,6 @@ export const useCells = () => {
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
-  const subscriptionStatusRef = useRef<string>('');
 
   const fetchCells = async () => {
     try {
@@ -129,7 +129,6 @@ export const useCells = () => {
         if (channelRef.current) {
           await supabase.removeChannel(channelRef.current);
           channelRef.current = null;
-          subscriptionStatusRef.current = '';
         }
 
         // Create new channel with unique name
@@ -138,7 +137,7 @@ export const useCells = () => {
         channelRef.current = channel;
 
         // Subscribe to changes
-        const subscriptionStatus = channel
+        channel
           .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'cells' },
             (payload) => {
@@ -148,11 +147,9 @@ export const useCells = () => {
               fetchCells(); // Refresh data when changes occur
             }
           )
-          .subscribe();
-
-        // Store subscription status
-        subscriptionStatusRef.current = await subscriptionStatus;
-        console.log('Cells subscription status:', subscriptionStatusRef.current);
+          .subscribe((status) => {
+            console.log('Cells subscription status:', status);
+          });
 
       } catch (error) {
         console.error('Error setting up cells subscription:', error);
@@ -163,10 +160,9 @@ export const useCells = () => {
 
     return () => {
       mountedRef.current = false;
-      if (channelRef.current && subscriptionStatusRef.current === 'SUBSCRIBED') {
+      if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
-        subscriptionStatusRef.current = '';
       }
     };
   }, []);
