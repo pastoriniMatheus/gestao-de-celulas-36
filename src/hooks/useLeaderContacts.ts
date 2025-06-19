@@ -102,7 +102,7 @@ export const useLeaderContacts = () => {
 
               const cellIds = leaderCells?.map(cell => cell.id) || [];
               
-              if (payload.new && !cellIds.includes(payload.new.cell_id)) {
+              if (payload.new && !cellIds.includes((payload.new as any).cell_id)) {
                 return; // Não processar se não for contato das células do líder
               }
             }
@@ -111,10 +111,10 @@ export const useLeaderContacts = () => {
               setContacts(prev => [payload.new as Contact, ...prev]);
             } else if (payload.eventType === 'UPDATE') {
               setContacts(prev => prev.map(contact => 
-                contact.id === payload.new.id ? payload.new as Contact : contact
+                contact.id === (payload.new as any).id ? payload.new as Contact : contact
               ));
             } else if (payload.eventType === 'DELETE') {
-              setContacts(prev => prev.filter(contact => contact.id !== payload.old.id));
+              setContacts(prev => prev.filter(contact => contact.id !== (payload.old as any).id));
             }
           }
         )

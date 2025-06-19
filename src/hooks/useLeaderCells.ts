@@ -65,7 +65,7 @@ export const useLeaderCells = () => {
             
             // Se for líder, filtrar apenas suas células
             if (isLeader && !isAdmin) {
-              if (payload.new && payload.new.leader_id !== userProfile.id) {
+              if (payload.new && (payload.new as any).leader_id !== userProfile.id) {
                 return; // Não processar se não for célula do líder
               }
             }
@@ -74,10 +74,10 @@ export const useLeaderCells = () => {
               setCells(prev => [...prev, payload.new as Cell]);
             } else if (payload.eventType === 'UPDATE') {
               setCells(prev => prev.map(cell => 
-                cell.id === payload.new.id ? payload.new as Cell : cell
+                cell.id === (payload.new as any).id ? payload.new as Cell : cell
               ));
             } else if (payload.eventType === 'DELETE') {
-              setCells(prev => prev.filter(cell => cell.id !== payload.old.id));
+              setCells(prev => prev.filter(cell => cell.id !== (payload.old as any).id));
             }
           }
         )

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -234,10 +233,10 @@ export const ContactsManager = () => {
       {selectedContact && (
         <EditContactDialog
           contact={selectedContact}
-          isOpen={showEditDialog}
-          onClose={() => {
-            setShowEditDialog(false);
-            setSelectedContact(null);
+          open={showEditDialog}
+          onOpenChange={(open) => {
+            setShowEditDialog(open);
+            if (!open) setSelectedContact(null);
           }}
         />
       )}
