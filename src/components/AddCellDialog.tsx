@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -141,14 +140,14 @@ export const AddCellDialog = () => {
           <div>
             <Label htmlFor="neighborhood">Bairro</Label>
             <Select 
-              value={formData.neighborhood_id || "no-neighborhood"} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood_id: value === "no-neighborhood" ? "" : value }))}
+              value={formData.neighborhood_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood_id: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o bairro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-neighborhood">Nenhum bairro</SelectItem>
+                <SelectItem value="">Nenhum bairro</SelectItem>
                 {neighborhoods.map((neighborhood) => (
                   <SelectItem key={neighborhood.id} value={neighborhood.id}>
                     {neighborhood.name}
@@ -161,14 +160,14 @@ export const AddCellDialog = () => {
           <div>
             <Label htmlFor="leader">Líder</Label>
             <Select 
-              value={formData.leader_id || "no-leader"} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value === "no-leader" ? "" : value }))}
+              value={formData.leader_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o líder" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-leader">Nenhum líder</SelectItem>
+                <SelectItem value="">Nenhum líder</SelectItem>
                 {leaders.map((leader) => (
                   <SelectItem key={leader.id} value={leader.id}>
                     {leader.name} ({leader.role === 'admin' ? 'Admin' : 'Líder'})
@@ -182,14 +181,13 @@ export const AddCellDialog = () => {
             <div>
               <Label htmlFor="meeting_day">Dia da Reunião *</Label>
               <Select 
-                value={formData.meeting_day || "no-day"} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value === "no-day" ? "" : value }))}
+                value={formData.meeting_day} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o dia" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no-day">Selecione um dia</SelectItem>
                   {weekDays.map((day, index) => (
                     <SelectItem key={index} value={index.toString()}>
                       {day}

@@ -259,7 +259,7 @@ export const PendingContactsManager = () => {
                               <SelectValue placeholder="Selecione uma célula" />
                             </SelectTrigger>
                             <SelectContent className="z-[50] bg-white border rounded shadow-lg">
-                              <SelectItem value="no-cell">Nenhuma</SelectItem>
+                              <SelectItem value="none">Nenhuma</SelectItem>
                               {Object.entries(groupedCellsByNeighborhood).map(([neighborhood, cellsArr]) => (
                                 <div key={neighborhood}>
                                   <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b">

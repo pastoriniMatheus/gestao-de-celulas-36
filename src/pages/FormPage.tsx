@@ -502,10 +502,10 @@ export const FormPage = () => {
                   Cidade
                 </Label>
                 <Select 
-                  value={formData.city_id || "placeholder-city"} 
+                  value={formData.city_id} 
                   onValueChange={(value) => setFormData(prev => ({ 
                     ...prev, 
-                    city_id: value === "placeholder-city" ? "" : value,
+                    city_id: value,
                     neighborhood: "" 
                   }))}
                 >
@@ -513,7 +513,6 @@ export const FormPage = () => {
                     <SelectValue placeholder="Selecione a cidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="placeholder-city">Selecione uma cidade</SelectItem>
                     {cities.map((city) => (
                       <SelectItem key={city.id} value={city.id}>
                         {city.name} - {city.state}
@@ -528,12 +527,12 @@ export const FormPage = () => {
                   <MapPin className="w-4 h-4 text-blue-600" />
                   Bairro *
                 </Label>
-                {formData.city_id && formData.city_id !== "placeholder-city" ? (
+                {formData.city_id ? (
                   <Select 
-                    value={formData.neighborhood || "placeholder-neighborhood"} 
+                    value={formData.neighborhood} 
                     onValueChange={(value) => setFormData(prev => ({ 
                       ...prev, 
-                      neighborhood: value === "placeholder-neighborhood" ? "" : value 
+                      neighborhood: value 
                     }))}
                     required
                   >
@@ -541,7 +540,6 @@ export const FormPage = () => {
                       <SelectValue placeholder="Selecione seu bairro" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="placeholder-neighborhood">Selecione um bairro</SelectItem>
                       {filteredNeighborhoods.map((neighborhood) => (
                         <SelectItem key={neighborhood.id} value={neighborhood.name}>
                           {neighborhood.name}

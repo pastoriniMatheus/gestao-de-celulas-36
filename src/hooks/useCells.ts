@@ -1,6 +1,6 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export interface Cell {
   id: string;
@@ -8,8 +8,8 @@ export interface Cell {
   address: string;
   meeting_day: number;
   meeting_time: string;
-  leader_id?: string;
-  neighborhood_id?: string | null;
+  leader_id: string | null;
+  neighborhood_id: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -19,8 +19,8 @@ export const useCells = () => {
   const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<any>(null);
-  const isSubscribedRef = useRef(false);
   const mountedRef = useRef(true);
+  const subscriptionStatusRef = useRef<string>('');
 
   const fetchCells = async () => {
     try {
@@ -122,86 +122,61 @@ export const useCells = () => {
     mountedRef.current = true;
     fetchCells();
 
-    // Cleanup function
-    return () => {
-      mountedRef.current = false;
-      console.log('Cleaning up cells hook...');
-      if (channelRef.current) {
-        try {
-          supabase.removeChannel(channelRef.current);
-        } catch (error) {
-          console.error('Error removing channel:', error);
-        }
-        channelRef.current = null;
-      }
-      isSubscribedRef.current = false;
-    };
-  }, []);
-
-  // Separate useEffect for subscription to avoid recreation on every render
-  useEffect(() => {
-    if (isSubscribedRef.current || !mountedRef.current) return;
-
+    // Setup realtime subscription
     const setupSubscription = async () => {
       try {
-        // Clean up any existing channel first
+        // Remove existing channel if it exists
         if (channelRef.current) {
-          console.log('Cleaning up existing cells channel...');
-          supabase.removeChannel(channelRef.current);
+          await supabase.removeChannel(channelRef.current);
           channelRef.current = null;
-          isSubscribedRef.current = false;
+          subscriptionStatusRef.current = '';
         }
 
-        const channelName = `cells-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        console.log('Creating cells subscription:', channelName);
+        // Create new channel with unique name
+        const channelName = `cells-${Date.now()}-${Math.random()}`;
+        const channel = supabase.channel(channelName);
+        channelRef.current = channel;
 
-        const channel = supabase
-          .channel(channelName)
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'cells'
-            },
+        // Subscribe to changes
+        const subscriptionStatus = channel
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'cells' },
             (payload) => {
-              console.log('Célula alterada em tempo real:', payload);
-              
               if (!mountedRef.current) return;
-
-              if (payload.eventType === 'INSERT') {
-                setCells(prev => [...prev, payload.new as Cell]);
-              } else if (payload.eventType === 'UPDATE') {
-                setCells(prev => prev.map(cell => 
-                  cell.id === payload.new.id ? payload.new as Cell : cell
-                ));
-              } else if (payload.eventType === 'DELETE') {
-                setCells(prev => prev.filter(cell => cell.id !== payload.old.id));
-              }
+              
+              console.log('Cells realtime update:', payload);
+              fetchCells(); // Refresh data when changes occur
             }
-          );
+          )
+          .subscribe();
 
-        const subscriptionResult = await channel.subscribe();
-        console.log('Cells subscription result:', subscriptionResult);
-        
-        if (subscriptionResult === 'SUBSCRIBED') {
-          channelRef.current = channel;
-          isSubscribedRef.current = true;
-        }
+        // Store subscription status
+        subscriptionStatusRef.current = await subscriptionStatus;
+        console.log('Cells subscription status:', subscriptionStatusRef.current);
+
       } catch (error) {
         console.error('Error setting up cells subscription:', error);
       }
     };
 
     setupSubscription();
+
+    return () => {
+      mountedRef.current = false;
+      if (channelRef.current && subscriptionStatusRef.current === 'SUBSCRIBED') {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        subscriptionStatusRef.current = '';
+      }
+    };
   }, []);
 
   return {
     cells,
     loading,
+    fetchCells,
     addCell,
     updateCell,
-    deleteCell,
-    fetchCells
+    deleteCell
   };
 };
