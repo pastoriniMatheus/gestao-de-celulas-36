@@ -37,6 +37,7 @@ const Sidebar = () => {
   ].filter(item => item.show);
 
   const handleMenuClick = (path: string) => {
+    console.log('Navegando para:', path);
     navigate(path);
   };
 
