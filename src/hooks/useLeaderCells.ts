@@ -23,20 +23,14 @@ export const useLeaderCells = () => {
   const permissions = useUserPermissions();
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
-  const fetchingRef = useRef(false);
 
   const fetchCells = async () => {
-    // Evitar múltiplas chamadas simultâneas
-    if (fetchingRef.current) return;
-    
     try {
-      fetchingRef.current = true;
       setLoading(true);
       
       // Aguardar o perfil do usuário estar disponível
       if (!permissions.userProfile?.id) {
         setLoading(false);
-        fetchingRef.current = false;
         return;
       }
 
@@ -70,13 +64,20 @@ export const useLeaderCells = () => {
       if (mountedRef.current) {
         setLoading(false);
       }
-      fetchingRef.current = false;
     }
   };
 
   useEffect(() => {
-    // Só buscar quando o perfil estiver disponível
-    if (!permissions.userProfile?.id || !permissions.isLeader) return;
+    // Só inicializar se as permissões estiverem carregadas
+    if (permissions.loading) {
+      return;
+    }
+
+    // Se não é líder, retornar vazio
+    if (!permissions.isLeader) {
+      setLoading(false);
+      return;
+    }
 
     mountedRef.current = true;
     fetchCells();
@@ -91,7 +92,7 @@ export const useLeaderCells = () => {
         }
 
         // Create new channel with unique name
-        const channelName = `leader-cells-${permissions.userProfile.id}-${Date.now()}`;
+        const channelName = `leader-cells-${permissions.userProfile?.id || 'unknown'}-${Date.now()}`;
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
 
@@ -103,10 +104,8 @@ export const useLeaderCells = () => {
               if (!mountedRef.current) return;
               
               console.log('Leader cells realtime update:', payload);
-              // Evitar loop infinito - só recarregar se não estiver já carregando
-              if (!fetchingRef.current) {
-                fetchCells();
-              }
+              // Recarregar dados quando houver mudanças
+              fetchCells();
             }
           )
           .subscribe((status) => {
@@ -127,7 +126,7 @@ export const useLeaderCells = () => {
         channelRef.current = null;
       }
     };
-  }, [permissions.userProfile?.id, permissions.isLeader, permissions.isAdmin]);
+  }, [permissions.loading, permissions.isLeader, permissions.userProfile?.id, permissions.isAdmin]);
 
   return {
     cells,

@@ -18,7 +18,8 @@ import {
   Crown,
   Target,
   Activity,
-  Zap
+  Zap,
+  Waves
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -120,6 +121,7 @@ export const Dashboard = () => {
   const totalVisitors = contacts.filter(c => c.status === 'visitor').length;
   const totalPending = contacts.filter(c => c.status === 'pending').length;
   const totalEncounter = contacts.filter(c => c.encounter_with_god).length;
+  const totalBaptized = contacts.filter(c => c.baptized).length;
   const activeCells = cells.filter(c => c.active).length;
   const totalLeaders = cells.filter(c => c.leader_id).length;
   
@@ -168,6 +170,15 @@ export const Dashboard = () => {
       trend: "+8% este mês"
     },
     {
+      title: "Batizados",
+      value: totalBaptized,
+      icon: Waves,
+      gradient: "from-cyan-600 to-cyan-700",
+      bgGradient: "from-cyan-50 to-cyan-100",
+      description: `${Math.round((totalBaptized / contacts.length) * 100)}% dos contatos`,
+      trend: "+5% este mês"
+    },
+    {
       title: "Células Ativas",
       value: activeCells,
       icon: Home,
@@ -175,15 +186,6 @@ export const Dashboard = () => {
       bgGradient: "from-purple-50 to-purple-100",
       description: `${totalLeaders} com líderes definidos`,
       trend: "+2 novas este mês"
-    },
-    {
-      title: "Taxa de Frequência",
-      value: `${attendanceRate}%`,
-      icon: TrendingUp,
-      gradient: "from-orange-600 to-orange-700",
-      bgGradient: "from-orange-50 to-orange-100",
-      description: "Últimos 30 dias",
-      trend: uniqueContactsPresent > 0 ? `${uniqueContactsPresent} pessoas ativas` : "Sem dados"
     }
   ];
 
@@ -339,6 +341,7 @@ export const Dashboard = () => {
         <DashboardCharts stats={{
           totalMembers,
           totalEncounter,
+          totalBaptized,
           totalCells: cells.length,
           activeCells,
           neighborhoodsWithMembers: neighborhoodStats.filter(n => n.count > 0).length,

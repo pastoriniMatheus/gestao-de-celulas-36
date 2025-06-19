@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -11,6 +12,7 @@ interface Contact {
   cell_id: string | null;
   status: string;
   encounter_with_god: boolean;
+  baptized: boolean;
   pipeline_stage_id: string | null;
   age: number | null;
   birth_date: string | null;
@@ -46,6 +48,7 @@ export const useContacts = () => {
         cell_id: contact.cell_id,
         status: contact.status,
         encounter_with_god: contact.encounter_with_god,
+        baptized: contact.baptized || false,
         pipeline_stage_id: contact.pipeline_stage_id,
         age: contact.age,
         birth_date: contact.birth_date,
@@ -90,6 +93,7 @@ export const useContacts = () => {
         cell_id: data.cell_id,
         status: data.status,
         encounter_with_god: data.encounter_with_god,
+        baptized: data.baptized || false,
         pipeline_stage_id: data.pipeline_stage_id,
         age: data.age,
         birth_date: data.birth_date,
@@ -139,6 +143,7 @@ export const useContacts = () => {
         cell_id: data.cell_id,
         status: data.status,
         encounter_with_god: data.encounter_with_god,
+        baptized: data.baptized || false,
         pipeline_stage_id: data.pipeline_stage_id,
         age: data.age,
         birth_date: data.birth_date,
@@ -209,6 +214,7 @@ export const useContacts = () => {
               cell_id: payload.new.cell_id,
               status: payload.new.status,
               encounter_with_god: payload.new.encounter_with_god,
+              baptized: payload.new.baptized || false,
               pipeline_stage_id: payload.new.pipeline_stage_id,
               age: payload.new.age,
               birth_date: payload.new.birth_date,
@@ -227,6 +233,7 @@ export const useContacts = () => {
               cell_id: payload.new.cell_id,
               status: payload.new.status,
               encounter_with_god: payload.new.encounter_with_god,
+              baptized: payload.new.baptized || false,
               pipeline_stage_id: payload.new.pipeline_stage_id,
               age: payload.new.age,
               birth_date: payload.new.birth_date,

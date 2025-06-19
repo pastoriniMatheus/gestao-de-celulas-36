@@ -273,6 +273,7 @@ export const ContactsManager = () => {
                 <TableHead>Bairro</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Encontro com Deus</TableHead>
+                <TableHead>Batizado</TableHead>
                 <TableHead>Data de Cadastro</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -311,6 +312,11 @@ export const ContactsManager = () => {
                   <TableCell>
                     <Badge variant={contact.encounter_with_god ? "default" : "secondary"}>
                       {contact.encounter_with_god ? 'Sim' : 'Não'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={contact.baptized ? "default" : "secondary"}>
+                      {contact.baptized ? 'Sim' : 'Não'}
                     </Badge>
                   </TableCell>
                   <TableCell>

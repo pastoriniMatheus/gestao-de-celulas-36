@@ -208,6 +208,7 @@ export type Database = {
         Row: {
           age: number | null
           attendance_code: string | null
+          baptized: boolean
           birth_date: string | null
           cell_id: string | null
           city_id: string | null
@@ -224,6 +225,7 @@ export type Database = {
         Insert: {
           age?: number | null
           attendance_code?: string | null
+          baptized?: boolean
           birth_date?: string | null
           cell_id?: string | null
           city_id?: string | null
@@ -240,6 +242,7 @@ export type Database = {
         Update: {
           age?: number | null
           attendance_code?: string | null
+          baptized?: boolean
           birth_date?: string | null
           cell_id?: string | null
           city_id?: string | null

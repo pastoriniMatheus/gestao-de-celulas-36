@@ -31,7 +31,8 @@ const FormPage = () => {
     whatsapp: '',
     neighborhood: '',
     birth_date: null as Date | null,
-    encounter_with_god: false
+    encounter_with_god: false,
+    baptized: false
   });
 
   // Verificar códigos de erro
@@ -101,6 +102,7 @@ const FormPage = () => {
         neighborhood: formData.neighborhood.trim(),
         birth_date: formData.birth_date ? formData.birth_date.toISOString().split('T')[0] : null,
         encounter_with_god: formData.encounter_with_god,
+        baptized: formData.baptized,
         status: 'pending',
         attendance_code: cod || null
       };
@@ -138,7 +140,8 @@ const FormPage = () => {
         whatsapp: '',
         neighborhood: '',
         birth_date: null,
-        encounter_with_god: false
+        encounter_with_god: false,
+        baptized: false
       });
 
     } catch (error: any) {
@@ -167,7 +170,7 @@ const FormPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
+        <Card className="w-full max-w-md text-center shadow-xl">
           <CardContent className="p-8">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Carregando...</h3>
@@ -180,21 +183,21 @@ const FormPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-gray-800">
+      <Card className="w-full max-w-2xl shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="text-center pb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+          <CardTitle className="text-2xl font-bold">
             {eventInfo ? `Cadastro - ${eventInfo.name}` : 
              qrInfo ? `Cadastro - ${qrInfo.title}` : 
              'Cadastro de Visitante'}
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-blue-100">
             {eventInfo ? `Evento: ${format(new Date(eventInfo.date), 'dd/MM/yyyy', { locale: ptBR })}` :
              qrInfo ? 'Preencha seus dados para entrarmos em contato' :
              'Preencha o formulário abaixo'}
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 p-8">
           {/* Mostrar erro se houver */}
           {errorCode && (
             <Alert className="border-red-200 bg-red-50">
@@ -216,51 +219,54 @@ const FormPage = () => {
           {/* Formulário - só mostrar se não houver erro */}
           {!errorCode && (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo *</Label>
+                  <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Nome Completo *</Label>
                   <Input
                     id="name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Seu nome completo"
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <Label htmlFor="whatsapp" className="text-sm font-semibold text-gray-700">WhatsApp</Label>
                   <Input
                     id="whatsapp"
                     type="tel"
                     value={formData.whatsapp}
                     onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
                     placeholder="(00) 00000-0000"
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Label htmlFor="neighborhood" className="text-sm font-semibold text-gray-700">Bairro</Label>
                   <Input
                     id="neighborhood"
                     type="text"
                     value={formData.neighborhood}
                     onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
                     placeholder="Seu bairro"
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Data de Nascimento</Label>
+                  <Label className="text-sm font-semibold text-gray-700">Data de Nascimento</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal border-gray-300 hover:border-blue-400",
                           !formData.birth_date && "text-muted-foreground"
                         )}
                       >
@@ -288,25 +294,43 @@ const FormPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="encounter"
-                  checked={formData.encounter_with_god}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ ...prev, encounter_with_god: !!checked }))
-                  }
-                />
-                <Label
-                  htmlFor="encounter"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Já participei de um Encontro com Deus
-                </Label>
+              <div className="space-y-4 p-6 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="encounter"
+                    checked={formData.encounter_with_god}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, encounter_with_god: !!checked }))
+                    }
+                  />
+                  <Label
+                    htmlFor="encounter"
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    Já participei de um Encontro com Deus
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="baptized"
+                    checked={formData.baptized}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, baptized: !!checked }))
+                    }
+                  />
+                  <Label
+                    htmlFor="baptized"
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    Sou batizado
+                  </Label>
+                </div>
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                 disabled={submitting}
               >
                 {submitting ? "Enviando..." : "Enviar Cadastro"}

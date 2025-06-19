@@ -11,6 +11,7 @@ import { BasicInfoFields } from './contact-form/BasicInfoFields';
 import { LocationFields } from './contact-form/LocationFields';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
+import { BaptizedField } from './contact-form/BaptizedField';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -51,6 +52,7 @@ export const AddContactDialog = () => {
         status: 'pending',
         birth_date: formData.birth_date || null,
         encounter_with_god: !!formData.encounter_with_god,
+        baptized: !!formData.baptized,
         pipeline_stage_id: null,
         age: null,
         attendance_code: null,
@@ -100,10 +102,16 @@ export const AddContactDialog = () => {
               onChange={e => updateFormData({ birth_date: e.target.value })}
             />
           </div>
-          <EncounterWithGodField
-            checked={!!formData.encounter_with_god}
-            onChange={checked => updateFormData({ encounter_with_god: checked })}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <EncounterWithGodField
+              checked={!!formData.encounter_with_god}
+              onChange={checked => updateFormData({ encounter_with_god: checked })}
+            />
+            <BaptizedField
+              checked={!!formData.baptized}
+              onChange={checked => updateFormData({ baptized: checked })}
+            />
+          </div>
           <LocationFields
             formData={formData}
             onUpdateFormData={updateFormData}

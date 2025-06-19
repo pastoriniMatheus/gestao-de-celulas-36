@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { useContacts } from '@/hooks/useContacts';
 import { useContactDialogData } from '@/hooks/useContactDialogData';
 import { useCells } from '@/hooks/useCells';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
+import { BaptizedField } from './contact-form/BaptizedField';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { UserCheck, ArrowRightLeft, Calendar } from 'lucide-react';
@@ -31,6 +33,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     city_id: contact?.city_id ?? '',
     birth_date: contact?.birth_date ?? '',
     encounter_with_god: contact?.encounter_with_god ?? false,
+    baptized: contact?.baptized ?? false,
     status: contact?.status ?? 'pending',
     cell_id: contact?.cell_id ?? '',
   });
@@ -49,6 +52,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       city_id: city_id ?? '',
       birth_date: contact?.birth_date ?? '',
       encounter_with_god: contact?.encounter_with_god ?? false,
+      baptized: contact?.baptized ?? false,
       status: contact?.status ?? 'pending',
       cell_id: contact?.cell_id ?? '',
     });
@@ -79,6 +83,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         city_id: form.city_id || null,
         birth_date: form.birth_date || null,
         encounter_with_god: !!form.encounter_with_god,
+        baptized: !!form.baptized,
         // Manter os valores atuais do contato para estes campos
         status: contact.status,
         cell_id: contact.cell_id,
@@ -166,7 +171,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Editar {statusBadge.text}
@@ -287,11 +292,17 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
               onChange={e => setForm(f => ({ ...f, birth_date: e.target.value }))}
             />
           </div>
-          <div>
+          <div className="grid grid-cols-1 gap-4">
             <EncounterWithGodField
               checked={!!form.encounter_with_god}
               onChange={checked =>
                 setForm(f => ({ ...f, encounter_with_god: checked }))
+              }
+            />
+            <BaptizedField
+              checked={!!form.baptized}
+              onChange={checked =>
+                setForm(f => ({ ...f, baptized: checked }))
               }
             />
           </div>
