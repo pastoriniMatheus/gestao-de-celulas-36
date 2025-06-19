@@ -22,6 +22,7 @@ export const useLeaderCells = () => {
   const { userProfile, isLeader, isAdmin } = useUserPermissions();
   const channelRef = useRef<any>(null);
   const isSubscribedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const fetchCells = async () => {
     try {
@@ -40,30 +41,49 @@ export const useLeaderCells = () => {
         return;
       }
 
-      setCells(data || []);
+      if (mountedRef.current) {
+        setCells(data || []);
+      }
     } catch (error) {
       console.error('Erro ao buscar células:', error);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (userProfile) {
       fetchCells();
+    }
 
-      // Clean up existing channel before creating new one
+    // Cleanup function
+    return () => {
+      mountedRef.current = false;
+      console.log('Cleaning up leader cells hook...');
       if (channelRef.current) {
-        console.log('Cleaning up existing leader cells channel...');
-        supabase.removeChannel(channelRef.current);
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (error) {
+          console.error('Error removing channel:', error);
+        }
         channelRef.current = null;
-        isSubscribedRef.current = false;
       }
+      isSubscribedRef.current = false;
+    };
+  }, [userProfile?.id]);
 
-      // Only create new subscription if not already subscribed
-      if (!isSubscribedRef.current) {
-        const channelName = `leader-cells-${userProfile.id}-${Date.now()}`;
-        console.log('Creating leader cells channel:', channelName);
+  // Separate useEffect for subscription
+  useEffect(() => {
+    if (!userProfile || isSubscribedRef.current || !mountedRef.current) return;
+
+    const setupSubscription = async () => {
+      try {
+        const channelName = `leader-cells-${userProfile.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Creating leader cells subscription:', channelName);
 
         const channel = supabase
           .channel(channelName)
@@ -76,6 +96,8 @@ export const useLeaderCells = () => {
             },
             (payload) => {
               console.log('Célula alterada em tempo real:', payload);
+              
+              if (!mountedRef.current) return;
               
               // Se for líder, filtrar apenas suas células
               if (isLeader && !isAdmin) {
@@ -96,25 +118,19 @@ export const useLeaderCells = () => {
             }
           );
 
-        channel.subscribe((status) => {
-          console.log('Leader cells channel subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            isSubscribedRef.current = true;
-          }
-        });
-
-        channelRef.current = channel;
-      }
-    }
-
-    return () => {
-      console.log('Cleaning up leader cells channel on unmount...');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-        isSubscribedRef.current = false;
+        const subscriptionResult = await channel.subscribe();
+        console.log('Leader cells subscription result:', subscriptionResult);
+        
+        if (subscriptionResult === 'SUBSCRIBED') {
+          channelRef.current = channel;
+          isSubscribedRef.current = true;
+        }
+      } catch (error) {
+        console.error('Error setting up leader cells subscription:', error);
       }
     };
+
+    setupSubscription();
   }, [userProfile, isLeader, isAdmin]);
 
   return {

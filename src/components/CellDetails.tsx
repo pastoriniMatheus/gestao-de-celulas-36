@@ -53,6 +53,7 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
   const { toast } = useToast();
   const channelsRef = useRef<any[]>([]);
   const isSubscribedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const fetchCellData = async () => {
     try {
@@ -70,7 +71,9 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
         return;
       }
 
-      setCell(cellData);
+      if (mountedRef.current) {
+        setCell(cellData);
+      }
 
       // Buscar membros da célula (incluindo visitantes)
       const { data: membersData, error: membersError } = await supabase
@@ -83,7 +86,9 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
         return;
       }
 
-      setMembers(membersData || []);
+      if (mountedRef.current) {
+        setMembers(membersData || []);
+      }
 
       // Buscar presenças da célula
       const { data: attendanceData, error: attendanceError } = await supabase
@@ -96,38 +101,54 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
         return;
       }
 
-      setAttendances(attendanceData || []);
+      if (mountedRef.current) {
+        setAttendances(attendanceData || []);
+      }
     } catch (error) {
       console.error('Erro ao buscar dados da célula:', error);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   const [filteredAttendances, setFilteredAttendances] = useState<Attendance[]>([]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (isOpen && cellId) {
       fetchCellData();
+    }
 
-      // Clean up existing channels before creating new ones
-      if (channelsRef.current.length > 0) {
-        console.log('Cleaning up existing cell detail channels...');
-        channelsRef.current.forEach(channel => {
+    return () => {
+      mountedRef.current = false;
+      console.log('Cleaning up cell detail channels on unmount...');
+      channelsRef.current.forEach(channel => {
+        try {
           supabase.removeChannel(channel);
-        });
-        channelsRef.current = [];
-        isSubscribedRef.current = false;
-      }
+        } catch (error) {
+          console.error('Error removing channel:', error);
+        }
+      });
+      channelsRef.current = [];
+      isSubscribedRef.current = false;
+    };
+  }, [cellId, isOpen]);
 
-      // Only create new subscriptions if not already subscribed
-      if (!isSubscribedRef.current) {
+  // Separate useEffect for subscriptions
+  useEffect(() => {
+    if (!isOpen || !cellId || isSubscribedRef.current || !mountedRef.current) return;
+
+    const setupSubscriptions = async () => {
+      try {
         const timestamp = Date.now();
-        const random = Math.random();
+        const random = Math.random().toString(36).substr(2, 9);
         const attendanceChannelName = `attendance-${cellId}-${timestamp}-${random}`;
         const contactChannelName = `contact-${cellId}-${timestamp}-${random}`;
         
-        console.log('Creating cell detail channels:', { attendanceChannelName, contactChannelName });
+        console.log('Creating cell detail subscriptions:', { attendanceChannelName, contactChannelName });
 
         // Configurar atualização em tempo real
         const attendanceChannel = supabase
@@ -142,7 +163,9 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
             },
             (payload) => {
               console.log('Presença alterada:', payload);
-              fetchCellData();
+              if (mountedRef.current) {
+                fetchCellData();
+              }
             }
           );
 
@@ -158,39 +181,29 @@ export function CellDetails({ cellId, cellName, isOpen, onOpenChange }: any) {
             },
             (payload) => {
               console.log('Contato alterado:', payload);
-              fetchCellData();
+              if (mountedRef.current) {
+                fetchCellData();
+              }
             }
           );
 
         // Subscribe channels
-        attendanceChannel.subscribe((status) => {
-          console.log('Attendance channel subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            isSubscribedRef.current = true;
-          }
-        });
+        const attendanceResult = await attendanceChannel.subscribe();
+        const contactResult = await contactChannel.subscribe();
         
-        contactChannel.subscribe((status) => {
-          console.log('Contact channel subscription status:', status);
-        });
-
-        // Store channels for cleanup
-        channelsRef.current = [attendanceChannel, contactChannel];
+        console.log('Subscription results:', { attendanceResult, contactResult });
+        
+        if (attendanceResult === 'SUBSCRIBED' && contactResult === 'SUBSCRIBED') {
+          channelsRef.current = [attendanceChannel, contactChannel];
+          isSubscribedRef.current = true;
+        }
+      } catch (error) {
+        console.error('Error setting up cell detail subscriptions:', error);
       }
-    }
-  }, [cellId, isOpen]);
-
-  // Cleanup when dialog closes or unmounts
-  useEffect(() => {
-    return () => {
-      console.log('Cleaning up cell detail channels on unmount...');
-      channelsRef.current.forEach(channel => {
-        supabase.removeChannel(channel);
-      });
-      channelsRef.current = [];
-      isSubscribedRef.current = false;
     };
-  }, []);
+
+    setupSubscriptions();
+  }, [cellId, isOpen]);
 
   useEffect(() => {
     const dateStr = format(selectedDate, 'yyyy-MM-dd');

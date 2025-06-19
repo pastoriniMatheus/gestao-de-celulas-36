@@ -20,6 +20,7 @@ export const useCells = () => {
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const isSubscribedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const fetchCells = async () => {
     try {
@@ -34,11 +35,15 @@ export const useCells = () => {
         return;
       }
 
-      setCells(data || []);
+      if (mountedRef.current) {
+        setCells(data || []);
+      }
     } catch (error) {
       console.error('Erro ao buscar células:', error);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -56,7 +61,9 @@ export const useCells = () => {
       }
 
       // Atualizar estado local imediatamente
-      setCells(prev => [...prev, data]);
+      if (mountedRef.current) {
+        setCells(prev => [...prev, data]);
+      }
       return data;
     } catch (error) {
       console.error('Erro ao criar célula:', error);
@@ -79,7 +86,9 @@ export const useCells = () => {
       }
 
       // Atualizar estado local imediatamente
-      setCells(prev => prev.map(cell => cell.id === id ? data : cell));
+      if (mountedRef.current) {
+        setCells(prev => prev.map(cell => cell.id === id ? data : cell));
+      }
       return data;
     } catch (error) {
       console.error('Erro ao atualizar célula:', error);
@@ -100,7 +109,9 @@ export const useCells = () => {
       }
 
       // Atualizar estado local imediatamente
-      setCells(prev => prev.filter(cell => cell.id !== id));
+      if (mountedRef.current) {
+        setCells(prev => prev.filter(cell => cell.id !== id));
+      }
     } catch (error) {
       console.error('Erro ao deletar célula:', error);
       throw error;
@@ -108,63 +119,73 @@ export const useCells = () => {
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchCells();
 
-    // Clean up existing channel before creating new one
-    if (channelRef.current) {
-      console.log('Cleaning up existing cells channel...');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+    // Cleanup function
+    return () => {
+      mountedRef.current = false;
+      console.log('Cleaning up cells hook...');
+      if (channelRef.current) {
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (error) {
+          console.error('Error removing channel:', error);
+        }
+        channelRef.current = null;
+      }
       isSubscribedRef.current = false;
-    }
+    };
+  }, []);
 
-    // Only create new subscription if not already subscribed
-    if (!isSubscribedRef.current) {
-      const channelName = `cells-realtime-${Date.now()}-${Math.random()}`;
-      console.log('Creating cells channel:', channelName);
+  // Separate useEffect for subscription to avoid recreation on every render
+  useEffect(() => {
+    if (isSubscribedRef.current || !mountedRef.current) return;
 
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'cells'
-          },
-          (payload) => {
-            console.log('Célula alterada em tempo real:', payload);
-            
-            if (payload.eventType === 'INSERT') {
-              setCells(prev => [...prev, payload.new as Cell]);
-            } else if (payload.eventType === 'UPDATE') {
-              setCells(prev => prev.map(cell => 
-                cell.id === payload.new.id ? payload.new as Cell : cell
-              ));
-            } else if (payload.eventType === 'DELETE') {
-              setCells(prev => prev.filter(cell => cell.id !== payload.old.id));
+    const setupSubscription = async () => {
+      try {
+        const channelName = `cells-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Creating cells subscription:', channelName);
+
+        const channel = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'cells'
+            },
+            (payload) => {
+              console.log('Célula alterada em tempo real:', payload);
+              
+              if (!mountedRef.current) return;
+
+              if (payload.eventType === 'INSERT') {
+                setCells(prev => [...prev, payload.new as Cell]);
+              } else if (payload.eventType === 'UPDATE') {
+                setCells(prev => prev.map(cell => 
+                  cell.id === payload.new.id ? payload.new as Cell : cell
+                ));
+              } else if (payload.eventType === 'DELETE') {
+                setCells(prev => prev.filter(cell => cell.id !== payload.old.id));
+              }
             }
-          }
-        );
+          );
 
-      channel.subscribe((status) => {
-        console.log('Cells channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
+        const subscriptionResult = await channel.subscribe();
+        console.log('Cells subscription result:', subscriptionResult);
+        
+        if (subscriptionResult === 'SUBSCRIBED') {
+          channelRef.current = channel;
           isSubscribedRef.current = true;
         }
-      });
-
-      channelRef.current = channel;
-    }
-
-    return () => {
-      console.log('Cleaning up cells channel on unmount...');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-        isSubscribedRef.current = false;
+      } catch (error) {
+        console.error('Error setting up cells subscription:', error);
       }
     };
+
+    setupSubscription();
   }, []);
 
   return {
