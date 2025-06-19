@@ -10,23 +10,23 @@ import { Users, MapPin, Calendar, Clock, Edit, Trash2, Save, X, QrCode, Eye } fr
 import { AddCellDialog } from './AddCellDialog';
 import { EditCellDialog } from './EditCellDialog';
 import { CellQrCode } from './CellQrCode';
-import { CellDetails } from './CellDetails';
 import { useLeaderCells } from '@/hooks/useLeaderCells';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useLocationManager } from '@/hooks/useLocationManager';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
 export const CellsManager = () => {
   const { cells, loading } = useLeaderCells();
   const { neighborhoods } = useLocationManager();
   const permissions = useUserPermissions();
+  const navigate = useNavigate();
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
   const [selectedCell, setSelectedCell] = useState<any>(null);
   const [showQrCode, setShowQrCode] = useState(false);
-  const [cellDetailsOpen, setCellDetailsOpen] = useState<any>(null);
 
   const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
@@ -90,6 +90,10 @@ export const CellsManager = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleViewDetails = (cellId: string) => {
+    navigate(`/cells/${cellId}`);
   };
 
   const getNeighborhoodName = (neighborhoodId: string | null) => {
@@ -209,10 +213,10 @@ export const CellsManager = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setCellDetailsOpen(cell)}
+                              onClick={() => handleViewDetails(cell.id)}
                               title="Ver detalhes da célula"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-4 w-4" />
                             </Button>
                             <Button
                               size="sm"
@@ -292,16 +296,6 @@ export const CellsManager = () => {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Dialog para Detalhes da Célula */}
-      {cellDetailsOpen && (
-        <CellDetails
-          cellId={cellDetailsOpen.id}
-          cellName={cellDetailsOpen.name}
-          isOpen={!!cellDetailsOpen}
-          onOpenChange={(open) => !open && setCellDetailsOpen(null)}
-        />
-      )}
     </>
   );
 };
