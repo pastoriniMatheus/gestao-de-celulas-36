@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { QRRedirect } from "./pages/QRRedirect";
-import { FormPage } from "./pages/FormPage";
+import FormPage from "./pages/FormPage";
 import { cellRoutes } from "@/routes/cells";
 
 const queryClient = new QueryClient();
