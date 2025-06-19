@@ -1,28 +1,80 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Contact, Calendar, MapPin, Phone, Edit, Trash2, Search, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Contact, Calendar, MapPin, Phone, Edit, Trash2, Search, Home, User, Users } from 'lucide-react';
 import { AddContactDialog } from './AddContactDialog';
 import { EditContactDialog } from './EditContactDialog';
 import { useLeaderContacts } from '@/hooks/useLeaderContacts';
+import { useLeaderCells } from '@/hooks/useLeaderCells';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const ContactsManager = () => {
   const { contacts, loading } = useLeaderContacts();
+  const { cells, loading: cellsLoading } = useLeaderCells();
   const permissions = useUserPermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [assigningCell, setAssigningCell] = useState<string | null>(null);
 
-  const filteredContacts = contacts.filter(contact =>
+  // Separar contatos pendentes dos demais
+  const pendingContacts = contacts.filter(contact => 
+    contact.status === 'pending' && !contact.cell_id
+  );
+  
+  const otherContacts = contacts.filter(contact => 
+    contact.status !== 'pending' || contact.cell_id
+  );
+
+  const filteredPendingContacts = pendingContacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.neighborhood.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const filteredOtherContacts = otherContacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.neighborhood.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const activeCells = cells.filter(cell => cell.active);
+
+  const handleAssignCell = async (contactId: string, cellId: string) => {
+    if (!cellId || cellId === 'none') return;
+
+    setAssigningCell(contactId);
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ 
+          cell_id: cellId,
+          status: 'assigned' // Mudando para 'assigned' ao invés de 'member'
+        })
+        .eq('id', contactId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Contato atribuído à célula com sucesso!"
+      });
+    } catch (error: any) {
+      console.error('Erro ao atribuir célula:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atribuir célula",
+        variant: "destructive"
+      });
+    } finally {
+      setAssigningCell(null);
+    }
+  };
 
   const handleDeleteContact = async (id: string) => {
     if (!permissions.isAdmin) {
@@ -63,13 +115,15 @@ export const ContactsManager = () => {
   const getStatusBadge = (status: string) => {
     const variants = {
       pending: 'bg-yellow-100 text-yellow-800',
+      assigned: 'bg-blue-100 text-blue-800',
       member: 'bg-green-100 text-green-800',
-      visitor: 'bg-blue-100 text-blue-800',
+      visitor: 'bg-purple-100 text-purple-800',
       inactive: 'bg-red-100 text-red-800'
     };
 
     const labels = {
       pending: 'Pendente',
+      assigned: 'Atribuído',
       member: 'Membro',
       visitor: 'Visitante',
       inactive: 'Inativo'
@@ -101,6 +155,85 @@ export const ContactsManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Seção de Contatos Pendentes */}
+      {pendingContacts.length > 0 && (
+        <Card className="border-orange-200">
+          <CardHeader className="bg-orange-50">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <Users className="h-5 w-5" />
+              Contatos Pendentes ({pendingContacts.length})
+            </CardTitle>
+            <CardDescription className="text-orange-700">
+              Novos contatos aguardando atribuição de célula
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="space-y-4">
+              {filteredPendingContacts.map((contact) => (
+                <Card key={contact.id} className="border-orange-200 bg-orange-50">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{contact.name}</h3>
+                          {getStatusBadge(contact.status)}
+                        </div>
+                        <div className="flex flex-col gap-1 text-sm text-gray-600">
+                          {contact.whatsapp && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              <span>{contact.whatsapp}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>{contact.neighborhood}</span>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            Cadastrado em: {formatDate(contact.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 min-w-[220px]">
+                        <label className="text-sm font-medium text-orange-800">
+                          Atribuir à Célula:
+                        </label>
+                        <Select
+                          onValueChange={(value) => handleAssignCell(contact.id, value)}
+                          disabled={assigningCell === contact.id || cellsLoading}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Selecione uma célula" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhuma</SelectItem>
+                            {activeCells.map((cell) => (
+                              <SelectItem key={cell.id} value={cell.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-sm flex gap-1 items-center">
+                                    <Home className="h-3 w-3 mr-1 text-blue-400" />
+                                    {cell.name}
+                                  </span>
+                                  <span className="text-xs text-gray-500">{cell.address}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {assigningCell === contact.id && (
+                          <p className="text-xs text-blue-600">Atribuindo...</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Seção de Outros Contatos */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -111,8 +244,8 @@ export const ContactsManager = () => {
               </CardTitle>
               <CardDescription>
                 {permissions.isLeader && !permissions.isAdmin 
-                  ? `Gerencie os contatos das suas células (${contacts.length} contatos)` 
-                  : `Gerencie todos os contatos do sistema (${contacts.length} contatos)`
+                  ? `Gerencie os contatos das suas células (${otherContacts.length} contatos)` 
+                  : `Gerencie todos os contatos do sistema (${otherContacts.length} contatos)`
                 }
               </CardDescription>
             </div>
@@ -145,7 +278,7 @@ export const ContactsManager = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContacts.map((contact) => (
+              {filteredOtherContacts.map((contact) => (
                 <TableRow key={contact.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -214,7 +347,7 @@ export const ContactsManager = () => {
             </TableBody>
           </Table>
 
-          {filteredContacts.length === 0 && (
+          {filteredOtherContacts.length === 0 && (
             <div className="text-center py-8">
               <Contact className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">

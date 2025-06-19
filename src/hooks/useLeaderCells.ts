@@ -23,10 +23,23 @@ export const useLeaderCells = () => {
   const permissions = useUserPermissions();
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
+  const fetchingRef = useRef(false);
 
   const fetchCells = async () => {
+    // Evitar múltiplas chamadas simultâneas
+    if (fetchingRef.current) return;
+    
     try {
+      fetchingRef.current = true;
       setLoading(true);
+      
+      // Aguardar o perfil do usuário estar disponível
+      if (!permissions.userProfile?.id) {
+        setLoading(false);
+        fetchingRef.current = false;
+        return;
+      }
+
       let query = supabase
         .from('cells')
         .select('*')
@@ -34,33 +47,41 @@ export const useLeaderCells = () => {
         .order('name');
 
       if (permissions.isLeader && !permissions.isAdmin) {
-        query = query.eq('leader_id', permissions.userProfile?.id);
+        query = query.eq('leader_id', permissions.userProfile.id);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      setCells(data || []);
+      if (mountedRef.current) {
+        setCells(data || []);
+      }
     } catch (error) {
       console.error('Erro ao buscar células:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar células",
-        variant: "destructive"
-      });
+      if (mountedRef.current) {
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar células",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+      fetchingRef.current = false;
     }
   };
 
   useEffect(() => {
-    if (!permissions.userProfile?.id) return;
+    // Só buscar quando o perfil estiver disponível
+    if (!permissions.userProfile?.id || !permissions.isLeader) return;
 
     mountedRef.current = true;
     fetchCells();
 
-    // Setup realtime subscription
+    // Setup realtime subscription apenas uma vez
     const setupSubscription = async () => {
       try {
         // Remove existing channel if it exists
@@ -70,7 +91,7 @@ export const useLeaderCells = () => {
         }
 
         // Create new channel with unique name
-        const channelName = `leader-cells-${permissions.userProfile?.id}-${Date.now()}-${Math.random()}`;
+        const channelName = `leader-cells-${permissions.userProfile.id}-${Date.now()}`;
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
 
@@ -82,7 +103,10 @@ export const useLeaderCells = () => {
               if (!mountedRef.current) return;
               
               console.log('Leader cells realtime update:', payload);
-              fetchCells(); // Refresh data when changes occur
+              // Evitar loop infinito - só recarregar se não estiver já carregando
+              if (!fetchingRef.current) {
+                fetchCells();
+              }
             }
           )
           .subscribe((status) => {
@@ -103,7 +127,7 @@ export const useLeaderCells = () => {
         channelRef.current = null;
       }
     };
-  }, [permissions.userProfile?.id]);
+  }, [permissions.userProfile?.id, permissions.isLeader, permissions.isAdmin]);
 
   return {
     cells,

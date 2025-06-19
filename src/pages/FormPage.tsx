@@ -1,591 +1,322 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useParams } from 'react-router-dom';
+
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, CheckCircle, AlertCircle, ExternalLink, User, Phone, MapPin, Calendar, Clock, Home } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, AlertCircle, Home } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Link } from 'react-router-dom';
 
-interface SystemSettings {
-  site_logo: { url: string; alt: string };
-  form_title: { text: string };
-  form_description: { text: string };
-  church_name: { text: string };
-}
-
-interface Neighborhood {
-  id: string;
-  name: string;
-  city_id: string;
-}
-
-interface City {
-  id: string;
-  name: string;
-  state: string;
-}
-
-interface EventData {
-  id: string;
-  name: string;
-  date: string;
-  keyword: string;
-  active: boolean;
-  scan_count: number;
-}
-
-export const FormPage = () => {
+const FormPage = () => {
   const [searchParams] = useSearchParams();
-  const { keyword } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [eventInfo, setEventInfo] = useState<any>(null);
+  const [qrInfo, setQrInfo] = useState<any>(null);
   
-  const evento = searchParams.get('evento');
-  const cod = searchParams.get('cod') || keyword;
-  
-  const [itemData, setItemData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  // Estados do formulário
   const [formData, setFormData] = useState({
     name: '',
     whatsapp: '',
     neighborhood: '',
-    city_id: ''
+    birth_date: null as Date | null,
+    encounter_with_god: false
   });
-  const [submitting, setSubmitting] = useState(false);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>({
-    site_logo: { url: '', alt: 'Logo da Igreja' },
-    form_title: { text: 'Formulário de Contato' },
-    form_description: { text: 'Preencha seus dados para nos conectarmos com você' },
-    church_name: { text: 'Igreja' }
-  });
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  // Verificar códigos de erro
+  const errorCode = searchParams.get('error');
+  const eventId = searchParams.get('evento');
+  const cod = searchParams.get('cod');
 
   useEffect(() => {
-    console.log('FormPage: Iniciando com parâmetros:', { evento, cod });
-    
-    loadSystemSettings();
-    loadNeighborhoods();
-    loadCities();
-    
-    if (evento || cod) {
-      handleItemScan();
-    } else {
-      console.log('FormPage: Nenhum parâmetro encontrado, mostrando formulário padrão');
-      setShowForm(true);
-      setLoading(false);
-    }
-  }, [evento, cod, keyword]);
+    const loadFormData = async () => {
+      try {
+        setLoading(true);
 
-  const loadSystemSettings = async () => {
-    try {
-      console.log('FormPage: Carregando configurações do sistema...');
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('key, value')
-        .in('key', ['site_logo', 'form_title', 'form_description', 'church_name']);
+        // Se tem evento, carregar dados do evento
+        if (eventId && !errorCode) {
+          const { data: event, error } = await supabase
+            .from('events')
+            .select('*')
+            .eq('id', eventId)
+            .single();
 
-      if (error) {
-        console.error('FormPage: Erro ao carregar configurações:', error);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        const settings: any = {};
-        data.forEach(item => {
-          settings[item.key] = item.value;
-        });
-        setSystemSettings(prev => ({ ...prev, ...settings }));
-      }
-    } catch (error) {
-      console.error('FormPage: Erro crítico ao carregar configurações:', error);
-    } finally {
-      setLoadingSettings(false);
-    }
-  };
-
-  const loadNeighborhoods = async () => {
-    try {
-      console.log('FormPage: Carregando bairros...');
-      const { data, error } = await supabase
-        .from('neighborhoods')
-        .select('id, name, city_id')
-        .eq('active', true)
-        .order('name');
-
-      if (error) {
-        console.error('FormPage: Erro ao carregar bairros:', error);
-        return;
-      }
-
-      console.log('FormPage: Bairros carregados:', data);
-      setNeighborhoods(data || []);
-    } catch (error) {
-      console.error('FormPage: Erro crítico ao carregar bairros:', error);
-    }
-  };
-
-  const loadCities = async () => {
-    try {
-      console.log('FormPage: Carregando cidades...');
-      const { data, error } = await supabase
-        .from('cities')
-        .select('id, name, state')
-        .eq('active', true)
-        .order('name');
-
-      if (error) {
-        console.error('FormPage: Erro ao carregar cidades:', error);
-        return;
-      }
-
-      console.log('FormPage: Cidades carregadas:', data);
-      setCities(data || []);
-    } catch (error) {
-      console.error('FormPage: Erro crítico ao carregar cidades:', error);
-    }
-  };
-
-  const handleItemScan = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log('FormPage: Processando QR code com parâmetros:', { evento, cod });
-
-      let eventData: EventData | null = null;
-
-      // Primeiro tentar por ID do evento
-      if (evento) {
-        console.log('FormPage: Buscando evento por ID:', evento);
-        const { data, error: eventError } = await supabase
-          .from('events')
-          .select('*')
-          .eq('id', evento)
-          .eq('active', true)
-          .maybeSingle();
-
-        if (data && !eventError) {
-          console.log('FormPage: Evento encontrado por ID:', data);
-          eventData = data;
-        } else {
-          console.log('FormPage: Evento não encontrado por ID:', eventError);
+          if (!error && event) {
+            setEventInfo(event);
+            console.log('FormPage: Evento carregado:', event);
+          }
         }
-      }
-
-      // Se não encontrou por ID, tentar por keyword
-      if (!eventData && cod) {
-        const normalizedCod = cod.toLowerCase().trim();
-        console.log('FormPage: Buscando evento por keyword:', normalizedCod);
         
-        const { data, error: keywordError } = await supabase
-          .from('events')
-          .select('*')
-          .eq('keyword', normalizedCod)
-          .eq('active', true)
-          .maybeSingle();
+        // Se tem código, carregar dados do QR code
+        if (cod && !eventId && !errorCode) {
+          const { data: qr, error } = await supabase
+            .from('qr_codes')
+            .select('*')
+            .eq('keyword', cod)
+            .single();
 
-        if (data && !keywordError) {
-          console.log('FormPage: Evento encontrado por keyword:', data);
-          eventData = data;
-        } else {
-          console.log('FormPage: Evento não encontrado por keyword:', keywordError);
-        }
-      }
-
-      if (eventData) {
-        console.log('FormPage: Evento válido encontrado, incrementando contador');
-        // Incrementar contador de scans
-        const { error: updateError } = await supabase
-          .from('events')
-          .update({ scan_count: (eventData.scan_count || 0) + 1 })
-          .eq('id', eventData.id);
-
-        if (updateError) {
-          console.error('FormPage: Erro ao incrementar contador:', updateError);
+          if (!error && qr) {
+            setQrInfo(qr);
+            console.log('FormPage: QR code carregado:', qr);
+          }
         }
 
-        setItemData({
-          type: 'event',
-          title: eventData.name,
-          description: `Evento: ${eventData.name}`,
-          date: eventData.date,
-          data: eventData
-        });
-        setShowForm(true);
+      } catch (error) {
+        console.error('FormPage: Erro ao carregar dados:', error);
+      } finally {
         setLoading(false);
-        return;
       }
+    };
 
-      console.log('FormPage: Nenhum evento encontrado');
-      setError('Evento não encontrado ou inativo');
-    } catch (error) {
-      console.error('FormPage: Erro crítico ao processar código:', error);
-      setError('Erro ao processar código');
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadFormData();
+  }, [eventId, cod, errorCode]);
 
-  const handleSubmitContact = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.whatsapp.trim() || !formData.neighborhood.trim()) {
+    if (!formData.name.trim()) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
+        description: "Nome é obrigatório",
+        variant: "destructive"
       });
       return;
     }
 
     setSubmitting(true);
     try {
-      console.log('FormPage: Enviando contato:', formData);
-      
-      const { data, error } = await supabase
-        .from('contacts')
-        .insert([{
-          name: formData.name.trim(),
-          whatsapp: formData.whatsapp.trim(),
-          neighborhood: formData.neighborhood.trim(),
-          city_id: formData.city_id || null,
-          status: 'pending'
-        }])
-        .select()
-        .single();
+      const contactData = {
+        name: formData.name.trim(),
+        whatsapp: formData.whatsapp.trim() || null,
+        neighborhood: formData.neighborhood.trim(),
+        birth_date: formData.birth_date ? formData.birth_date.toISOString().split('T')[0] : null,
+        encounter_with_god: formData.encounter_with_god,
+        status: 'pending',
+        attendance_code: cod || null
+      };
 
-      if (error) {
-        console.error('FormPage: Erro ao criar contato:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao enviar dados. Tente novamente.",
-          variant: "destructive",
-        });
-        return;
+      const { error } = await supabase
+        .from('contacts')
+        .insert([contactData]);
+
+      if (error) throw error;
+
+      // Incrementar contador de scan se for evento
+      if (eventId && eventInfo) {
+        await supabase
+          .from('events')
+          .update({ scan_count: (eventInfo.scan_count || 0) + 1 })
+          .eq('id', eventId);
       }
 
-      console.log('FormPage: Contato criado com sucesso:', data);
-      
+      // Incrementar contador de scan se for QR code
+      if (qrInfo) {
+        await supabase
+          .from('qr_codes')
+          .update({ scan_count: (qrInfo.scan_count || 0) + 1 })
+          .eq('id', qrInfo.id);
+      }
+
       toast({
-        title: "Sucesso",
-        description: "Seus dados foram enviados com sucesso!",
+        title: "Sucesso!",
+        description: "Seu cadastro foi realizado com sucesso. Em breve entraremos em contato!"
       });
 
-      setShowForm(false);
-      setShowSuccess(true);
-    } catch (error) {
-      console.error('FormPage: Erro crítico ao enviar contato:', error);
+      // Limpar formulário
+      setFormData({
+        name: '',
+        whatsapp: '',
+        neighborhood: '',
+        birth_date: null,
+        encounter_with_god: false
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao enviar formulário:', error);
       toast({
         title: "Erro",
-        description: "Erro inesperado. Tente novamente.",
-        variant: "destructive",
+        description: error.message || "Erro ao enviar formulário",
+        variant: "destructive"
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+  const getErrorMessage = (code: string) => {
+    const messages = {
+      evento_nao_encontrado: 'Evento não encontrado ou inválido',
+      evento_inativo: 'Este evento não está mais ativo',
+      codigo_nao_encontrado: 'Código QR não encontrado ou inválido',
+      codigo_inativo: 'Este código QR não está mais ativo',
+      erro_interno: 'Ocorreu um erro interno. Tente novamente.'
+    };
+    return messages[code as keyof typeof messages] || 'Código inválido';
   };
 
-  const filteredNeighborhoods = formData.city_id 
-    ? neighborhoods.filter(n => n.city_id === formData.city_id)
-    : neighborhoods;
-
-  if (loading || loadingSettings) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
           <CardContent className="p-8">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Carregando formulário...</h3>
-            <p className="text-sm text-gray-500">Aguarde um momento</p>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Carregando...</h3>
+            <p className="text-sm text-gray-500">Preparando formulário</p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            {systemSettings.site_logo.url && (
-              <div className="mx-auto mb-4">
-                <img 
-                  src={systemSettings.site_logo.url} 
-                  alt={systemSettings.site_logo.alt}
-                  className="h-16 w-auto mx-auto rounded-lg shadow-md"
-                />
-              </div>
-            )}
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
-              <AlertCircle className="w-8 h-8 text-red-600" />
-            </div>
-            <CardTitle className="text-xl text-red-700 mb-2">Código Não Encontrado</CardTitle>
-            <CardDescription className="text-red-600">{error}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Button
-                onClick={() => window.location.reload()}
-                variant="outline"
-                className="flex-1"
-              >
-                Tentar Novamente
-              </Button>
-              <Button
-                onClick={() => {
-                  setError(null);
-                  setShowForm(true);
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                <Home className="w-4 h-4 mr-2" />
-                Ir para Formulário
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-gray-800">
+            {eventInfo ? `Cadastro - ${eventInfo.name}` : 
+             qrInfo ? `Cadastro - ${qrInfo.title}` : 
+             'Cadastro de Visitante'}
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            {eventInfo ? `Evento: ${format(new Date(eventInfo.date), 'dd/MM/yyyy', { locale: ptBR })}` :
+             qrInfo ? 'Preencha seus dados para entrarmos em contato' :
+             'Preencha o formulário abaixo'}
+          </CardDescription>
+        </CardHeader>
 
-  if (showSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            {systemSettings.site_logo.url && (
-              <div className="mx-auto mb-6">
-                <img 
-                  src={systemSettings.site_logo.url} 
-                  alt={systemSettings.site_logo.alt}
-                  className="h-20 w-auto mx-auto rounded-lg shadow-md"
-                />
+        <CardContent className="space-y-6">
+          {/* Mostrar erro se houver */}
+          {errorCode && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {getErrorMessage(errorCode)}
+              </AlertDescription>
+              <div className="mt-3">
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Link to="/form">
+                    <Home className="w-4 h-4 mr-2" />
+                    Ir para Formulário
+                  </Link>
+                </Button>
               </div>
-            )}
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <CardTitle className="text-xl text-green-700 mb-2">
-              Dados Enviados com Sucesso!
-            </CardTitle>
-            <CardDescription className="text-green-600">
-              Obrigado por compartilhar seus dados conosco
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {itemData && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center justify-center gap-3 text-sm text-green-700">
-                  <Calendar className="w-4 h-4" />
-                  <div className="text-center">
-                    <p className="font-medium">{itemData.title}</p>
-                    {itemData.date && (
-                      <p className="text-xs text-green-600">{formatDate(itemData.date)}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+            </Alert>
+          )}
 
-            <div className="text-center space-y-2">
-              <p className="text-sm text-gray-600 font-medium">
-                Entraremos em contato em breve!
-              </p>
-              <p className="text-xs text-gray-500">
-                Seus dados foram registrados com segurança
-              </p>
-            </div>
-
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700 shadow-lg"
-              onClick={() => window.close()}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Fechar
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (showForm) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="text-center pb-4">
-            {systemSettings.site_logo.url && (
-              <div className="mx-auto mb-6">
-                <img 
-                  src={systemSettings.site_logo.url} 
-                  alt={systemSettings.site_logo.alt}
-                  className="h-20 w-auto mx-auto rounded-lg shadow-md"
-                />
-              </div>
-            )}
-            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-              <QrCode className="w-8 h-8 text-blue-600" />
-            </div>
-            <CardTitle className="text-xl text-blue-700 mb-2">
-              {systemSettings.form_title.text}
-            </CardTitle>
-            <CardDescription className="text-blue-600">
-              {systemSettings.form_description.text}
-            </CardDescription>
-            
-            {itemData && (
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center justify-center gap-3 text-sm text-blue-700">
-                  <Calendar className="w-4 h-4" />
-                  <div className="text-center">
-                    <p className="font-medium">{itemData.title}</p>
-                    {itemData.date && (
-                      <p className="text-xs text-blue-600">{formatDate(itemData.date)}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmitContact} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
-                  <User className="w-4 h-4 text-blue-600" />
-                  Nome Completo *
-                </Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Seu nome completo"
-                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp" className="flex items-center gap-2 text-sm font-medium">
-                  <Phone className="w-4 h-4 text-blue-600" />
-                  WhatsApp *
-                </Label>
-                <Input
-                  id="whatsapp"
-                  type="tel"
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
-                  placeholder="(11) 99999-9999"
-                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="city" className="flex items-center gap-2 text-sm font-medium">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                  Cidade
-                </Label>
-                <Select 
-                  value={formData.city_id} 
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    city_id: value,
-                    neighborhood: "" 
-                  }))}
-                >
-                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
-                    <SelectValue placeholder="Selecione a cidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cities.map((city) => (
-                      <SelectItem key={city.id} value={city.id}>
-                        {city.name} - {city.state}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="neighborhood" className="flex items-center gap-2 text-sm font-medium">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                  Bairro *
-                </Label>
-                {formData.city_id ? (
-                  <Select 
-                    value={formData.neighborhood} 
-                    onValueChange={(value) => setFormData(prev => ({ 
-                      ...prev, 
-                      neighborhood: value 
-                    }))}
+          {/* Formulário - só mostrar se não houver erro */}
+          {!errorCode && (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome Completo *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Seu nome completo"
                     required
-                  >
-                    <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
-                      <SelectValue placeholder="Selecione seu bairro" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredNeighborhoods.map((neighborhood) => (
-                        <SelectItem key={neighborhood.id} value={neighborhood.name}>
-                          {neighborhood.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <Input
+                    id="whatsapp"
+                    type="tel"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">Bairro</Label>
                   <Input
                     id="neighborhood"
                     type="text"
                     value={formData.neighborhood}
                     onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
-                    placeholder="Digite o nome do bairro"
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
-                    required
+                    placeholder="Seu bairro"
                   />
-                )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Data de Nascimento</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.birth_date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.birth_date ? (
+                          format(formData.birth_date, "dd/MM/yyyy", { locale: ptBR })
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.birth_date || undefined}
+                        onSelect={(date) => setFormData(prev => ({ ...prev, birth_date: date || null }))}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="encounter"
+                  checked={formData.encounter_with_god}
+                  onCheckedChange={(checked) => 
+                    setFormData(prev => ({ ...prev, encounter_with_god: !!checked }))
+                  }
+                />
+                <Label
+                  htmlFor="encounter"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Já participei de um Encontro com Deus
+                </Label>
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium shadow-lg transition-all duration-200 hover:shadow-xl"
+                className="w-full bg-blue-600 hover:bg-blue-700"
                 disabled={submitting}
               >
-                {submitting ? (
-                  <>
-                    <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  'Enviar Dados'
-                )}
+                {submitting ? "Enviando..." : "Enviar Cadastro"}
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">
-                🔒 Seus dados serão utilizados apenas para contato da igreja e estão protegidos.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return null;
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
+
+export default FormPage;

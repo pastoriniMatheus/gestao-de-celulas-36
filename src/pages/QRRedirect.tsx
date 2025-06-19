@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 export const QRRedirect = () => {
   const { keyword } = useParams();
@@ -9,50 +10,89 @@ export const QRRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Capturar todos os parâmetros
-    const evento = searchParams.get('evento');
-    const cod = searchParams.get('cod');
-    
-    console.log('QRRedirect: Redirecionando com parâmetros:', { 
-      keyword, 
-      evento, 
-      cod,
-      allParams: Object.fromEntries(searchParams.entries()),
-      currentOrigin: window.location.origin
-    });
+    const handleRedirect = async () => {
+      try {
+        // Capturar todos os parâmetros
+        const evento = searchParams.get('evento');
+        const cod = searchParams.get('cod');
+        
+        console.log('QRRedirect: Processando redirecionamento:', { 
+          keyword, 
+          evento, 
+          cod,
+          allParams: Object.fromEntries(searchParams.entries()),
+          currentOrigin: window.location.origin
+        });
 
-    // Construir URL de redirecionamento correta
-    let redirectUrl = '/form';
-    const params = new URLSearchParams();
+        // Se tem evento, verificar se existe e está ativo
+        if (evento) {
+          console.log('QRRedirect: Verificando evento:', evento);
+          
+          const { data: eventData, error } = await supabase
+            .from('events')
+            .select('id, active, keyword')
+            .eq('id', evento)
+            .single();
 
-    // Priorizar evento se existir - esta é a lógica correta para eventos
-    if (evento) {
-      params.set('evento', evento);
-      console.log('QRRedirect: Adicionando parâmetro evento:', evento);
-      
-      // Para eventos, usar cod se existir, senão usar keyword
-      if (cod) {
-        params.set('cod', cod);
-        console.log('QRRedirect: Adicionando parâmetro cod:', cod);
-      } else if (keyword) {
-        params.set('cod', keyword);
-        console.log('QRRedirect: Usando keyword como cod:', keyword);
+          if (error || !eventData) {
+            console.log('QRRedirect: Evento não encontrado:', error);
+            navigate('/form?error=evento_nao_encontrado', { replace: true });
+            return;
+          }
+
+          if (!eventData.active) {
+            console.log('QRRedirect: Evento inativo');
+            navigate('/form?error=evento_inativo', { replace: true });
+            return;
+          }
+
+          // Evento válido, redirecionar com parâmetros corretos
+          const redirectUrl = `/form?evento=${evento}&cod=${cod || keyword || eventData.keyword}`;
+          console.log('QRRedirect: Redirecionando para evento válido:', redirectUrl);
+          navigate(redirectUrl, { replace: true });
+          return;
+        }
+
+        // Se não tem evento mas tem keyword, verificar se é um QR code simples
+        if (keyword) {
+          console.log('QRRedirect: Verificando QR code simples:', keyword);
+          
+          const { data: qrData, error } = await supabase
+            .from('qr_codes')
+            .select('id, active, keyword')
+            .eq('keyword', keyword)
+            .single();
+
+          if (error || !qrData) {
+            console.log('QRRedirect: QR code não encontrado:', error);
+            navigate('/form?error=codigo_nao_encontrado', { replace: true });
+            return;
+          }
+
+          if (!qrData.active) {
+            console.log('QRRedirect: QR code inativo');
+            navigate('/form?error=codigo_inativo', { replace: true });
+            return;
+          }
+
+          // QR code válido
+          const redirectUrl = `/form?cod=${keyword}`;
+          console.log('QRRedirect: Redirecionando para QR code válido:', redirectUrl);
+          navigate(redirectUrl, { replace: true });
+          return;
+        }
+
+        // Se chegou até aqui, não tem parâmetros válidos
+        console.log('QRRedirect: Nenhum parâmetro válido encontrado');
+        navigate('/form', { replace: true });
+        
+      } catch (error) {
+        console.error('QRRedirect: Erro inesperado:', error);
+        navigate('/form?error=erro_interno', { replace: true });
       }
-    } else if (keyword) {
-      // Para QR codes simples, usar apenas cod
-      params.set('cod', keyword);
-      console.log('QRRedirect: QR code simples com keyword:', keyword);
-    }
+    };
 
-    // Se há parâmetros, adicionar à URL
-    if (params.toString()) {
-      redirectUrl += `?${params.toString()}`;
-    }
-
-    console.log('QRRedirect: URL final de redirecionamento:', redirectUrl);
-    
-    // Redirecionamento imediato
-    navigate(redirectUrl, { replace: true });
+    handleRedirect();
   }, [keyword, searchParams, navigate]);
 
   return (
@@ -60,7 +100,7 @@ export const QRRedirect = () => {
       <Card className="w-full max-w-md text-center shadow-lg">
         <CardContent className="p-8">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Redirecionando...</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Verificando código...</h3>
           <p className="text-sm text-gray-500">Aguarde um momento</p>
         </CardContent>
       </Card>
