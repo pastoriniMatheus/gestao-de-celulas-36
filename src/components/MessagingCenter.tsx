@@ -26,18 +26,18 @@ export const MessagingCenter = () => {
   const { webhooks } = useWebhookConfigs();
   
   const [message, setMessage] = useState('');
-  const [selectedCell, setSelectedCell] = useState<string>('');
-  const [selectedStage, setSelectedStage] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [selectedWebhook, setSelectedWebhook] = useState<string>('');
+  const [selectedCell, setSelectedCell] = useState<string>('all');
+  const [selectedStage, setSelectedStage] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedWebhook, setSelectedWebhook] = useState<string>('none');
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const filters = {
-      ...(selectedCell && { cellId: selectedCell }),
-      ...(selectedStage && { pipelineStageId: selectedStage }),
-      ...(selectedStatus && { status: selectedStatus })
+      ...(selectedCell !== 'all' && { cellId: selectedCell }),
+      ...(selectedStage !== 'all' && { pipelineStageId: selectedStage }),
+      ...(selectedStatus !== 'all' && { status: selectedStatus })
     };
     applyFilters(filters);
   }, [selectedCell, selectedStage, selectedStatus, applyFilters]);
@@ -74,7 +74,7 @@ export const MessagingCenter = () => {
     
     try {
       // Enviar webhook se selecionado
-      if (selectedWebhook) {
+      if (selectedWebhook !== 'none') {
         const webhook = webhooks.find(w => w.id === selectedWebhook);
         if (webhook) {
           const selectedContactsData = contacts.filter(c => selectedContacts.includes(c.id));
@@ -124,23 +124,23 @@ export const MessagingCenter = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <MessageSquare className="h-5 w-5 text-blue-600" />
             Central de Mensagens
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Select value={selectedCell} onValueChange={setSelectedCell}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Todas as células" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as células</SelectItem>
+                <SelectItem value="all">Todas as células</SelectItem>
                 {cells.map((cell) => (
                   <SelectItem key={cell.id} value={cell.id}>
                     {cell.name}
@@ -150,11 +150,11 @@ export const MessagingCenter = () => {
             </Select>
 
             <Select value={selectedStage} onValueChange={setSelectedStage}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Todos os estágios" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os estágios</SelectItem>
+                <SelectItem value="all">Todos os estágios</SelectItem>
                 {pipelineStages.map((stage) => (
                   <SelectItem key={stage.id} value={stage.id}>
                     {stage.name}
@@ -164,11 +164,11 @@ export const MessagingCenter = () => {
             </Select>
 
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="member">Membros</SelectItem>
                 <SelectItem value="visitor">Visitantes</SelectItem>
                 <SelectItem value="pending">Pendentes</SelectItem>
@@ -183,11 +183,11 @@ export const MessagingCenter = () => {
               Webhook (opcional)
             </label>
             <Select value={selectedWebhook} onValueChange={setSelectedWebhook}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Selecionar webhook" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum webhook</SelectItem>
+                <SelectItem value="none">Nenhum webhook</SelectItem>
                 {webhooks.filter(w => w.active).map((webhook) => (
                   <SelectItem key={webhook.id} value={webhook.id}>
                     {webhook.name}
@@ -204,7 +204,8 @@ export const MessagingCenter = () => {
               placeholder="Digite sua mensagem..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={4}
+              rows={3}
+              className="resize-none"
             />
           </div>
         </CardContent>
@@ -212,10 +213,10 @@ export const MessagingCenter = () => {
 
       {/* Lista de Contatos */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-4 w-4" />
               Contatos ({contacts.length})
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -231,20 +232,20 @@ export const MessagingCenter = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="max-h-96 overflow-y-auto space-y-2">
+          <div className="max-h-64 overflow-y-auto space-y-1">
             {contacts.map((contact) => (
-              <div key={contact.id} className="flex items-center justify-between p-2 border rounded">
+              <div key={contact.id} className="flex items-center justify-between p-2 border rounded-md">
                 <div className="flex items-center gap-3">
                   <Checkbox
                     checked={selectedContacts.includes(contact.id)}
                     onCheckedChange={(checked) => handleContactSelect(contact.id, checked as boolean)}
                   />
-                  <div>
-                    <p className="font-medium">{contact.name}</p>
-                    <p className="text-sm text-gray-600">{contact.whatsapp}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{contact.name}</p>
+                    <p className="text-xs text-gray-600 truncate">{contact.whatsapp}</p>
                   </div>
                 </div>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-xs">
                   {contact.status === 'member' ? 'Membro' :
                    contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
                 </Badge>
@@ -256,7 +257,7 @@ export const MessagingCenter = () => {
 
       {/* Botão Enviar */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
               {selectedContacts.length} contato(s) selecionado(s)
