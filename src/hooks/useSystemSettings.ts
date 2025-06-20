@@ -23,7 +23,14 @@ export const useSystemSettings = () => {
 
         const settingsMap: SystemSettings = {};
         data?.forEach(setting => {
-          settingsMap[setting.key as keyof SystemSettings] = setting.value;
+          // Handle Json type properly by extracting string values
+          const value = setting.value;
+          if (typeof value === 'object' && value !== null) {
+            // If it's an object, try to get the text property or convert to string
+            settingsMap[setting.key as keyof SystemSettings] = (value as any).text || (value as any).url || String(value);
+          } else {
+            settingsMap[setting.key as keyof SystemSettings] = String(value);
+          }
         });
 
         setSettings(settingsMap);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,9 +28,8 @@ const FormPage = () => {
   const [qrInfo, setQrInfo] = useState<any>(null);
   const { settings } = useSystemSettings();
   const { cities } = useCities();
-  const { neighborhoods } = useNeighborhoods(formData.city_id);
   
-  // Estados do formulário
+  // Estados do formulário - declarar antes de usar
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,6 +41,8 @@ const FormPage = () => {
     encounter_with_god: false,
     baptized: false
   });
+
+  const { neighborhoods } = useNeighborhoods(formData.city_id);
 
   // Verificar códigos de erro
   const errorCode = searchParams.get('error');
