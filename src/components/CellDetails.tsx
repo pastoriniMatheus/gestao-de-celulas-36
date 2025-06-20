@@ -41,7 +41,7 @@ export const CellDetails = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-	const channelRef = useRef<any>(null);
+  const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
 
   const fetchCellDetails = async () => {
@@ -93,13 +93,12 @@ export const CellDetails = () => {
     mountedRef.current = true;
     fetchCellDetails();
 
-    // Setup realtime subscription for cell updates
-    const setupSubscription = async () => {
+    // Setup realtime subscription for cell updates only if no existing channel
+    const setupSubscription = () => {
       try {
-        // Remove existing channel if it exists
+        // Only create subscription if none exists
         if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
+          return;
         }
 
         // Create new channel with unique name

@@ -122,13 +122,12 @@ export const useCells = () => {
     mountedRef.current = true;
     fetchCells();
 
-    // Setup realtime subscription
-    const setupSubscription = async () => {
+    // Setup realtime subscription only if no existing channel
+    const setupSubscription = () => {
       try {
-        // Remove existing channel if it exists
+        // Only create subscription if none exists
         if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
+          return;
         }
 
         // Create new channel with unique name
