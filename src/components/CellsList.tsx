@@ -17,7 +17,11 @@ export const CellsList = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  console.log('CellsList: células carregadas:', cells.length, cells);
+  console.log('CellsList: Estado atual:', { 
+    cellsCount: cells.length, 
+    loading, 
+    cells: cells.slice(0, 3) // Mostrar apenas as primeiras 3 para debug
+  });
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Tem certeza que deseja excluir a célula "${name}"?`)) {
@@ -98,7 +102,12 @@ export const CellsList = () => {
         <CardContent className="p-6 text-center">
           <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma célula encontrada</h3>
-          <p className="text-gray-600 mb-4">Comece criando sua primeira célula.</p>
+          <p className="text-gray-600 mb-4">
+            {loading ? 'Carregando células...' : 'Comece criando sua primeira célula.'}
+          </p>
+          <Button onClick={() => fetchCells()} variant="outline">
+            Recarregar Células
+          </Button>
         </CardContent>
       </Card>
     );
@@ -178,7 +187,6 @@ export const CellsList = () => {
           ))}
         </div>
 
-        {/* Dialog de edição */}
         {editingCell && (
           <EditCellDialog
             cell={editingCell}

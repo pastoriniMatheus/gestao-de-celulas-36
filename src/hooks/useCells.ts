@@ -82,7 +82,6 @@ export const useCells = () => {
 
       console.log('useCells: Célula criada com sucesso:', data);
       
-      // Atualizar estado local imediatamente
       if (mountedRef.current) {
         setCells(prev => [...prev, data]);
       }
@@ -117,7 +116,6 @@ export const useCells = () => {
 
       console.log('useCells: Célula atualizada com sucesso:', data);
       
-      // Atualizar estado local imediatamente
       if (mountedRef.current) {
         setCells(prev => prev.map(cell => cell.id === id ? data : cell));
       }
@@ -150,7 +148,6 @@ export const useCells = () => {
 
       console.log('useCells: Célula deletada com sucesso');
       
-      // Atualizar estado local imediatamente
       if (mountedRef.current) {
         setCells(prev => prev.filter(cell => cell.id !== id));
       }
@@ -171,24 +168,20 @@ export const useCells = () => {
     
     fetchCells();
 
-    // Setup realtime subscription with proper cleanup
     const setupSubscription = () => {
       try {
-        // Clean up existing channel first
         if (channelRef.current) {
           console.log('useCells: Limpando canal anterior...');
           supabase.removeChannel(channelRef.current);
           channelRef.current = null;
         }
 
-        // Create new channel with unique name
         const channelName = `cells-realtime-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         console.log('useCells: Criando canal:', channelName);
         
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
 
-        // Subscribe to changes
         channel
           .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'cells' },
@@ -196,8 +189,6 @@ export const useCells = () => {
               if (!mountedRef.current) return;
               
               console.log('useCells: Atualização em tempo real:', payload);
-              
-              // Recarregar dados para garantir consistência
               fetchCells();
             }
           )

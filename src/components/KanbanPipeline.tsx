@@ -21,7 +21,6 @@ export const KanbanPipeline = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCellFilter, setSelectedCellFilter] = useState<string>('all');
 
-  // Filtrar contatos baseado na pesquisa e célula selecionada
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (contact.whatsapp && contact.whatsapp.includes(searchTerm));
@@ -62,18 +61,17 @@ export const KanbanPipeline = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-blue-600" />
-            Filtros
+            Filtros do Pipeline
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Buscar contato</label>
+              <label className="text-sm font-medium">Buscar discípulo</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -106,7 +104,6 @@ export const KanbanPipeline = () => {
         </CardContent>
       </Card>
 
-      {/* Pipeline Kanban */}
       <div className="flex gap-6 overflow-x-auto pb-4">
         {stages.map((stage) => {
           const stageContacts = filteredContacts.filter(
@@ -128,7 +125,7 @@ export const KanbanPipeline = () => {
                 {stageContacts.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Nenhum contato</p>
+                    <p className="text-sm">Nenhum discípulo</p>
                   </div>
                 ) : (
                   stageContacts.map((contact) => (
@@ -189,7 +186,6 @@ export const KanbanPipeline = () => {
         })}
       </div>
 
-      {/* Dialog de edição */}
       {selectedContact && (
         <EditContactDialog
           open={editDialogOpen}
