@@ -24,7 +24,7 @@ import {
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import DashboardCharts from "./DashboardCharts";
-import { PipelineWithFilters } from './PipelineWithFilters';
+import { DashboardPipelineMetrics } from './DashboardPipelineMetrics';
 
 export const Dashboard = () => {
   const [contacts, setContacts] = useState([]);
@@ -152,7 +152,7 @@ export const Dashboard = () => {
 
   const stats = [
     {
-      title: "Total de Contatos",
+      title: "Total de Discípulos",
       value: contacts.length,
       icon: Users,
       gradient: "from-blue-600 to-blue-700",
@@ -166,7 +166,7 @@ export const Dashboard = () => {
       icon: CircleCheck,
       gradient: "from-green-600 to-green-700",
       bgGradient: "from-green-50 to-green-100",
-      description: `${Math.round((totalEncounter / contacts.length) * 100)}% dos contatos`,
+      description: `${Math.round((totalEncounter / contacts.length) * 100)}% dos discípulos`,
       trend: "+8% este mês"
     },
     {
@@ -175,7 +175,7 @@ export const Dashboard = () => {
       icon: Waves,
       gradient: "from-cyan-600 to-cyan-700",
       bgGradient: "from-cyan-50 to-cyan-100",
-      description: `${Math.round((totalBaptized / contacts.length) * 100)}% dos contatos`,
+      description: `${Math.round((totalBaptized / contacts.length) * 100)}% dos discípulos`,
       trend: "+5% este mês"
     },
     {
@@ -304,10 +304,10 @@ export const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ChartPie className="h-5 w-5 text-purple-600" />
-              Top 5 Bairros com Mais Membros
+              Top 5 Bairros com Mais Discípulos
             </CardTitle>
             <CardDescription>
-              Distribuição geográfica dos membros cadastrados
+              Distribuição geográfica dos discípulos cadastrados
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -326,7 +326,7 @@ export const Dashboard = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-bold text-gray-900">{neighborhood.count}</span>
-                    <span className="text-xs text-gray-500">membros</span>
+                    <span className="text-xs text-gray-500">discípulos</span>
                   </div>
                 </div>
               ))}
@@ -335,9 +335,9 @@ export const Dashboard = () => {
         </Card>
       )}
 
-      {/* Pipeline e Gráficos */}
+      {/* Métricas do Pipeline e Gráfico Unificado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PipelineWithFilters />
+        <DashboardPipelineMetrics />
         <DashboardCharts stats={{
           totalMembers,
           totalEncounter,
@@ -364,7 +364,7 @@ export const Dashboard = () => {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Gestão Inteligente</h3>
               <p className="text-sm text-gray-600">
-                Acompanhe o crescimento das células, conversões e engajamento dos membros.
+                Acompanhe o crescimento das células, conversões e engajamento dos discípulos.
               </p>
             </div>
             <div>

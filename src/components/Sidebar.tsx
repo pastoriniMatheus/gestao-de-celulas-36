@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -44,7 +43,7 @@ const Sidebar = () => {
     },
     { 
       icon: Contact, 
-      label: 'Contatos', 
+      label: 'Discípulos', 
       description: 'Visitantes e membros',
       path: '/contacts', 
       show: permissions.canAccessContacts 
@@ -65,7 +64,7 @@ const Sidebar = () => {
     },
     { 
       icon: TrendingUp, 
-      label: 'Pipeline', 
+      label: 'Estágio dos Discípulos', 
       description: 'Pipeline de conversão',
       path: '/pipeline', 
       show: permissions.canAccessPipeline 

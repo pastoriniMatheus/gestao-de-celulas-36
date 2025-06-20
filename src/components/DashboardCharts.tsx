@@ -1,6 +1,8 @@
 
-import React from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Legend } from "recharts";
+import React, { useState } from "react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DashboardChartsProps {
   stats: {
@@ -27,66 +29,64 @@ const COLORS = [
 ];
 
 const DashboardCharts: React.FC<DashboardChartsProps> = ({ stats }) => {
-  // Pie: Membros x Encontro com Deus
+  const [selectedChart, setSelectedChart] = useState<'encounter' | 'baptized'>('encounter');
+
+  // Dados para Encontro com Deus
   const encounterData = [
-    { name: "Encontro com Deus", value: stats.totalEncounter },
-    { name: "Outros Membros", value: Math.max(0, stats.totalMembers - stats.totalEncounter) },
+    { name: "Com Encontro", value: stats.totalEncounter },
+    { name: "Sem Encontro", value: Math.max(0, stats.totalMembers - stats.totalEncounter) },
   ];
 
-  // Pie: Membros x Batizados
+  // Dados para Batizados
   const baptizedData = [
     { name: "Batizados", value: stats.totalBaptized },
     { name: "Não Batizados", value: Math.max(0, stats.totalMembers - stats.totalBaptized) },
   ];
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center">
-        <h3 className="font-semibold mb-2 text-center">Membros x Encontro com Deus</h3>
-        <ResponsiveContainer width="100%" height={240}>
-          <PieChart>
-            <Pie
-              data={encounterData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
-              dataKey="value"
-            >
-              {encounterData.map((_, idx) => (
-                <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
+  const currentData = selectedChart === 'encounter' ? encounterData : baptizedData;
+  const currentTitle = selectedChart === 'encounter' ? 'Membros x Encontro com Deus' : 'Membros x Batizados';
 
-      <div className="rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center">
-        <h3 className="font-semibold mb-2 text-center">Membros x Batizados</h3>
-        <ResponsiveContainer width="100%" height={240}>
-          <PieChart>
-            <Pie
-              data={baptizedData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
-              dataKey="value"
-            >
-              {baptizedData.map((_, idx) => (
-                <Cell key={`cell-${idx}`} fill={COLORS[(idx + 2) % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Análise dos Discípulos</CardTitle>
+          <Select value={selectedChart} onValueChange={(value: 'encounter' | 'baptized') => setSelectedChart(value)}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="encounter">Encontro com Deus</SelectItem>
+              <SelectItem value="baptized">Batizados</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center">
+          <h3 className="font-semibold mb-4 text-center">{currentTitle}</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={currentData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
+                dataKey="value"
+              >
+                {currentData.map((_, idx) => (
+                  <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

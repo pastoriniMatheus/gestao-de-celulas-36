@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -113,7 +112,7 @@ export const PipelineWithFilters = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Pipeline de Contatos</CardTitle>
+          <CardTitle>Pipeline de Discípulos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">Carregando pipeline...</div>
@@ -127,10 +126,10 @@ export const PipelineWithFilters = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5 text-blue-600" />
-          Pipeline de Contatos
+          Pipeline de Discípulos
         </CardTitle>
         <CardDescription>
-          Visualização dos contatos por estágio do funil
+          Visualização dos discípulos por estágio do funil
         </CardDescription>
         
         {/* Filtro por Célula */}
@@ -168,7 +167,7 @@ export const PipelineWithFilters = () => {
                       />
                       <h3 className="font-medium">{stage.name}</h3>
                       <Badge variant="secondary">
-                        {filteredContacts.length} contatos
+                        {filteredContacts.length} discípulos
                       </Badge>
                     </div>
                   </div>
@@ -179,8 +178,8 @@ export const PipelineWithFilters = () => {
                       {filteredContacts.length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-4">
                           {selectedCell === 'all' 
-                            ? 'Nenhum contato neste estágio' 
-                            : 'Nenhum contato neste estágio para o filtro selecionado'
+                            ? 'Nenhum discípulo neste estágio' 
+                            : 'Nenhum discípulo neste estágio para o filtro selecionado'
                           }
                         </p>
                       ) : (
