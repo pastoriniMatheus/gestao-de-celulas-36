@@ -76,6 +76,16 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     try {
       console.log('EditContactDialog: Salvando contato com dados:', form);
       
+      // Determinar o status correto baseado na célula
+      let newStatus = contact.status;
+      if (form.cell_id && form.cell_id !== contact.cell_id) {
+        // Se está atribuindo uma célula, mudar para membro
+        newStatus = 'member';
+      } else if (!form.cell_id && contact.cell_id) {
+        // Se está removendo a célula, voltar para pendente
+        newStatus = 'pending';
+      }
+
       const updateData = {
         name: form.name,
         whatsapp: form.whatsapp,
@@ -84,9 +94,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         birth_date: form.birth_date || null,
         encounter_with_god: !!form.encounter_with_god,
         baptized: !!form.baptized,
-        // Manter os valores atuais do contato para estes campos
-        status: contact.status,
-        cell_id: contact.cell_id,
+        status: newStatus,
+        cell_id: form.cell_id || null,
       };
 
       console.log('EditContactDialog: Dados de atualização:', updateData);
@@ -134,6 +143,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       
       await updateContact(contact.id, {
         cell_id: form.cell_id || null,
+        status: form.cell_id ? 'member' : 'pending' // Ajustar status baseado na célula
       });
       onOpenChange(false);
     } catch (error) {
@@ -159,7 +169,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   
   const showTransformButton = context === 'cell' && isVisitor;
   const showTransferButton = isMember && contact?.cell_id !== form.cell_id && form.cell_id;
-  const showCellField = isMember || context === 'contacts';
+  const showCellField = isMember || context === 'contacts' || isPending;
 
   const getStatusBadge = () => {
     if (isMember) return { variant: 'default', text: 'Membro' };
@@ -268,7 +278,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="placeholder-cell">Sem célula</SelectItem>
-                  {cells.map(cell => (
+                  {cells.filter(cell => cell.active).map(cell => (
                     <SelectItem key={cell.id} value={cell.id}>
                       {cell.name}
                     </SelectItem>
