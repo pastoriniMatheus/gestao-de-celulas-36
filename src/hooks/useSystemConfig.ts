@@ -79,11 +79,9 @@ export const useSystemConfig = () => {
 
   const updateFavicon = (logoUrl: string) => {
     try {
-      // Remover favicon existente
-      const existingFavicon = document.querySelector('link[rel="icon"]');
-      if (existingFavicon) {
-        existingFavicon.remove();
-      }
+      // Remover favicons existentes
+      const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+      existingFavicons.forEach(favicon => favicon.remove());
 
       // Adicionar novo favicon
       const link = document.createElement('link');
@@ -91,6 +89,13 @@ export const useSystemConfig = () => {
       link.href = logoUrl;
       link.type = 'image/png';
       document.head.appendChild(link);
+      
+      // Adicionar também como shortcut icon para melhor compatibilidade
+      const shortcutLink = document.createElement('link');
+      shortcutLink.rel = 'shortcut icon';
+      shortcutLink.href = logoUrl;
+      shortcutLink.type = 'image/png';
+      document.head.appendChild(shortcutLink);
       
       console.log('Favicon atualizado para:', logoUrl);
     } catch (error) {

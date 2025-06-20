@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardCharts } from "./DashboardCharts";
 import { DashboardPipelineMetrics } from './DashboardPipelineMetrics';
+import { DiscipleAnalysisChart } from './DiscipleAnalysisChart';
 
 export const Dashboard = () => {
   const [contacts, setContacts] = useState([]);
@@ -334,9 +335,10 @@ export const Dashboard = () => {
         </Card>
       )}
 
-      {/* Métricas do Pipeline e Gráfico Unificado */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Métricas do Pipeline, Gráfico de Análise e Gráfico por Cidade */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <DashboardPipelineMetrics />
+        <DiscipleAnalysisChart />
         <DashboardCharts />
       </div>
 
