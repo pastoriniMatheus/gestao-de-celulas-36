@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -17,12 +18,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useSystemConfig } from '@/hooks/useSystemConfig';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const permissions = useUserPermissions();
+  const { config, loading: configLoading } = useSystemConfig();
 
   console.log('Sidebar - permissions recebidas:', permissions);
 
@@ -97,6 +100,11 @@ const Sidebar = () => {
     navigate(path);
   };
 
+  // Usar configurações do sistema para o logo
+  const logoUrl = config?.site_logo?.url;
+  const logoAlt = config?.site_logo?.alt || 'Logo';
+  const churchName = config?.church_name?.text || config?.form_title?.text || 'Sistema de Células';
+
   return (
     <div className={cn(
       "bg-white border-r border-gray-200 transition-all duration-300 flex flex-col",
@@ -105,7 +113,54 @@ const Sidebar = () => {
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <h1 className="text-xl font-bold text-gray-800">Sistema</h1>
+            <div className="flex items-center gap-3">
+              {configLoading ? (
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              ) : logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt={logoAlt}
+                  className="w-8 h-8 object-contain rounded border border-gray-200"
+                  onError={(e) => {
+                    console.error('Erro ao carregar logo no sidebar:', logoUrl);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('Logo carregado com sucesso no sidebar:', logoUrl);
+                  }}
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">
+                    {churchName.charAt(0)}
+                  </span>
+                </div>
+              )}
+              <h1 className="text-xl font-bold text-gray-800">Sistema</h1>
+            </div>
+          )}
+          {isCollapsed && (
+            <div className="flex justify-center w-full">
+              {configLoading ? (
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              ) : logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt={logoAlt}
+                  className="w-8 h-8 object-contain rounded border border-gray-200"
+                  onError={(e) => {
+                    console.error('Erro ao carregar logo no sidebar:', logoUrl);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">
+                    {churchName.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
           <Button
             variant="ghost"

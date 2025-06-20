@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -33,6 +32,7 @@ export const Dashboard = () => {
   const [neighborhoods, setNeighborhoods] = useState([]);
   const [cities, setCities] = useState([]);
   const [attendances, setAttendances] = useState([]);
+  const [topNeighborhoods, setTopNeighborhoods] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -100,6 +100,7 @@ export const Dashboard = () => {
       setNeighborhoods(neighborhoodsData.data || []);
       setCities(citiesData.data || []);
       setAttendances(attendancesData.data || []);
+      setTopNeighborhoods(neighborhoodStatsData.data || []);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
@@ -293,6 +294,52 @@ export const Dashboard = () => {
           );
         })}
       </div>
+
+      {/* Top 5 Bairros com Mais Discípulos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-purple-600" />
+            Top 5 Bairros com Mais Discípulos
+          </CardTitle>
+          <CardDescription>
+            Bairros com maior concentração de discípulos cadastrados
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {topNeighborhoods.map((neighborhood, index) => (
+              <div
+                key={neighborhood.id}
+                className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-blue-50 hover:to-purple-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`
+                    w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
+                    ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : ''}
+                    ${index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-600' : ''}
+                    ${index === 2 ? 'bg-gradient-to-r from-orange-400 to-orange-600' : ''}
+                    ${index >= 3 ? 'bg-gradient-to-r from-blue-400 to-blue-600' : ''}
+                  `}>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{neighborhood.neighborhood_name}</p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {neighborhood.city_name}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-600">{neighborhood.total_people}</p>
+                  <p className="text-xs text-gray-500">discípulos</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Primeira linha com 3 gráficos: Estágios, Análise e Métricas por Cidade */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
