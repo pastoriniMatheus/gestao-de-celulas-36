@@ -1,28 +1,18 @@
-import { useAuth } from './AuthProvider';
-import { UserMenu } from './UserMenu';
+
 import { BirthdayNotifications } from './BirthdayNotifications';
-import { useSystemConfig } from '@/hooks/useSystemConfig';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export const Header = () => {
-  const { user, userProfile, signOut } = useAuth();
-  const { config, loading: configLoading } = useSystemConfig();
-
-  const handleLogout = async () => {
-    await signOut();
-  };
-
   return (
-    <header className="fixed top-4 right-4 z-50">
-      <div className="flex items-center gap-2 md:gap-3 bg-white p-2 rounded-xl shadow-lg">
-        <BirthdayNotifications />
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <SidebarTrigger />
+        </div>
         
-        {user && userProfile ? (
-          <div className="flex items-center gap-2">
-            <UserMenu />
-          </div>
-        ) : (
-          <div className="text-sm text-gray-500">Carregando...</div>
-        )}
+        <div className="flex items-center gap-2">
+          <BirthdayNotifications />
+        </div>
       </div>
     </header>
   );

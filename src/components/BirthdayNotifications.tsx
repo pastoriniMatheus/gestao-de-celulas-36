@@ -43,55 +43,55 @@ export const BirthdayNotifications = () => {
         variant="ghost"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative"
+        className="relative h-9 w-9"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-4 w-4" />
         {todayBirthdays.length > 0 && (
-          <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs bg-red-500">
+          <Badge className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-xs bg-red-500 flex items-center justify-center">
             {todayBirthdays.length}
           </Badge>
         )}
       </Button>
 
       {isOpen && (
-        <Card className="absolute right-0 top-12 w-80 z-50 shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="absolute right-0 top-12 w-80 z-50 shadow-lg border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Gift className="h-5 w-5 text-orange-500" />
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Gift className="h-4 w-4 text-orange-500" />
                 Aniversariantes Hoje
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs">
                 {todayBirthdays.length === 0 
                   ? "Nenhum aniversariante hoje" 
                   : `${todayBirthdays.length} pessoa(s) fazendo aniversário`
                 }
               </CardDescription>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-              <X className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-6 w-6">
+              <X className="h-3 w-3" />
             </Button>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {todayBirthdays.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">
+              <p className="text-center text-muted-foreground py-4 text-sm">
                 🎉 Nenhum aniversariante hoje
               </p>
             ) : (
               todayBirthdays.map((contact) => (
-                <div key={contact.contact_id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                <div key={contact.contact_id} className="flex items-center justify-between p-2 bg-orange-50 rounded-md">
                   <div>
-                    <p className="font-medium">{contact.contact_name}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm font-medium">{contact.contact_name}</p>
+                    <p className="text-xs text-muted-foreground">
                       {contact.age ? `${contact.age} anos` : 'Idade não informada'}
                     </p>
                   </div>
                   <Button
                     size="sm"
                     onClick={() => handleSendMessage(contact.contact_id, contact.contact_name, contact.whatsapp)}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 h-7"
                   >
-                    <Phone className="h-4 w-4 mr-1" />
+                    <Phone className="h-3 w-3 mr-1" />
                     WhatsApp
                   </Button>
                 </div>
