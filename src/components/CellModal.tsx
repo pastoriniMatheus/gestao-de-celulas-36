@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Users, Calendar, MapPin, Clock, UserPlus, QrCode, BarChart3 } from 'lucide-react';
+import { Users, Calendar, MapPin, Clock, UserPlus, QrCode, BarChart3, Edit, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Cell } from '@/hooks/useCells';
+import { EditContactDialog } from './EditContactDialog';
 import QRCode from 'qrcode.react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -20,6 +21,7 @@ interface Contact {
   encounter_with_god: boolean;
   cell_id: string | null;
   neighborhood: string;
+  attendance_code: string | null;
 }
 
 interface Attendance {
@@ -46,7 +48,13 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
   const [newVisitorName, setNewVisitorName] = useState('');
   const [loading, setLoading] = useState(false);
   const [weeklyStats, setWeeklyStats] = useState<any[]>([]);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const mountedRef = useRef(true);
+
+  const generateAttendanceCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
 
   const fetchCellData = async () => {
     if (!cell) return;
@@ -119,29 +127,35 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     if (!newVisitorName.trim() || !cell) return;
     
     try {
-      const { error } = await supabase
-        .from('attendances')
-        .insert({
-          cell_id: cell.id,
-          contact_id: null,
-          attendance_date: selectedDate,
-          present: true,
-          visitor: true
-        });
-
-      if (error) throw error;
-
-      // Criar contato temporário para o visitante
-      const { error: contactError } = await supabase
+      const attendanceCode = generateAttendanceCode();
+      
+      // Criar contato visitante
+      const { data: contactData, error: contactError } = await supabase
         .from('contacts')
         .insert({
           name: newVisitorName,
           cell_id: cell.id,
           status: 'visitor',
-          neighborhood: 'Visitante'
-        });
+          neighborhood: 'Visitante',
+          attendance_code: attendanceCode
+        })
+        .select()
+        .single();
 
       if (contactError) throw contactError;
+
+      // Adicionar presença automática para a data selecionada
+      const { error: attendanceError } = await supabase
+        .from('attendances')
+        .insert({
+          cell_id: cell.id,
+          contact_id: contactData.id,
+          attendance_date: selectedDate,
+          present: true,
+          visitor: true
+        });
+
+      if (attendanceError) throw attendanceError;
 
       setNewVisitorName('');
       fetchCellData();
@@ -199,6 +213,17 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     }
   };
 
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact);
+    setEditDialogOpen(true);
+  };
+
+  const handleContactUpdated = () => {
+    fetchCellData();
+    setEditDialogOpen(false);
+    setEditingContact(null);
+  };
+
   useEffect(() => {
     if (cell && isOpen) {
       mountedRef.current = true;
@@ -223,197 +248,241 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Users className="h-6 w-6 text-blue-600" />
-            {cell.name}
-          </DialogTitle>
-          <p className="text-sm text-gray-600">{cell.address}</p>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Users className="h-6 w-6 text-blue-600" />
+              {cell.name}
+            </DialogTitle>
+            <p className="text-sm text-gray-600">{cell.address}</p>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Estatísticas principais */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-6">
+            {/* Estatísticas principais */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Total de Membros</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-8 w-8 text-blue-500" />
+                    <span className="text-2xl font-bold">{totalMembers}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Presentes na Data</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-8 w-8 text-green-500" />
+                    <span className="text-2xl font-bold">{presentToday}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600">Visitantes na Data</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="h-8 w-8 text-orange-500" />
+                    <span className="text-2xl font-bold">{visitorsToday}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Gráfico de frequência */}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Total de Membros</CardTitle>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Frequência Semanal
+                </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-2">
-                  <Users className="h-8 w-8 text-blue-500" />
-                  <span className="text-2xl font-bold">{totalMembers}</span>
-                </div>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={weeklyStats}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="week" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="presentes" fill="#3B82F6" />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
 
+            {/* Controle de presença */}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Presentes na Data</CardTitle>
+              <CardHeader>
+                <CardTitle>Controle de Presença</CardTitle>
+                <p className="text-sm text-gray-600">Selecione uma data e marque a presença dos membros</p>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-2">
-                  <Users className="h-8 w-8 text-green-500" />
-                  <span className="text-2xl font-bold">{presentToday}</span>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium">Data da Reunião:</label>
+                  <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-auto"
+                  />
                 </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-medium">Membros:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {contacts.filter(c => c.status !== 'visitor').map((contact) => {
+                      const attendance = todayAttendances.find(att => att.contact_id === contact.id);
+                      const isPresent = attendance?.present || false;
+                      
+                      return (
+                        <div
+                          key={contact.id}
+                          className={`p-3 rounded-lg border transition-colors ${
+                            isPresent ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div 
+                              className="flex-1 cursor-pointer"
+                              onClick={() => togglePresence(contact.id, isPresent)}
+                            >
+                              <p className="font-medium">{contact.name}</p>
+                              <p className="text-xs text-gray-500">{contact.neighborhood}</p>
+                              {contact.attendance_code && (
+                                <p className="text-xs text-blue-600 font-mono">
+                                  Código: {contact.attendance_code}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditContact(contact)}
+                                className="p-1"
+                              >
+                                <Edit className="h-4 w-4 text-gray-500" />
+                              </Button>
+                              {contact.encounter_with_god && (
+                                <Badge variant="outline" className="text-xs">Encontro</Badge>
+                              )}
+                              <div className={`w-4 h-4 rounded-full ${
+                                isPresent ? 'bg-green-500' : 'bg-gray-300'
+                              }`} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-medium">Adicionar Visitante:</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nome do visitante"
+                      value={newVisitorName}
+                      onChange={(e) => setNewVisitorName(e.target.value)}
+                    />
+                    <Button onClick={addVisitor} disabled={!newVisitorName.trim()}>
+                      <UserPlus className="h-4 w-4 mr-1" />
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Visitantes da célula */}
+                {contacts.filter(c => c.status === 'visitor').length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Visitantes da Célula:</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {contacts.filter(c => c.status === 'visitor').map((visitor) => (
+                        <div key={visitor.id} className="p-3 rounded bg-orange-50 border border-orange-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <span className="font-medium">{visitor.name}</span>
+                              {visitor.attendance_code && (
+                                <p className="text-xs text-blue-600 font-mono mt-1">
+                                  Código: {visitor.attendance_code}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditContact(visitor)}
+                                className="p-1"
+                              >
+                                <Edit className="h-4 w-4 text-gray-500" />
+                              </Button>
+                              <Badge variant="secondary" className="text-xs">Visitante</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
+            {/* QR Code */}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Visitantes na Data</CardTitle>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="h-5 w-5" />
+                  QR Code de Presença da Célula
+                </CardTitle>
+                <p className="text-sm text-gray-600">Escaneie, copie ou baixe este QR Code.</p>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-2">
-                  <UserPlus className="h-8 w-8 text-orange-500" />
-                  <span className="text-2xl font-bold">{visitorsToday}</span>
+              <CardContent className="text-center space-y-4">
+                <div className="inline-block p-4 bg-white rounded-lg border">
+                  <QRCode 
+                    value={`${window.location.origin}/cells/${cell.id}/attendance`}
+                    size={200}
+                  />
                 </div>
+                <div className="flex justify-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/cells/${cell.id}/attendance`);
+                      toast({ title: "Link copiado!" });
+                    }}
+                  >
+                    Copiar Link
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {window.location.origin}/cells/{cell.id}/attendance
+                </p>
               </CardContent>
             </Card>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          {/* Gráfico de frequência */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Frequência Semanal
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={weeklyStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="week" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="presentes" fill="#3B82F6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Controle de presença */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Controle de Presença</CardTitle>
-              <p className="text-sm text-gray-600">Selecione uma data e marque a presença dos membros</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <label className="text-sm font-medium">Data da Reunião:</label>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-auto"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium">Membros:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {contacts.filter(c => c.status !== 'visitor').map((contact) => {
-                    const attendance = todayAttendances.find(att => att.contact_id === contact.id);
-                    const isPresent = attendance?.present || false;
-                    
-                    return (
-                      <div
-                        key={contact.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                          isPresent ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                        }`}
-                        onClick={() => togglePresence(contact.id, isPresent)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{contact.name}</p>
-                            <p className="text-xs text-gray-500">{contact.neighborhood}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {contact.encounter_with_god && (
-                              <Badge variant="outline" className="text-xs">Encontro</Badge>
-                            )}
-                            <div className={`w-4 h-4 rounded-full ${
-                              isPresent ? 'bg-green-500' : 'bg-gray-300'
-                            }`} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium">Adicionar Visitante:</h4>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nome do visitante"
-                    value={newVisitorName}
-                    onChange={(e) => setNewVisitorName(e.target.value)}
-                  />
-                  <Button onClick={addVisitor} disabled={!newVisitorName.trim()}>
-                    <UserPlus className="h-4 w-4 mr-1" />
-                    Adicionar
-                  </Button>
-                </div>
-              </div>
-
-              {/* Visitantes da célula */}
-              {contacts.filter(c => c.status === 'visitor').length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">Visitantes da Célula:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {contacts.filter(c => c.status === 'visitor').map((visitor) => (
-                      <div key={visitor.id} className="p-2 rounded bg-orange-50 border border-orange-200">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{visitor.name}</span>
-                          <Badge variant="secondary" className="text-xs">Visitante</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* QR Code */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="h-5 w-5" />
-                QR Code de Presença da Célula
-              </CardTitle>
-              <p className="text-sm text-gray-600">Escaneie, copie ou baixe este QR Code.</p>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="inline-block p-4 bg-white rounded-lg border">
-                <QRCode 
-                  value={`${window.location.origin}/cells/${cell.id}/attendance`}
-                  size={200}
-                />
-              </div>
-              <div className="flex justify-center gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/cells/${cell.id}/attendance`);
-                    toast({ title: "Link copiado!" });
-                  }}
-                >
-                  Copiar Link
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500">
-                {window.location.origin}/cells/{cell.id}/attendance
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {editingContact && (
+        <EditContactDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          contact={editingContact}
+          context="cell"
+          onContactUpdated={handleContactUpdated}
+        />
+      )}
+    </>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +19,10 @@ interface Contact {
   created_at: string;
   updated_at: string;
 }
+
+const generateAttendanceCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -67,9 +70,15 @@ export const useContacts = () => {
 
   const addContact = async (contactData: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Gerar código de presença se não fornecido
+      const dataWithCode = {
+        ...contactData,
+        attendance_code: contactData.attendance_code || generateAttendanceCode()
+      };
+
       const { data, error } = await supabase
         .from('contacts')
-        .insert([contactData])
+        .insert([dataWithCode])
         .select()
         .single();
 
@@ -114,6 +123,14 @@ export const useContacts = () => {
     try {
       console.log('useContacts: Atualizando contato com dados:', { id, updates });
       
+      // Se não tem código de presença, gerar um
+      if (!updates.attendance_code) {
+        const contact = contacts.find(c => c.id === id);
+        if (contact && !contact.attendance_code) {
+          updates.attendance_code = generateAttendanceCode();
+        }
+      }
+
       const { data, error } = await supabase
         .from('contacts')
         .update(updates)
