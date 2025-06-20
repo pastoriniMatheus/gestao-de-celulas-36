@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -450,38 +449,76 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
               </CardContent>
             </Card>
 
-            {/* QR Code */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <QrCode className="h-5 w-5" />
-                  QR Code de Presença da Célula
-                </CardTitle>
-                <p className="text-sm text-gray-600">Escaneie, copie ou baixe este QR Code.</p>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <div className="inline-block p-4 bg-white rounded-lg border">
-                  <QRCode 
-                    value={`${window.location.origin}/cells/${cell.id}/attendance`}
-                    size={200}
-                  />
-                </div>
-                <div className="flex justify-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/cells/${cell.id}/attendance`);
-                      toast({ title: "Link copiado!" });
-                    }}
-                  >
-                    Copiar Link
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {window.location.origin}/cells/{cell.id}/attendance
-                </p>
-              </CardContent>
-            </Card>
+            {/* QR Codes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* QR Code para Líderes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-700">
+                    <QrCode className="h-5 w-5" />
+                    QR Code - Acesso do Líder
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Para controle completo da célula</p>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                  <div className="inline-block p-4 bg-white rounded-lg border">
+                    <QRCode 
+                      value={`${window.location.origin}/cells/${cell.id}/attendance`}
+                      size={180}
+                      fgColor="#059669"
+                    />
+                  </div>
+                  <div className="flex justify-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/cells/${cell.id}/attendance`);
+                        toast({ title: "Link copiado!" });
+                      }}
+                    >
+                      Copiar Link
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 break-all">
+                    {window.location.origin}/cells/{cell.id}/attendance
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* QR Code para Membros */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-blue-700">
+                    <UserCheck className="h-5 w-5" />
+                    QR Code - Presença dos Membros
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Para membros marcarem presença</p>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                  <div className="inline-block p-4 bg-white rounded-lg border">
+                    <QRCode 
+                      value={`${window.location.origin}/attendance/${cell.id}`}
+                      size={180}
+                      fgColor="#2563EB"
+                    />
+                  </div>
+                  <div className="flex justify-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/attendance/${cell.id}`);
+                        toast({ title: "Link copiado!" });
+                      }}
+                    >
+                      Copiar Link
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 break-all">
+                    {window.location.origin}/attendance/{cell.id}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
