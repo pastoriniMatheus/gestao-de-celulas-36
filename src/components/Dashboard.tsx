@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -84,13 +85,14 @@ export const Dashboard = () => {
     setLoading(true);
     try {
       // Buscar todos os dados em paralelo
-      const [contactsData, cellsData, neighborhoodsData, citiesData, attendancesData, profilesData] = await Promise.all([
+      const [contactsData, cellsData, neighborhoodsData, citiesData, attendancesData, profilesData, neighborhoodStatsData] = await Promise.all([
         supabase.from('contacts').select('*'),
         supabase.from('cells').select('*'),
-        supabase.from('neighborhoods').select('*'),
+        supabase.from('neighborhoods').select('*, cities(name)'),
         supabase.from('cities').select('*'),
         supabase.from('attendances').select('*'),
-        supabase.from('profiles').select('id, role, active')
+        supabase.from('profiles').select('id, role, active'),
+        supabase.from('neighborhood_stats').select('*').order('total_people', { ascending: false }).limit(5)
       ]);
 
       setContacts(contactsData.data || []);
@@ -140,12 +142,6 @@ export const Dashboard = () => {
   
   const uniqueContactsPresent = new Set(recentAttendances.map(a => a.contact_id)).size;
   const attendanceRate = totalMembers > 0 ? Math.round((uniqueContactsPresent / totalMembers) * 100) : 0;
-
-  // Bairros com mais membros
-  const neighborhoodStats = neighborhoods.map(n => ({
-    name: n.name,
-    count: contacts.filter(c => c.neighborhood === n.name).length
-  })).sort((a, b) => b.count - a.count);
 
   // Taxa de conversão (visitantes que viraram membros)
   const conversionRate = totalVisitors > 0 ? Math.round((totalMembers / (totalMembers + totalVisitors)) * 100) : 0;
@@ -235,38 +231,38 @@ export const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto py-6">
+    <div className="space-y-6 max-w-7xl mx-auto py-4 px-4">
       {/* Header do Dashboard */}
       <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Painel de Gestão
         </h1>
-        <p className="text-gray-600 text-lg">
+        <p className="text-gray-600 text-sm md:text-lg">
           Visão completa e em tempo real do seu sistema de células
         </p>
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-gray-500">
           <Zap className="h-4 w-4 text-green-500" />
           <span>Dados atualizados em tempo real</span>
         </div>
       </div>
       
       {/* Cards Principais - Métricas Essenciais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Card key={index} className={`hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br ${stat.bgGradient} transform hover:-translate-y-1`}>
               <CardHeader className="flex flex-row items-center gap-3 pb-2">
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
-                  <Icon className="h-6 w-6 text-white" />
+                <div className={`p-2 md:p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
+                  <Icon className="h-4 w-4 md:h-6 md:w-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <CardTitle className="text-sm font-medium text-gray-700">{stat.title}</CardTitle>
+                  <CardTitle className="text-xs md:text-sm font-medium text-gray-700">{stat.title}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
+                <div className="space-y-1 md:space-y-2">
+                  <div className="text-xl md:text-3xl font-bold text-gray-900">{stat.value}</div>
                   <p className="text-xs text-gray-600">{stat.description}</p>
                   <p className="text-xs text-green-600 font-medium">{stat.trend}</p>
                 </div>
@@ -277,18 +273,18 @@ export const Dashboard = () => {
       </div>
 
       {/* Cards Secundários - Métricas Complementares */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
         {secondaryStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Card key={index} className="hover:shadow-lg transition-all duration-200 border border-gray-100">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${stat.bg}`}>
-                    <Icon className={`h-5 w-5 ${stat.color}`} />
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className={`p-1.5 md:p-2 rounded-lg ${stat.bg}`}>
+                    <Icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.color}`} />
                   </div>
                   <div>
-                    <div className="text-xl font-bold text-gray-900">{stat.value}</div>
+                    <div className="text-lg md:text-xl font-bold text-gray-900">{stat.value}</div>
                     <p className="text-xs text-gray-600">{stat.title}</p>
                   </div>
                 </div>
@@ -298,45 +294,8 @@ export const Dashboard = () => {
         })}
       </div>
 
-      {/* Bairros com Mais Membros */}
-      {neighborhoodStats.length > 0 && (
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ChartPie className="h-5 w-5 text-purple-600" />
-              Top 5 Bairros com Mais Discípulos
-            </CardTitle>
-            <CardDescription>
-              Distribuição geográfica dos discípulos cadastrados
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {neighborhoodStats.slice(0, 5).map((neighborhood, index) => (
-                <div key={neighborhood.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                      index === 0 ? 'bg-yellow-500' : 
-                      index === 1 ? 'bg-gray-400' : 
-                      index === 2 ? 'bg-amber-600' : 'bg-blue-500'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <span className="font-medium">{neighborhood.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-gray-900">{neighborhood.count}</span>
-                    <span className="text-xs text-gray-500">discípulos</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Métricas do Pipeline, Gráfico de Análise e Gráfico por Cidade */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Primeira linha com 3 gráficos: Estágios, Análise e Métricas por Cidade */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <DashboardPipelineMetrics />
         <DiscipleAnalysisChart />
         <DashboardCharts />
@@ -344,23 +303,23 @@ export const Dashboard = () => {
 
       {/* Footer com Informações Adicionais */}
       <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        <CardContent className="p-4 md:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 text-center">
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Sistema em Tempo Real</h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs md:text-sm text-gray-600">
                 Todos os dados são atualizados automaticamente conforme as mudanças acontecem no sistema.
               </p>
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Gestão Inteligente</h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs md:text-sm text-gray-600">
                 Acompanhe o crescimento das células, conversões e engajamento dos discípulos.
               </p>
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Tomada de Decisão</h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs md:text-sm text-gray-600">
                 Use os insights para identificar oportunidades e otimizar a estratégia das células.
               </p>
             </div>
