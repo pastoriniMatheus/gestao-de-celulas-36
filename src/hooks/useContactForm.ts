@@ -11,6 +11,7 @@ export interface ContactFormData {
   cell_id: string;
   birth_date: string;
   encounter_with_god: boolean;
+  baptized: boolean;
 }
 
 export const useContactForm = () => {
@@ -24,6 +25,7 @@ export const useContactForm = () => {
     cell_id: '',
     birth_date: '',
     encounter_with_god: false,
+    baptized: false,
   });
 
   const updateFormData = (updates: Partial<ContactFormData>) => {
@@ -41,6 +43,7 @@ export const useContactForm = () => {
       cell_id: '',
       birth_date: '',
       encounter_with_god: false,
+      baptized: false,
     });
   };
 

@@ -24,7 +24,7 @@ import {
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import DashboardCharts from "./DashboardCharts";
-import { DashboardPipeline } from './DashboardPipeline';
+import { PipelineWithFilters } from './PipelineWithFilters';
 
 export const Dashboard = () => {
   const [contacts, setContacts] = useState([]);
@@ -337,7 +337,7 @@ export const Dashboard = () => {
 
       {/* Pipeline e Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DashboardPipeline />
+        <PipelineWithFilters />
         <DashboardCharts stats={{
           totalMembers,
           totalEncounter,

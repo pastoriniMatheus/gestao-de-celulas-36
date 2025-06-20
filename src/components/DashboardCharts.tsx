@@ -6,6 +6,7 @@ interface DashboardChartsProps {
   stats: {
     totalMembers: number;
     totalEncounter: number;
+    totalBaptized: number;
     totalCells: number;
     activeCells: number;
     neighborhoodsWithMembers: number;
@@ -26,44 +27,26 @@ const COLORS = [
 ];
 
 const DashboardCharts: React.FC<DashboardChartsProps> = ({ stats }) => {
-  // Pie: Membros cadastrados vs. Encontro com Deus (mostrando proporção)
-  const pieData = [
+  // Pie: Membros x Encontro com Deus
+  const encounterData = [
     { name: "Encontro com Deus", value: stats.totalEncounter },
-    { name: "Outros Membros", value: stats.totalMembers - stats.totalEncounter },
+    { name: "Outros Membros", value: Math.max(0, stats.totalMembers - stats.totalEncounter) },
   ];
 
-  // Bar: Bairros X Cidades X Líderes X Células
-  const miscData = [
-    {
-      name: "Bairros com membros",
-      value: stats.neighborhoodsWithMembers,
-    },
-    {
-      name: "Total de Bairros",
-      value: stats.totalNeighborhoods,
-    },
-    {
-      name: "Cidades",
-      value: stats.totalCities,
-    },
-    {
-      name: "Líderes",
-      value: stats.totalLeaders,
-    },
-    {
-      name: "Total de Células",
-      value: stats.totalCells,
-    },
+  // Pie: Membros x Batizados
+  const baptizedData = [
+    { name: "Batizados", value: stats.totalBaptized },
+    { name: "Não Batizados", value: Math.max(0, stats.totalMembers - stats.totalBaptized) },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center">
         <h3 className="font-semibold mb-2 text-center">Membros x Encontro com Deus</h3>
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
             <Pie
-              data={pieData}
+              data={encounterData}
               cx="50%"
               cy="50%"
               labelLine={false}
@@ -71,7 +54,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ stats }) => {
               outerRadius={80}
               dataKey="value"
             >
-              {pieData.map((_, idx) => (
+              {encounterData.map((_, idx) => (
                 <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
               ))}
             </Pie>
@@ -80,15 +63,27 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ stats }) => {
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <div className="col-span-full rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center">
-        <h3 className="font-semibold mb-2 text-center">Indicadores Gerais</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={miscData}>
-            <XAxis dataKey="name" />
-            <YAxis />
+
+      <div className="rounded-lg bg-white shadow p-4 dark:bg-card flex flex-col items-center">
+        <h3 className="font-semibold mb-2 text-center">Membros x Batizados</h3>
+        <ResponsiveContainer width="100%" height={240}>
+          <PieChart>
+            <Pie
+              data={baptizedData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              outerRadius={80}
+              dataKey="value"
+            >
+              {baptizedData.map((_, idx) => (
+                <Cell key={`cell-${idx}`} fill={COLORS[(idx + 2) % COLORS.length]} />
+              ))}
+            </Pie>
             <Tooltip />
-            <Bar dataKey="value" fill="#6366f1" />
-          </BarChart>
+            <Legend />
+          </PieChart>
         </ResponsiveContainer>
       </div>
     </div>

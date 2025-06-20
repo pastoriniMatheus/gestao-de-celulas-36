@@ -69,7 +69,7 @@ export const useLeaderCells = () => {
 
   useEffect(() => {
     // Só inicializar se as permissões estiverem carregadas
-    if (permissions.loading) {
+    if (permissions.isLoading) {
       return;
     }
 
@@ -126,7 +126,7 @@ export const useLeaderCells = () => {
         channelRef.current = null;
       }
     };
-  }, [permissions.loading, permissions.isLeader, permissions.userProfile?.id, permissions.isAdmin]);
+  }, [permissions.isLoading, permissions.isLeader, permissions.userProfile?.id, permissions.isAdmin]);
 
   return {
     cells,
