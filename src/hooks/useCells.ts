@@ -25,12 +25,14 @@ export const useCells = () => {
   const fetchCells = async () => {
     try {
       setLoading(true);
-      console.log('useCells: Buscando células...');
+      console.log('useCells: Iniciando busca de células...');
       
       const { data, error } = await supabase
         .from('cells')
         .select('*')
         .order('name');
+
+      console.log('useCells: Resposta do Supabase:', { data, error });
 
       if (error) {
         console.error('useCells: Erro ao buscar células:', error);
@@ -42,7 +44,7 @@ export const useCells = () => {
         return;
       }
 
-      console.log('useCells: Células carregadas:', data?.length || 0);
+      console.log('useCells: Células encontradas:', data?.length || 0, data);
       
       if (mountedRef.current) {
         setCells(data || []);
@@ -219,7 +221,7 @@ export const useCells = () => {
         channelRef.current = null;
       }
     };
-  }, []); // Empty dependency array to run only once
+  }, []);
 
   return {
     cells,

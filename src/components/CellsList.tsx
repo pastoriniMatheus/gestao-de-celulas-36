@@ -17,6 +17,8 @@ export const CellsList = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  console.log('CellsList: células carregadas:', cells.length, cells);
+
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Tem certeza que deseja excluir a célula "${name}"?`)) {
       return;
@@ -42,6 +44,7 @@ export const CellsList = () => {
   };
 
   const handleViewDetails = (cellId: string) => {
+    console.log('CellsList: Navegando para célula:', cellId);
     navigate(`/cells/${cellId}`);
   };
 
@@ -86,6 +89,12 @@ export const CellsList = () => {
   if (cells.length === 0) {
     return (
       <Card>
+        <CardHeader>
+          <CardTitle>Lista de Células</CardTitle>
+          <CardDescription>
+            Gerencie todas as células da igreja
+          </CardDescription>
+        </CardHeader>
         <CardContent className="p-6 text-center">
           <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma célula encontrada</h3>
@@ -98,7 +107,7 @@ export const CellsList = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Lista de Células</CardTitle>
+        <CardTitle>Lista de Células ({cells.length})</CardTitle>
         <CardDescription>
           Gerencie todas as células da igreja
         </CardDescription>
@@ -161,7 +170,7 @@ export const CellsList = () => {
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
                     <Users className="h-4 w-4" />
-                    <span>Clique no ícono de olho para ver membros</span>
+                    <span>Clique no ícone de olho para ver membros</span>
                   </div>
                 </div>
               </CardContent>
