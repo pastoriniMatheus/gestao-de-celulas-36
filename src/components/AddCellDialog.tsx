@@ -8,15 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Plus } from 'lucide-react';
 import { useCells } from '@/hooks/useCells';
-import { useLocationManager } from '@/hooks/useLocationManager';
+import { useCities } from '@/hooks/useCities';
+import { useNeighborhoods } from '@/hooks/useNeighborhoods';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AddCellDialog = () => {
   const { addCell } = useCells();
-  const { neighborhoods } = useLocationManager();
+  const { cities } = useCities();
   const [open, setOpen] = useState(false);
   const [leaders, setLeaders] = useState<any[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState('');
+  const { neighborhoods } = useNeighborhoods(selectedCityId);
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -89,6 +92,7 @@ export const AddCellDialog = () => {
         active: true
       });
       
+      setSelectedCityId('');
       setOpen(false);
     } catch (error: any) {
       console.error('Erro ao criar célula:', error);
@@ -108,7 +112,7 @@ export const AddCellDialog = () => {
           Nova Célula
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Criar Nova Célula</DialogTitle>
           <DialogDescription>
@@ -139,16 +143,41 @@ export const AddCellDialog = () => {
           </div>
 
           <div>
-            <Label htmlFor="neighborhood">Bairro</Label>
+            <Label htmlFor="city">Cidade</Label>
             <Select 
-              value={formData.neighborhood_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood_id: value === 'nenhum' ? '' : value }))}
+              value={selectedCityId || "none"} 
+              onValueChange={(value) => {
+                const cityId = value === "none" ? "" : value;
+                setSelectedCityId(cityId);
+                setFormData(prev => ({ ...prev, neighborhood_id: '' }));
+              }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o bairro" />
+                <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="nenhum">Nenhum bairro</SelectItem>
+                <SelectItem value="none">Selecione uma cidade</SelectItem>
+                {cities.map((city) => (
+                  <SelectItem key={city.id} value={city.id}>
+                    {city.name} - {city.state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Select 
+              value={formData.neighborhood_id || "none"} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood_id: value === "none" ? "" : value }))}
+              disabled={!selectedCityId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={selectedCityId ? "Selecione o bairro" : "Primeiro selecione uma cidade"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum bairro</SelectItem>
                 {neighborhoods.map((neighborhood) => (
                   <SelectItem key={neighborhood.id} value={neighborhood.id}>
                     {neighborhood.name}
@@ -161,14 +190,14 @@ export const AddCellDialog = () => {
           <div>
             <Label htmlFor="leader">Líder</Label>
             <Select 
-              value={formData.leader_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value === 'nenhum' ? '' : value }))}
+              value={formData.leader_id || "none"} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value === "none" ? "" : value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o líder" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="nenhum">Nenhum líder</SelectItem>
+                <SelectItem value="none">Nenhum líder</SelectItem>
                 {leaders.map((leader) => (
                   <SelectItem key={leader.id} value={leader.id}>
                     {leader.name} ({leader.role === 'admin' ? 'Admin' : 'Líder'})
@@ -182,13 +211,14 @@ export const AddCellDialog = () => {
             <div>
               <Label htmlFor="meeting_day">Dia da Reunião *</Label>
               <Select 
-                value={formData.meeting_day} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value }))}
+                value={formData.meeting_day || "day_none"} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_day: value === "day_none" ? "" : value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o dia" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="day_none">Selecione o dia</SelectItem>
                   {weekDays.map((day, index) => (
                     <SelectItem key={index} value={index.toString()}>
                       {day}

@@ -12,17 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCities } from "@/hooks/useCities";
+import { useNeighborhoods } from "@/hooks/useNeighborhoods";
 import type { Cell } from "@/hooks/useCells";
 
 interface Leader {
-  id: string;
-  name: string;
-}
-
-interface Neighborhood {
   id: string;
   name: string;
 }
@@ -40,6 +38,10 @@ export const EditCellDialog = ({
   cell,
   onCellUpdated,
 }: EditCellDialogProps) => {
+  const { cities } = useCities();
+  const [selectedCityId, setSelectedCityId] = useState('');
+  const { neighborhoods } = useNeighborhoods(selectedCityId);
+  
   const [formState, setFormState] = useState<Partial<Cell>>({
     name: cell.name,
     address: cell.address,
@@ -51,7 +53,6 @@ export const EditCellDialog = ({
   });
 
   const [leaders, setLeaders] = useState<Leader[]>([]);
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export const EditCellDialog = ({
       const { data, error } = await supabase
         .from("profiles")
         .select("id, name")
-        .eq("role", "leader")
+        .in("role", ["admin", "leader"])
         .eq("active", true);
 
       if (error) {
@@ -73,28 +74,25 @@ export const EditCellDialog = ({
       }
     };
 
-    const fetchNeighborhoods = async () => {
-      const { data, error } = await supabase
-        .from("neighborhoods")
-        .select("id, name")
-        .eq("active", true);
-
-      if (error) {
-        toast({
-          title: "Erro ao buscar bairros.",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        setNeighborhoods(data || []);
+    const fetchCellNeighborhoodCity = async () => {
+      if (cell.neighborhood_id) {
+        const { data, error } = await supabase
+          .from('neighborhoods')
+          .select('city_id')
+          .eq('id', cell.neighborhood_id)
+          .single();
+        
+        if (!error && data) {
+          setSelectedCityId(data.city_id);
+        }
       }
     };
 
     if (isOpen) {
       fetchLeaders();
-      fetchNeighborhoods();
+      fetchCellNeighborhoodCity();
     }
-  }, [isOpen]);
+  }, [isOpen, cell.neighborhood_id]);
 
   useEffect(() => {
     if (cell) {
@@ -110,11 +108,10 @@ export const EditCellDialog = ({
     }
   }, [cell]);
 
-  const handleChange = (e: any) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (field: string, value: any) => {
     setFormState((prevState) => ({
       ...prevState,
-      [name]: type === "checkbox" ? checked : value,
+      [field]: value,
     }));
   };
 
@@ -134,24 +131,6 @@ export const EditCellDialog = ({
       toast({ 
         title: "Erro",
         description: "Endereço da célula é obrigatório.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!formState.leader_id) {
-      toast({ 
-        title: "Erro",
-        description: "Selecione o líder da célula.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!formState.neighborhood_id) {
-      toast({ 
-        title: "Erro",
-        description: "Selecione o bairro da célula.",
         variant: "destructive"
       });
       return;
@@ -188,8 +167,8 @@ export const EditCellDialog = ({
         .update({
           name: formState.name,
           address: formState.address,
-          leader_id: formState.leader_id,
-          neighborhood_id: formState.neighborhood_id,
+          leader_id: formState.leader_id || null,
+          neighborhood_id: formState.neighborhood_id || null,
           active: formState.active,
           meeting_day: Number(formState.meeting_day),
           meeting_time: formState.meeting_time,
@@ -229,6 +208,8 @@ export const EditCellDialog = ({
     }
   };
 
+  const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
@@ -246,7 +227,7 @@ export const EditCellDialog = ({
               id="name"
               name="name"
               value={formState.name || ""}
-              onChange={handleChange}
+              onChange={(e) => handleChange('name', e.target.value)}
               required
             />
           </div>
@@ -257,96 +238,120 @@ export const EditCellDialog = ({
               id="address"
               name="address"
               value={formState.address || ""}
-              onChange={handleChange}
+              onChange={(e) => handleChange('address', e.target.value)}
               required
             />
           </div>
-          <div>
-            <Label className="block font-medium">Líder da Célula *</Label>
-            <select
-              required
-              name="leader_id"
-              value={formState.leader_id || ""}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 bg-white"
+          
+          <div className="grid gap-2">
+            <Label>Cidade</Label>
+            <Select 
+              value={selectedCityId || "none"} 
+              onValueChange={(value) => {
+                const cityId = value === "none" ? "" : value;
+                setSelectedCityId(cityId);
+                handleChange('neighborhood_id', '');
+              }}
             >
-              <option value="" disabled>
-                Selecione um líder
-              </option>
-              {leaders.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a cidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Selecione uma cidade</SelectItem>
+                {cities.map((city) => (
+                  <SelectItem key={city.id} value={city.id}>
+                    {city.name} - {city.state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
-            <Label className="block font-medium">Bairro *</Label>
-            <select
-              required
-              name="neighborhood_id"
-              value={formState.neighborhood_id || ""}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 bg-white"
+
+          <div className="grid gap-2">
+            <Label>Bairro</Label>
+            <Select 
+              value={formState.neighborhood_id || "none"} 
+              onValueChange={(value) => handleChange('neighborhood_id', value === "none" ? "" : value)}
+              disabled={!selectedCityId}
             >
-              <option value="" disabled>
-                Selecione um bairro
-              </option>
-              {neighborhoods.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder={selectedCityId ? "Selecione o bairro" : "Primeiro selecione uma cidade"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum bairro</SelectItem>
+                {neighborhoods.map((neighborhood) => (
+                  <SelectItem key={neighborhood.id} value={neighborhood.id}>
+                    {neighborhood.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
+
+          <div className="grid gap-2">
+            <Label>Líder da Célula</Label>
+            <Select 
+              value={formState.leader_id || "none"} 
+              onValueChange={(value) => handleChange('leader_id', value === "none" ? "" : value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um líder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum líder</SelectItem>
+                {leaders.map((leader) => (
+                  <SelectItem key={leader.id} value={leader.id}>
+                    {leader.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
             <Label htmlFor="meeting_day">Dia da reunião *</Label>
-            <select
-              id="meeting_day"
-              name="meeting_day"
-              value={
-                formState.meeting_day !== undefined && formState.meeting_day !== null
-                  ? String(formState.meeting_day)
-                  : ""
-              }
-              onChange={handleChange}
-              required
-              className="w-full border rounded px-3 py-2 bg-white"
+            <Select 
+              value={formState.meeting_day !== undefined && formState.meeting_day !== null ? String(formState.meeting_day) : "day_none"} 
+              onValueChange={(value) => handleChange('meeting_day', value === "day_none" ? null : parseInt(value))}
             >
-              <option value="" disabled>
-                Selecione o dia da semana
-              </option>
-              <option value="0">Domingo</option>
-              <option value="1">Segunda-feira</option>
-              <option value="2">Terça-feira</option>
-              <option value="3">Quarta-feira</option>
-              <option value="4">Quinta-feira</option>
-              <option value="5">Sexta-feira</option>
-              <option value="6">Sábado</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o dia da semana" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day_none">Selecione o dia</SelectItem>
+                {weekDays.map((day, index) => (
+                  <SelectItem key={index} value={index.toString()}>
+                    {day}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
+
+          <div className="grid gap-2">
             <Label htmlFor="meeting_time">Horário da reunião *</Label>
             <Input
               type="time"
               id="meeting_time"
               name="meeting_time"
               value={formState.meeting_time || ""}
-              onChange={handleChange}
+              onChange={(e) => handleChange('meeting_time', e.target.value)}
               required
             />
           </div>
+          
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               id="active"
               name="active"
               checked={formState.active || false}
-              onChange={handleChange}
+              onChange={(e) => handleChange('active', e.target.checked)}
               className="w-4 h-4"
             />
             <Label htmlFor="active">Ativo</Label>
           </div>
+          
           <AlertDialogFooter>
             <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
             <AlertDialogAction type="submit" disabled={saving}>

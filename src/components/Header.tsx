@@ -19,6 +19,10 @@ export const Header = () => {
   const logoAlt = config.site_logo?.alt || 'Logo';
   const churchName = config.church_name?.text || config.form_title?.text || 'Sistema de Células';
 
+  console.log('Header: user =', user);
+  console.log('Header: userProfile =', userProfile);
+  console.log('Header: logoUrl =', logoUrl);
+
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
@@ -32,7 +36,10 @@ export const Header = () => {
               className="w-12 h-12 object-contain rounded-lg border border-gray-200"
               onError={(e) => {
                 console.error('Erro ao carregar logo:', logoUrl);
-                e.currentTarget.style.display = 'none';
+                // Não esconder a imagem, apenas logar o erro
+              }}
+              onLoad={() => {
+                console.log('Logo carregado com sucesso:', logoUrl);
               }}
             />
           ) : (
@@ -51,7 +58,7 @@ export const Header = () => {
         <div className="flex items-center gap-3">
           <BirthdayNotifications />
           
-          {user && (
+          {user && userProfile && (
             <div className="flex items-center gap-2">
               <UserMenu />
               <Button

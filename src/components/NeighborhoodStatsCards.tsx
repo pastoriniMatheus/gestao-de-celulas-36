@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Home, Users, MapPin } from 'lucide-react';
@@ -100,14 +101,18 @@ export const NeighborhoodStatsCards = ({
               }
             }}
           >
-            <CardHeader className="pb-2 flex-row items-center gap-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-pink-600" />
-                <span className="font-bold text-base">{bairro.neighborhood_name}</span>
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-pink-600" />
+                  <span className="font-bold text-base">{bairro.neighborhood_name}</span>
+                </div>
+                {bairro.city_name && (
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {bairro.city_name}
+                  </span>
+                )}
               </div>
-              <span className="text-xs text-gray-400 font-normal ml-1">
-                {bairro.city_name || 'Cidade desconhecida'}
-              </span>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2 justify-between items-center">
