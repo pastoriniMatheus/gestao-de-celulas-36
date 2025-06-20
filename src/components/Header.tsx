@@ -12,19 +12,17 @@ export const Header = () => {
   };
 
   return (
-    <header>
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-2 md:gap-3">
-          <BirthdayNotifications />
-          
-          {user && userProfile ? (
-            <div className="flex items-center gap-2">
-              <UserMenu />
-            </div>
-          ) : (
-            <div className="text-sm text-gray-500">Carregando...</div>
-          )}
-        </div>
+    <header className="fixed top-4 right-4 z-50">
+      <div className="flex items-center gap-2 md:gap-3 bg-white p-2 rounded-xl shadow-lg">
+        <BirthdayNotifications />
+        
+        {user && userProfile ? (
+          <div className="flex items-center gap-2">
+            <UserMenu />
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500">Carregando...</div>
+        )}
       </div>
     </header>
   );
