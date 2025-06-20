@@ -55,9 +55,13 @@ export const useSystemConfig = () => {
 
     loadConfig();
 
+    // Criar canal único com nome baseado em timestamp
+    const channelName = `system-config-${Date.now()}`;
+    console.log('Creating system config channel:', channelName);
+
     // Configurar real-time updates para configurações
     const channel = supabase
-      .channel('system-config-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -70,9 +74,12 @@ export const useSystemConfig = () => {
           loadConfig(); // Recarregar configurações
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('System config channel subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up system config channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, []);

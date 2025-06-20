@@ -132,8 +132,8 @@ export const useMessageTemplates = () => {
   useEffect(() => {
     fetchTemplates();
 
-    // Create a unique channel name to prevent conflicts
-    const channelName = `message-templates-changes-${Date.now()}-${Math.random()}`;
+    // Criar canal único com nome baseado em timestamp
+    const channelName = `message-templates-${Date.now()}`;
     console.log('Creating message templates channel:', channelName);
 
     // Real-time updates
@@ -147,6 +147,7 @@ export const useMessageTemplates = () => {
           table: 'message_templates'
         },
         () => {
+          console.log('Message templates table changed, refetching...');
           fetchTemplates();
         }
       )
@@ -155,7 +156,7 @@ export const useMessageTemplates = () => {
       });
 
     return () => {
-      console.log('Cleaning up message templates channel...');
+      console.log('Cleaning up message templates channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, []);

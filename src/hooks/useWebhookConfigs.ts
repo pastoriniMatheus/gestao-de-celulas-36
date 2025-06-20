@@ -122,8 +122,8 @@ export const useWebhookConfigs = () => {
   useEffect(() => {
     fetchWebhooks();
 
-    // Create a unique channel name to prevent conflicts
-    const channelName = `webhook-configs-changes-${Date.now()}-${Math.random()}`;
+    // Criar canal único com nome baseado em timestamp
+    const channelName = `webhook-configs-${Date.now()}`;
     console.log('Creating webhook configs channel:', channelName);
 
     // Real-time updates
@@ -137,6 +137,7 @@ export const useWebhookConfigs = () => {
           table: 'webhook_configs'
         },
         () => {
+          console.log('Webhook configs table changed, refetching...');
           fetchWebhooks();
         }
       )
@@ -145,7 +146,7 @@ export const useWebhookConfigs = () => {
       });
 
     return () => {
-      console.log('Cleaning up webhook configs channel...');
+      console.log('Cleaning up webhook configs channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, []);
