@@ -53,7 +53,9 @@ export const AddUserDialog = () => {
 
     setLoading(true);
     try {
-      // Criar usuário no Supabase Auth
+      console.log('Criando usuário:', formData.email);
+      
+      // Criar usuário no Supabase Auth com email redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -66,7 +68,12 @@ export const AddUserDialog = () => {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Erro auth:', authError);
+        throw authError;
+      }
+
+      console.log('Usuário criado no auth:', authData.user?.id);
 
       if (authData.user) {
         // Criar perfil na tabela profiles
@@ -82,6 +89,9 @@ export const AddUserDialog = () => {
 
         if (profileError) {
           console.error('Erro ao criar perfil:', profileError);
+          // Não fazer throw aqui pois o usuário já foi criado no auth
+        } else {
+          console.log('Perfil criado com sucesso');
         }
       }
 
@@ -94,14 +104,27 @@ export const AddUserDialog = () => {
       setIsOpen(false);
       
       // Recarregar a página para atualizar a lista
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error: any) {
       console.error('Erro ao criar usuário:', error);
+      let errorMessage = "Erro ao criar usuário";
+      
+      if (error.message?.includes('User already registered')) {
+        errorMessage = "Este email já está cadastrado";
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = "Email inválido";
+      } else if (error.message?.includes('Password')) {
+        errorMessage = "Senha inválida";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro",
-        description: error.message === 'User already registered' 
-          ? "Este email já está cadastrado" 
-          : error.message || "Erro ao criar usuário",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
