@@ -98,5 +98,41 @@ export const useSystemConfig = () => {
     }
   };
 
-  return { config, loading };
+  const updateConfig = async (newConfig: Partial<SystemConfig>) => {
+    try {
+      console.log('Atualizando configurações:', newConfig);
+      
+      // Salvar cada configuração
+      for (const [key, value] of Object.entries(newConfig)) {
+        const { error } = await supabase
+          .from('system_settings')
+          .upsert({ 
+            key, 
+            value 
+          }, { 
+            onConflict: 'key' 
+          });
+
+        if (error) {
+          console.error(`Erro ao salvar ${key}:`, error);
+          throw error;
+        }
+      }
+
+      // Atualizar estado local
+      setConfig(prev => ({ ...prev, ...newConfig }));
+
+      // Atualizar favicon se o logo foi alterado
+      if (newConfig.site_logo?.url) {
+        updateFavicon(newConfig.site_logo.url);
+      }
+      
+      console.log('Configurações atualizadas com sucesso');
+    } catch (error) {
+      console.error('Erro ao atualizar configurações:', error);
+      throw error;
+    }
+  };
+
+  return { config, loading, updateConfig };
 };
