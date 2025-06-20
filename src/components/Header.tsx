@@ -29,7 +29,18 @@ export const Header = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {configLoading ? (
-           
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+          ) : logoUrl ? (
+            
+          ) : (
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm md:text-lg">
+                {churchName.charAt(0)}
+              </span>
+            </div>
+          )}
+      
+
         <div className="flex items-center gap-2 md:gap-3">
           <BirthdayNotifications />
           
