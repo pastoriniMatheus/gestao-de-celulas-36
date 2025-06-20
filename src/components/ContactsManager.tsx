@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,23 +15,8 @@ import { useCells } from '@/hooks/useCells';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Contact {
-  id: string;
-  name: string;
-  whatsapp: string | null;
-  neighborhood: string;
-  city_id: string | null;
-  cell_id: string | null;
-  status: string;
-  encounter_with_god: boolean;
-  baptized: boolean;
-  pipeline_stage_id: string | null;
-  age: number | null;
-  birth_date: string | null;
-  attendance_code: string | null;
-  created_at: string;
-  updated_at: string;
-}
+// Import the Contact type from the hook
+type Contact = ReturnType<typeof useLeaderContacts>['contacts'][0];
 
 export const ContactsManager = () => {
   const { contacts, loading } = useLeaderContacts();

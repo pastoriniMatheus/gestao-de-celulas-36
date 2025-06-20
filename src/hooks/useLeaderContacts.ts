@@ -12,6 +12,7 @@ interface Contact {
   cell_id: string | null;
   status: string;
   encounter_with_god: boolean;
+  baptized: boolean;
   pipeline_stage_id: string | null;
   age: number | null;
   birth_date: string | null;
