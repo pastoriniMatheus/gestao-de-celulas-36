@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { CellFilters } from '@/components/CellsFilter';
 
 export interface Cell {
   id: string;
@@ -18,6 +18,7 @@ export interface Cell {
 
 export const useCells = () => {
   const [cells, setCells] = useState<Cell[]>([]);
+  const [filteredCells, setFilteredCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
 
@@ -49,6 +50,7 @@ export const useCells = () => {
       
       if (mountedRef.current) {
         setCells(data || []);
+        setFilteredCells(data || []);
       }
     } catch (error) {
       console.error('useCells: Erro inesperado:', error);
@@ -64,6 +66,32 @@ export const useCells = () => {
         setLoading(false);
       }
     }
+  };
+
+  const applyFilters = (filters: CellFilters) => {
+    let filtered = [...cells];
+
+    if (filters.search) {
+      filtered = filtered.filter(cell =>
+        cell.name.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    // Note: Para filtros de cidade, bairro e líder, seria necessário fazer joins com outras tabelas
+    // Por enquanto, vou implementar um filtro básico baseado no endereço
+    if (filters.city) {
+      filtered = filtered.filter(cell =>
+        cell.address.toLowerCase().includes(filters.city.toLowerCase())
+      );
+    }
+
+    if (filters.neighborhood) {
+      filtered = filtered.filter(cell =>
+        cell.address.toLowerCase().includes(filters.neighborhood.toLowerCase())
+      );
+    }
+
+    setFilteredCells(filtered);
   };
 
   const addCell = async (cellData: Omit<Cell, 'id' | 'created_at' | 'updated_at'>) => {
@@ -85,6 +113,7 @@ export const useCells = () => {
       
       if (mountedRef.current) {
         setCells(prev => [...prev, data]);
+        setFilteredCells(prev => [...prev, data]);
       }
       
       toast({
@@ -119,6 +148,7 @@ export const useCells = () => {
       
       if (mountedRef.current) {
         setCells(prev => prev.map(cell => cell.id === id ? data : cell));
+        setFilteredCells(prev => prev.map(cell => cell.id === id ? data : cell));
       }
       
       toast({
@@ -151,6 +181,7 @@ export const useCells = () => {
       
       if (mountedRef.current) {
         setCells(prev => prev.filter(cell => cell.id !== id));
+        setFilteredCells(prev => prev.filter(cell => cell.id !== id));
       }
       
       toast({
@@ -175,11 +206,12 @@ export const useCells = () => {
   }, []);
 
   return {
-    cells,
+    cells: filteredCells,
     loading,
     fetchCells,
     addCell,
     updateCell,
-    deleteCell
+    deleteCell,
+    applyFilters
   };
 };
