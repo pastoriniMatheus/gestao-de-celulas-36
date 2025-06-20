@@ -52,7 +52,7 @@ export const Header = () => {
           <BirthdayNotifications />
           
           {user && (
-            <>
+            <div className="flex items-center gap-2">
               <UserMenu />
               <Button
                 variant="ghost"
@@ -62,7 +62,7 @@ export const Header = () => {
               >
                 <LogOut className="h-4 w-4" />
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>

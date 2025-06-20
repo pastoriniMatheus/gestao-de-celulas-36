@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { User, Phone, MapPin, Search, Filter } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { usePipelineStages } from '@/hooks/usePipelineStages';
 import { useLeaderContacts } from '@/hooks/useLeaderContacts';
 import { useContacts } from '@/hooks/useContacts';
@@ -42,11 +43,16 @@ export const KanbanPipeline = () => {
     return matchesSearch && matchesCell && contact.pipeline_stage_id;
   });
 
-  const handleMoveContact = async (contactId: string, newStageId: string) => {
-    if (!isAdmin) return; // Líderes não podem mover contatos entre estágios
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination || !isAdmin) return;
+
+    const { source, destination, draggableId } = result;
     
+    // Se não mudou de estágio, não fazer nada
+    if (source.droppableId === destination.droppableId) return;
+
     try {
-      await updateContact(contactId, { pipeline_stage_id: newStageId });
+      await updateContact(draggableId, { pipeline_stage_id: destination.droppableId });
     } catch (error) {
       console.error('Erro ao mover contato:', error);
     }
@@ -57,7 +63,7 @@ export const KanbanPipeline = () => {
     return cell ? cell.name : 'Sem célula';
   };
 
-  const handleEditContact = (contact: any) => {
+  const handleContactDoubleClick = (contact: any) => {
     setSelectedContact(contact);
     setEditDialogOpen(true);
   };
@@ -116,87 +122,116 @@ export const KanbanPipeline = () => {
         </CardContent>
       </Card>
 
-      <div className="flex gap-6 overflow-x-auto pb-4">
-        {stages.map((stage) => {
-          const stageContacts = filteredContacts.filter(
-            contact => contact.pipeline_stage_id === stage.id
-          );
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex gap-6 overflow-x-auto pb-4">
+          {stages.map((stage) => {
+            const stageContacts = filteredContacts.filter(
+              contact => contact.pipeline_stage_id === stage.id
+            );
 
-          return (
-            <Card key={stage.id} className="min-w-[300px] flex-shrink-0">
-              <CardHeader 
-                className="pb-3"
-                style={{ backgroundColor: `${stage.color}15`, borderBottom: `2px solid ${stage.color}` }}
-              >
-                <CardTitle className="flex items-center justify-between">
-                  <span style={{ color: stage.color }}>{stage.name}</span>
-                  <Badge variant="secondary">{stageContacts.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
-                {stageContacts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Nenhum discípulo</p>
-                  </div>
-                ) : (
-                  stageContacts.map((contact) => (
-                    <Card 
-                      key={contact.id} 
-                      className="cursor-pointer hover:shadow-md transition-shadow border-l-4"
-                      style={{ borderLeftColor: stage.color }}
-                      onClick={() => handleEditContact(contact)}
+            return (
+              <Card key={stage.id} className="min-w-[300px] flex-shrink-0">
+                <CardHeader 
+                  className="pb-3"
+                  style={{ backgroundColor: `${stage.color}15`, borderBottom: `2px solid ${stage.color}` }}
+                >
+                  <CardTitle className="flex items-center justify-between">
+                    <span style={{ color: stage.color }}>{stage.name}</span>
+                    <Badge variant="secondary">{stageContacts.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <Droppable droppableId={stage.id} isDropDisabled={!isAdmin}>
+                  {(provided, snapshot) => (
+                    <CardContent 
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`p-4 space-y-3 max-h-[600px] overflow-y-auto ${
+                        snapshot.isDraggingOver ? 'bg-blue-50' : ''
+                      }`}
                     >
-                      <CardContent className="p-3">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-sm">{contact.name}</h4>
-                            <Badge 
-                              variant={contact.status === 'member' ? 'default' : 
-                                     contact.status === 'visitor' ? 'secondary' : 'outline'}
-                              className="text-xs"
-                            >
-                              {contact.status === 'member' ? 'Membro' :
-                               contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
-                            </Badge>
-                          </div>
-                          
-                          {contact.whatsapp && (
-                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                              <Phone className="h-3 w-3" />
-                              <span>{contact.whatsapp}</span>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <MapPin className="h-3 w-3" />
-                            <span>{contact.neighborhood}</span>
-                          </div>
-
-                          {contact.cell_id && (
-                            <div className="text-xs text-blue-600 font-medium">
-                              {getCellName(contact.cell_id)}
-                            </div>
-                          )}
-                          
-                          <div className="flex gap-1 mt-2">
-                            {contact.encounter_with_god && (
-                              <Badge variant="outline" className="text-xs">EcD</Badge>
-                            )}
-                            {contact.baptized && (
-                              <Badge variant="outline" className="text-xs">Batizado</Badge>
-                            )}
-                          </div>
+                      {stageContacts.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Nenhum discípulo</p>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                      ) : (
+                        stageContacts.map((contact, index) => (
+                          <Draggable
+                            key={contact.id}
+                            draggableId={contact.id}
+                            index={index}
+                            isDragDisabled={!isAdmin}
+                          >
+                            {(provided, snapshot) => (
+                              <Card 
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`border-l-4 transition-shadow ${
+                                  snapshot.isDragging ? 'shadow-lg rotate-2' : 'hover:shadow-md'
+                                } ${!isAdmin ? 'cursor-pointer' : 'cursor-grab'}`}
+                                style={{ 
+                                  borderLeftColor: stage.color,
+                                  ...provided.draggableProps.style
+                                }}
+                                onDoubleClick={() => handleContactDoubleClick(contact)}
+                              >
+                                <CardContent className="p-3">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="font-semibold text-sm">{contact.name}</h4>
+                                      <Badge 
+                                        variant={contact.status === 'member' ? 'default' : 
+                                               contact.status === 'visitor' ? 'secondary' : 'outline'}
+                                        className="text-xs"
+                                      >
+                                        {contact.status === 'member' ? 'Membro' :
+                                         contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
+                                      </Badge>
+                                    </div>
+                                    
+                                    {contact.whatsapp && (
+                                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                                        <Phone className="h-3 w-3" />
+                                        <span>{contact.whatsapp}</span>
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                                      <MapPin className="h-3 w-3" />
+                                      <span>{contact.neighborhood}</span>
+                                    </div>
+
+                                    {contact.cell_id && (
+                                      <div className="text-xs text-blue-600 font-medium">
+                                        {getCellName(contact.cell_id)}
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex gap-1 mt-2">
+                                      {contact.encounter_with_god && (
+                                        <Badge variant="outline" className="text-xs">EcD</Badge>
+                                      )}
+                                      {contact.baptized && (
+                                        <Badge variant="outline" className="text-xs">Batizado</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </Draggable>
+                        ))
+                      )}
+                      {provided.placeholder}
+                    </CardContent>
+                  )}
+                </Droppable>
+              </Card>
+            );
+          })}
+        </div>
+      </DragDropContext>
 
       {selectedContact && (
         <EditContactDialog
