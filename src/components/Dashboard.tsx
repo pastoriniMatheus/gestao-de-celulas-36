@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import DashboardCharts from "./DashboardCharts";
+import { DashboardCharts } from "./DashboardCharts";
 import { DashboardPipelineMetrics } from './DashboardPipelineMetrics';
 
 export const Dashboard = () => {
