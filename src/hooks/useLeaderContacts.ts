@@ -80,50 +80,6 @@ export const useLeaderContacts = () => {
   useEffect(() => {
     if (userProfile) {
       fetchContacts();
-
-      // Real-time updates
-      const channel = supabase
-        .channel(`leader-contacts-${userProfile.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'contacts'
-          },
-          async (payload) => {
-            console.log('Contato alterado em tempo real:', payload);
-            
-            // Se for líder, verificar se o contato pertence às suas células
-            if (isLeader && !isAdmin) {
-              const { data: leaderCells } = await supabase
-                .from('cells')
-                .select('id')
-                .eq('leader_id', userProfile.id);
-
-              const cellIds = leaderCells?.map(cell => cell.id) || [];
-              
-              if (payload.new && !cellIds.includes((payload.new as any).cell_id)) {
-                return; // Não processar se não for contato das células do líder
-              }
-            }
-
-            if (payload.eventType === 'INSERT') {
-              setContacts(prev => [payload.new as Contact, ...prev]);
-            } else if (payload.eventType === 'UPDATE') {
-              setContacts(prev => prev.map(contact => 
-                contact.id === (payload.new as any).id ? payload.new as Contact : contact
-              ));
-            } else if (payload.eventType === 'DELETE') {
-              setContacts(prev => prev.filter(contact => contact.id !== (payload.old as any).id));
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     }
   }, [userProfile, isLeader, isAdmin]);
 

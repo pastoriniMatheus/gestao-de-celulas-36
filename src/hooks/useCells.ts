@@ -35,11 +35,13 @@ export const useCells = () => {
 
       if (error) {
         console.error('useCells: Error fetching cells:', error);
-        toast({
-          title: "Erro",
-          description: `Erro ao carregar células: ${error.message}`,
-          variant: "destructive"
-        });
+        if (mountedRef.current) {
+          toast({
+            title: "Erro",
+            description: `Erro ao carregar células: ${error.message}`,
+            variant: "destructive"
+          });
+        }
         return;
       }
 
