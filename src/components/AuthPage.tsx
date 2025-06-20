@@ -108,8 +108,8 @@ export const AuthPage = () => {
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-4 mb-6">
-              <div className="w-20 h-20 bg-gray-800 rounded-xl animate-pulse"></div>
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-gray-800 rounded-xl animate-pulse"></div>
               <div>
                 <div className="w-48 h-10 bg-gray-800 rounded animate-pulse mb-3"></div>
                 <div className="w-40 h-6 bg-gray-800 rounded animate-pulse"></div>
@@ -130,13 +130,13 @@ export const AuthPage = () => {
       }}></div>
       
       <div className="w-full max-w-md relative z-10">
-        {/* Logo e Título */}
+        {/* Logo e Título no Topo */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-6 mb-8">
+          <div className="flex items-center justify-center gap-4 mb-8">
             {logoUrl ? (
               <div className="relative group">
                 <div className="absolute -inset-2 bg-gradient-to-r from-white/20 to-gray-300/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
-                <div className="relative w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
+                <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
                   <img 
                     src={logoUrl} 
                     alt={logoAlt}
@@ -150,18 +150,18 @@ export const AuthPage = () => {
             ) : (
               <div className="relative group">
                 <div className="absolute -inset-2 bg-gradient-to-r from-white/20 to-gray-300/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
-                <div className="relative w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
-                  <span className="text-white font-bold text-3xl">
+                <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
+                  <span className="text-white font-bold text-2xl">
                     {displayTitle.charAt(0)}
                   </span>
                 </div>
               </div>
             )}
             <div className="text-left">
-              <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+              <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
                 {displayTitle}
               </h1>
-              <p className="text-xl text-gray-300">Sistema de Gestão</p>
+              <p className="text-lg text-gray-300">Sistema de Gestão</p>
             </div>
           </div>
           <div className="w-32 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto"></div>
