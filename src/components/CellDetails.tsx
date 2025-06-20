@@ -42,8 +42,6 @@ export const CellDetails = () => {
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const mountedRef = useRef(true);
-  const channelRef = useRef<any>(null);
-  const subscriptionActiveRef = useRef(false);
 
   const fetchCellDetails = async () => {
     if (!id) return;
@@ -95,95 +93,11 @@ export const CellDetails = () => {
     mountedRef.current = true;
     fetchCellDetails();
 
-    // Setup realtime subscription
-    const setupSubscription = () => {
-      if (subscriptionActiveRef.current) {
-        console.log('CellDetails: Subscription already active, skipping...');
-        return;
-      }
-
-      try {
-        // Clean up any existing channel
-        if (channelRef.current) {
-          console.log('CellDetails: Cleaning up existing channel...');
-          supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
-        }
-
-        // Create unique channel name for this specific cell
-        const uniqueId = Math.random().toString(36).substr(2, 9);
-        const channelName = `cell-details-${id}-${Date.now()}-${uniqueId}`;
-        console.log('CellDetails: Creating channel:', channelName);
-        
-        const channel = supabase.channel(channelName);
-        channelRef.current = channel;
-
-        // Subscribe to changes for this specific cell
-        channel
-          .on('postgres_changes', 
-            { 
-              event: '*', 
-              schema: 'public', 
-              table: 'cells',
-              filter: `id=eq.${id}`
-            },
-            (payload) => {
-              if (!mountedRef.current) return;
-              
-              console.log('CellDetails: Cell realtime update:', payload);
-              fetchCellDetails();
-            }
-          )
-          .on('postgres_changes', 
-            { 
-              event: '*', 
-              schema: 'public', 
-              table: 'contacts',
-              filter: `cell_id=eq.${id}`
-            },
-            (payload) => {
-              if (!mountedRef.current) return;
-              
-              console.log('CellDetails: Contacts realtime update:', payload);
-              fetchCellDetails();
-            }
-          )
-          .subscribe((status) => {
-            console.log('CellDetails: Subscription status:', status);
-            if (status === 'SUBSCRIBED') {
-              subscriptionActiveRef.current = true;
-            } else if (status === 'CHANNEL_ERROR') {
-              subscriptionActiveRef.current = false;
-              console.error('CellDetails: Channel error');
-            }
-          });
-
-      } catch (error) {
-        console.error('CellDetails: Error setting up subscription:', error);
-        subscriptionActiveRef.current = false;
-      }
-    };
-
-    // Delay subscription setup to avoid conflicts
-    const timeoutId = setTimeout(setupSubscription, 300);
-
     return () => {
       console.log('CellDetails: Cleaning up...');
-      clearTimeout(timeoutId);
       mountedRef.current = false;
-      subscriptionActiveRef.current = false;
-      
-      if (channelRef.current) {
-        console.log('CellDetails: Removing channel on cleanup...');
-        try {
-          supabase.removeChannel(channelRef.current);
-        } catch (error) {
-          console.warn('CellDetails: Error removing channel:', error);
-        }
-        channelRef.current = null;
-      }
     };
-  }, [id]); // Only depend on id
+  }, [id]);
 
   if (loading) {
     return (
