@@ -19,8 +19,9 @@ export interface Cell {
 export const useCells = () => {
   const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
-  const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
+  const channelRef = useRef<any>(null);
+  const subscriptionActiveRef = useRef(false);
 
   const fetchCells = async () => {
     try {
@@ -163,60 +164,83 @@ export const useCells = () => {
   };
 
   useEffect(() => {
+    console.log('useCells: Hook initializing...');
     mountedRef.current = true;
-    console.log('useCells: Initializing hook...');
     
     // Fetch initial data
     fetchCells();
 
-    // Setup realtime subscription
+    // Setup realtime subscription only if not already active
     const setupSubscription = () => {
-      // Clean up existing channel first
-      if (channelRef.current) {
-        console.log('useCells: Cleaning up existing channel...');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+      if (subscriptionActiveRef.current) {
+        console.log('useCells: Subscription already active, skipping...');
+        return;
       }
 
-      // Create new channel with unique name
-      const channelName = `cells-realtime-${Date.now()}-${Math.random()}`;
-      console.log('useCells: Creating channel:', channelName);
-      
-      const channel = supabase.channel(channelName);
-      channelRef.current = channel;
+      try {
+        // Clean up any existing channel
+        if (channelRef.current) {
+          console.log('useCells: Cleaning up existing channel...');
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
 
-      // Subscribe to changes
-      channel
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'cells' },
-          (payload) => {
-            if (!mountedRef.current) return;
-            
-            console.log('useCells: Realtime update:', payload);
-            // Refetch data to ensure consistency
-            fetchCells();
-          }
-        )
-        .subscribe((status) => {
-          console.log('useCells: Subscription status:', status);
-        });
+        // Create unique channel name
+        const uniqueId = Math.random().toString(36).substr(2, 9);
+        const channelName = `cells-list-${Date.now()}-${uniqueId}`;
+        console.log('useCells: Creating channel:', channelName);
+        
+        const channel = supabase.channel(channelName);
+        channelRef.current = channel;
+
+        // Subscribe to changes
+        channel
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'cells' },
+            (payload) => {
+              if (!mountedRef.current) return;
+              
+              console.log('useCells: Realtime update received:', payload);
+              // Refetch data to ensure consistency
+              fetchCells();
+            }
+          )
+          .subscribe((status) => {
+            console.log('useCells: Subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+              subscriptionActiveRef.current = true;
+            } else if (status === 'CHANNEL_ERROR') {
+              subscriptionActiveRef.current = false;
+              console.error('useCells: Channel error');
+            }
+          });
+
+      } catch (error) {
+        console.error('useCells: Error setting up subscription:', error);
+        subscriptionActiveRef.current = false;
+      }
     };
 
-    // Setup subscription with a small delay to avoid race conditions
-    const timeoutId = setTimeout(setupSubscription, 100);
+    // Delay subscription setup to avoid conflicts
+    const timeoutId = setTimeout(setupSubscription, 200);
 
     return () => {
       console.log('useCells: Cleaning up hook...');
       clearTimeout(timeoutId);
       mountedRef.current = false;
+      subscriptionActiveRef.current = false;
       
       if (channelRef.current) {
-        console.log('useCells: Removing channel...');
-        supabase.removeChannel(channelRef.current);
+        console.log('useCells: Removing channel on cleanup...');
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (error) {
+          console.warn('useCells: Error removing channel:', error);
+        }
         channelRef.current = null;
       }
     };
-  }, []); // Empty dependency array - run only once
+  }, []); // Empty dependency array to run only once
 
   return {
     cells,

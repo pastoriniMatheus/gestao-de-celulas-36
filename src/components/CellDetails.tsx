@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,10 +41,9 @@ export const CellDetails = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
-  const subscriptionSetupRef = useRef(false);
-  const componentIdRef = useRef(Math.random().toString(36).substr(2, 9));
+  const channelRef = useRef<any>(null);
+  const subscriptionActiveRef = useRef(false);
 
   const fetchCellDetails = async () => {
     if (!id) return;
@@ -91,30 +91,29 @@ export const CellDetails = () => {
   useEffect(() => {
     if (!id) return;
 
+    console.log('CellDetails: Initializing for cell ID:', id);
     mountedRef.current = true;
     fetchCellDetails();
 
-    // Setup realtime subscription with proper cleanup
+    // Setup realtime subscription
     const setupSubscription = () => {
-      if (subscriptionSetupRef.current) {
-        console.log(`CellDetails [${componentIdRef.current}]: Subscription already setup, skipping...`);
+      if (subscriptionActiveRef.current) {
+        console.log('CellDetails: Subscription already active, skipping...');
         return;
       }
 
       try {
-        // Clean up existing channel first
+        // Clean up any existing channel
         if (channelRef.current) {
-          try {
-            supabase.removeChannel(channelRef.current);
-          } catch (cleanupError) {
-            console.warn(`CellDetails [${componentIdRef.current}]: Erro ao limpar canal anterior:`, cleanupError);
-          }
+          console.log('CellDetails: Cleaning up existing channel...');
+          supabase.removeChannel(channelRef.current);
           channelRef.current = null;
         }
 
-        // Create new channel with unique name
-        const channelName = `cell-details-${id}-${componentIdRef.current}-${Date.now()}`;
-        console.log(`CellDetails [${componentIdRef.current}]: Creating cell details channel:`, channelName);
+        // Create unique channel name for this specific cell
+        const uniqueId = Math.random().toString(36).substr(2, 9);
+        const channelName = `cell-details-${id}-${Date.now()}-${uniqueId}`;
+        console.log('CellDetails: Creating channel:', channelName);
         
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
@@ -131,7 +130,7 @@ export const CellDetails = () => {
             (payload) => {
               if (!mountedRef.current) return;
               
-              console.log(`CellDetails [${componentIdRef.current}]: Cell details realtime update:`, payload);
+              console.log('CellDetails: Cell realtime update:', payload);
               fetchCellDetails();
             }
           )
@@ -145,40 +144,41 @@ export const CellDetails = () => {
             (payload) => {
               if (!mountedRef.current) return;
               
-              console.log(`CellDetails [${componentIdRef.current}]: Cell contacts realtime update:`, payload);
+              console.log('CellDetails: Contacts realtime update:', payload);
               fetchCellDetails();
             }
           )
           .subscribe((status) => {
-            console.log(`CellDetails [${componentIdRef.current}]: Cell details subscription status:`, status);
+            console.log('CellDetails: Subscription status:', status);
             if (status === 'SUBSCRIBED') {
-              subscriptionSetupRef.current = true;
+              subscriptionActiveRef.current = true;
             } else if (status === 'CHANNEL_ERROR') {
-              console.error(`CellDetails [${componentIdRef.current}]: Erro no canal`);
-              subscriptionSetupRef.current = false;
+              subscriptionActiveRef.current = false;
+              console.error('CellDetails: Channel error');
             }
           });
 
       } catch (error) {
-        console.error(`CellDetails [${componentIdRef.current}]: Error setting up cell details subscription:`, error);
-        subscriptionSetupRef.current = false;
+        console.error('CellDetails: Error setting up subscription:', error);
+        subscriptionActiveRef.current = false;
       }
     };
 
-    // Delay subscription setup to avoid race conditions
-    const timeoutId = setTimeout(setupSubscription, 100);
+    // Delay subscription setup to avoid conflicts
+    const timeoutId = setTimeout(setupSubscription, 300);
 
     return () => {
+      console.log('CellDetails: Cleaning up...');
       clearTimeout(timeoutId);
       mountedRef.current = false;
-      subscriptionSetupRef.current = false;
+      subscriptionActiveRef.current = false;
       
       if (channelRef.current) {
-        console.log(`CellDetails [${componentIdRef.current}]: Cleaning up cell details channel`);
+        console.log('CellDetails: Removing channel on cleanup...');
         try {
           supabase.removeChannel(channelRef.current);
-        } catch (cleanupError) {
-          console.warn(`CellDetails [${componentIdRef.current}]: Erro ao limpar canal:`, cleanupError);
+        } catch (error) {
+          console.warn('CellDetails: Error removing channel:', error);
         }
         channelRef.current = null;
       }
