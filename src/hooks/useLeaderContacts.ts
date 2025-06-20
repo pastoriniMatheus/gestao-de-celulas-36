@@ -78,10 +78,13 @@ export const useLeaderContacts = () => {
   };
 
   useEffect(() => {
-    if (userProfile) {
+    // Only fetch if we have the necessary data and permissions are defined
+    if (userProfile !== null && typeof isLeader === 'boolean' && typeof isAdmin === 'boolean') {
       fetchContacts();
+    } else {
+      setLoading(false);
     }
-  }, [userProfile, isLeader, isAdmin]);
+  }, [userProfile?.id, isLeader, isAdmin]);
 
   return {
     contacts,
