@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings as SettingsIcon, Palette, MapPin, FileText, Webhook, MessageSquare } from 'lucide-react';
@@ -8,42 +7,30 @@ import { FormSettings } from './FormSettings';
 import { WebhookManager } from './WebhookManager';
 import { MessageTemplateManager } from './MessageTemplateManager';
 import { useSystemConfig } from '@/hooks/useSystemConfig';
-
 export const Settings = () => {
-  const { config, loading: configLoading } = useSystemConfig();
+  const {
+    config,
+    loading: configLoading
+  } = useSystemConfig();
 
   // Usar configurações do sistema para o logo
   const logoUrl = config?.site_logo?.url;
   const logoAlt = config?.site_logo?.alt || 'Logo';
   const churchName = config?.church_name?.text || config?.form_title?.text || 'Sistema de Células';
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-2xl">
-            {configLoading ? (
-              <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-            ) : logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt={logoAlt}
-                className="w-8 h-8 object-contain rounded border border-purple-200"
-                onError={(e) => {
-                  console.error('Erro ao carregar logo nas configurações:', logoUrl);
-                  e.currentTarget.style.display = 'none';
-                }}
-                onLoad={() => {
-                  console.log('Logo carregado com sucesso nas configurações:', logoUrl);
-                }}
-              />
-            ) : (
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded flex items-center justify-center">
+            {configLoading ? <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div> : logoUrl ? <img src={logoUrl} alt={logoAlt} className="w-8 h-8 object-contain rounded border border-purple-200" onError={e => {
+            console.error('Erro ao carregar logo nas configurações:', logoUrl);
+            e.currentTarget.style.display = 'none';
+          }} onLoad={() => {
+            console.log('Logo carregado com sucesso nas configurações:', logoUrl);
+          }} /> : <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded flex items-center justify-center">
                 <span className="text-white font-bold text-sm">
                   {churchName.charAt(0)}
                 </span>
-              </div>
-            )}
+              </div>}
             <SettingsIcon className="h-6 w-6 text-purple-600" />
             Configurações do Sistema
           </CardTitle>
@@ -97,6 +84,5 @@ export const Settings = () => {
           <MessageTemplateManager />
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
