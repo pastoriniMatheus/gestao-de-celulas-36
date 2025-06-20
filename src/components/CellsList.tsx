@@ -2,25 +2,26 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Home, MapPin, Clock, Trash2, Users, Eye, UserCheck } from 'lucide-react';
+import { Home, MapPin, Clock, Trash2, Users, Edit, UserCheck } from 'lucide-react';
 import { useCells } from '@/hooks/useCells';
 import { EditCellDialog } from './EditCellDialog';
+import { CellModal } from './CellModal';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 export const CellsList = () => {
   const { cells, loading, deleteCell, fetchCells } = useCells();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingCell, setEditingCell] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedCell, setSelectedCell] = useState<any>(null);
+  const [cellModalOpen, setCellModalOpen] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   console.log('CellsList: Estado atual:', { 
     cellsCount: cells.length, 
     loading, 
-    cells: cells.slice(0, 3) // Mostrar apenas as primeiras 3 para debug
+    cells: cells.slice(0, 3)
   });
 
   const handleDelete = async (id: string, name: string) => {
@@ -47,14 +48,9 @@ export const CellsList = () => {
     }
   };
 
-  const handleViewDetails = (cellId: string) => {
-    console.log('CellsList: Navegando para célula:', cellId);
-    navigate(`/cells/${cellId}`);
-  };
-
-  const handleAttendanceClick = (cellId: string) => {
-    console.log('CellsList: Navegando para controle de presença:', cellId);
-    navigate(`/cells/${cellId}/attendance`);
+  const handleCellClick = (cell: any) => {
+    setSelectedCell(cell);
+    setCellModalOpen(true);
   };
 
   const handleEditCell = (cell: any) => {
@@ -66,6 +62,7 @@ export const CellsList = () => {
     fetchCells();
     setEditDialogOpen(false);
     setEditingCell(null);
+    setCellModalOpen(false);
   };
 
   const getWeekDayName = (day: number) => {
@@ -119,98 +116,100 @@ export const CellsList = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Lista de Células ({cells.length})</CardTitle>
-        <CardDescription>
-          Gerencie todas as células da igreja
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cells.map((cell) => (
-            <Card key={cell.id} className="border border-gray-200 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Home className="h-4 w-4 text-blue-600" />
-                      {cell.name}
-                    </CardTitle>
-                    <Badge variant={cell.active ? "default" : "secondary"} className="mt-1">
-                      {cell.active ? 'Ativa' : 'Inativa'}
-                    </Badge>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Células ({cells.length})</CardTitle>
+          <CardDescription>
+            Clique em uma célula para ver detalhes, estatísticas e controle de presença
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cells.map((cell) => (
+              <Card 
+                key={cell.id} 
+                className="border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-blue-300"
+                onClick={() => handleCellClick(cell)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg flex items-center gap-2 mb-2">
+                        <Home className="h-5 w-5 text-blue-600" />
+                        {cell.name}
+                      </CardTitle>
+                      <Badge variant={cell.active ? "default" : "secondary"} className="mb-2">
+                        {cell.active ? 'Ativa' : 'Inativa'}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCell(cell)}
+                        title="Editar célula"
+                      >
+                        <Edit className="h-4 w-4 text-orange-500" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(cell.id, cell.name)}
+                        disabled={deletingId === cell.id}
+                        title="Excluir célula"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetails(cell.id)}
-                      title="Ver detalhes"
-                    >
-                      <Eye className="h-4 w-4 text-blue-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleAttendanceClick(cell.id)}
-                      title="Controle de presença"
-                    >
-                      <UserCheck className="h-4 w-4 text-green-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditCell(cell)}
-                      title="Editar célula"
-                    >
-                      <Users className="h-4 w-4 text-orange-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(cell.id, cell.name)}
-                      disabled={deletingId === cell.id}
-                      title="Excluir célula"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2 text-gray-600">
+                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{cell.address}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm">
+                        {getWeekDayName(cell.meeting_day)} às {formatTime(cell.meeting_time)}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-gray-100">
+                      <p className="text-xs text-blue-600 font-medium">
+                        👆 Clique para ver detalhes e controle de presença
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin className="h-4 w-4" />
-                    <span className="truncate">{cell.address}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {getWeekDayName(cell.meeting_day)} às {formatTime(cell.meeting_time)}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    Clique nos ícones para gerenciar a célula
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-        {editingCell && (
-          <EditCellDialog
-            cell={editingCell}
-            isOpen={editDialogOpen}
+          {editingCell && (
+            <EditCellDialog
+              cell={editingCell}
+              isOpen={editDialogOpen}
+              onClose={() => {
+                setEditDialogOpen(false);
+                setEditingCell(null);
+              }}
+              onCellUpdated={handleCellUpdated}
+            />
+          )}
+
+          <CellModal
+            cell={selectedCell}
+            isOpen={cellModalOpen}
             onClose={() => {
-              setEditDialogOpen(false);
-              setEditingCell(null);
+              setCellModalOpen(false);
+              setSelectedCell(null);
             }}
             onCellUpdated={handleCellUpdated}
           />
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
 };
