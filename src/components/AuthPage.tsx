@@ -107,7 +107,8 @@ export const AuthPage = () => {
   const logoUrl = config.site_logo?.url;
   const logoAlt = config.site_logo?.alt || 'Logo';
   if (configLoading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-6">
@@ -119,30 +120,49 @@ export const AuthPage = () => {
             </div>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/50 via-black to-gray-900/50"></div>
       <div className="absolute inset-0" style={{
-      backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%)'
-    }}></div>
+        backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%)'
+      }}></div>
       
       <div className="w-full max-w-md relative z-10">
         {/* Logo e Título no Topo */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-4 mb-8">
-            {logoUrl ? <div className="relative group">
+            {logoUrl ? (
+              <div className="relative group">
                 <div className="absolute -inset-2 bg-gradient-to-r from-white/20 to-gray-300/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
                 <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
-                  <img src={logoUrl} alt={logoAlt} className="w-full h-full object-contain" onError={e => {
-                e.currentTarget.style.display = 'none';
-              }} />
+                  <img 
+                    src={logoUrl} 
+                    alt={logoAlt} 
+                    className="w-full h-full object-contain" 
+                    onError={(e) => {
+                      console.error('Erro ao carregar logo na página de login:', logoUrl);
+                      e.currentTarget.style.display = 'none';
+                    }} 
+                    onLoad={() => {
+                      console.log('Logo carregado com sucesso na página de login:', logoUrl);
+                    }}
+                  />
                 </div>
-              </div> : <div className="relative group">
+              </div>
+            ) : (
+              <div className="relative group">
                 <div className="absolute -inset-2 bg-gradient-to-r from-white/20 to-gray-300/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
-                
-              </div>}
+                <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
+                  <span className="text-2xl font-bold text-white">
+                    {(config.church_name?.text || displayTitle).charAt(0)}
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="text-left">
               <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
                 {config.church_name?.text || displayTitle}
@@ -256,5 +276,6 @@ export const AuthPage = () => {
           </p>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };

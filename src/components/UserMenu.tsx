@@ -59,10 +59,12 @@ export const UserMenu = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
-          <Avatar className="h-8 w-8">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:bg-gray-100">
+          <Avatar className="h-10 w-10 border-2 border-gray-200">
             <AvatarImage src={userProfile?.photo_url} alt={userProfile?.name || 'User'} />
-            <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
+            <AvatarFallback className="text-sm font-semibold bg-blue-100 text-blue-700">
+              {getUserInitials()}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

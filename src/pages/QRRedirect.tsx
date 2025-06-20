@@ -46,6 +46,28 @@ export const QRRedirect = () => {
             return;
           }
 
+          // Registrar o scan do evento
+          try {
+            const response = await fetch('/api/track-qr-scan', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                eventId: evento,
+                keyword: cod || eventData.keyword
+              }),
+            });
+
+            if (!response.ok) {
+              console.warn('Erro ao registrar scan do evento:', response.statusText);
+            } else {
+              console.log('Scan do evento registrado com sucesso');
+            }
+          } catch (trackError) {
+            console.warn('Erro ao chamar função de tracking:', trackError);
+          }
+
           // Evento válido, redirecionar com parâmetros corretos
           const redirectUrl = `/form?evento=${evento}&cod=${cod || keyword || eventData.keyword}`;
           console.log('QRRedirect: Redirecionando para evento válido:', redirectUrl);
@@ -73,6 +95,27 @@ export const QRRedirect = () => {
             console.log('QRRedirect: QR code inativo');
             navigate('/form?error=codigo_inativo', { replace: true });
             return;
+          }
+
+          // Registrar o scan do QR code
+          try {
+            const response = await fetch('/api/track-qr-scan', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                keyword: keyword
+              }),
+            });
+
+            if (!response.ok) {
+              console.warn('Erro ao registrar scan do QR code:', response.statusText);
+            } else {
+              console.log('Scan do QR code registrado com sucesso');
+            }
+          } catch (trackError) {
+            console.warn('Erro ao chamar função de tracking:', trackError);
           }
 
           // QR code válido
