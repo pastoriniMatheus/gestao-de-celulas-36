@@ -71,6 +71,8 @@ export const useLeaderCells = () => {
   };
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (!permissions.userProfile?.id) {
       setLoading(false);
       return;
@@ -82,14 +84,12 @@ export const useLeaderCells = () => {
     }
 
     console.log('useLeaderCells: Initializing for user:', permissions.userProfile.id);
-    mountedRef.current = true;
     fetchCells();
 
     return () => {
-      console.log('useLeaderCells: Cleaning up...');
       mountedRef.current = false;
     };
-  }, [permissions.userProfile?.id, permissions.isLeader]);
+  }, [permissions.userProfile?.id, permissions.isLeader, permissions.isAdmin]);
 
   return {
     cells,
