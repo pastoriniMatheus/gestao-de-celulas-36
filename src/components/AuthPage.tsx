@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -152,14 +151,14 @@ export const AuthPage = () => {
                 <div className="absolute -inset-2 bg-gradient-to-r from-white/20 to-gray-300/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
                 <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
                   <span className="text-white font-bold text-2xl">
-                    {displayTitle.charAt(0)}
+                    {config.church_name?.text || displayTitle.charAt(0)}
                   </span>
                 </div>
               </div>
             )}
             <div className="text-left">
               <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
-                {displayTitle}
+                {config.church_name?.text || displayTitle}
               </h1>
               <p className="text-lg text-gray-300">Sistema de Gestão</p>
             </div>
@@ -329,7 +328,7 @@ export const AuthPage = () => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-400">
-            © {new Date().getFullYear()} {displayTitle}. Todos os direitos reservados.
+            © {new Date().getFullYear()} {config.church_name?.text || displayTitle}. Todos os direitos reservados.
           </p>
         </div>
       </div>
