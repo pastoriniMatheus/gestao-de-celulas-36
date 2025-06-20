@@ -21,23 +21,21 @@ export const useCells = () => {
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
-  const subscriptionSetupRef = useRef(false);
-  const hookIdRef = useRef(Math.random().toString(36).substr(2, 9));
 
   const fetchCells = async () => {
     try {
       setLoading(true);
-      console.log(`useCells [${hookIdRef.current}]: Iniciando busca de células...`);
+      console.log('useCells: Fetching cells...');
       
       const { data, error } = await supabase
         .from('cells')
         .select('*')
         .order('name');
 
-      console.log(`useCells [${hookIdRef.current}]: Resposta do Supabase:`, { data, error });
+      console.log('useCells: Supabase response:', { data, error });
 
       if (error) {
-        console.error(`useCells [${hookIdRef.current}]: Erro ao buscar células:`, error);
+        console.error('useCells: Error fetching cells:', error);
         toast({
           title: "Erro",
           description: `Erro ao carregar células: ${error.message}`,
@@ -46,13 +44,13 @@ export const useCells = () => {
         return;
       }
 
-      console.log(`useCells [${hookIdRef.current}]: Células encontradas:`, data?.length || 0, data);
+      console.log('useCells: Cells found:', data?.length || 0);
       
       if (mountedRef.current) {
         setCells(data || []);
       }
     } catch (error) {
-      console.error(`useCells [${hookIdRef.current}]: Erro inesperado ao buscar células:`, error);
+      console.error('useCells: Unexpected error:', error);
       if (mountedRef.current) {
         toast({
           title: "Erro",
@@ -69,7 +67,7 @@ export const useCells = () => {
 
   const addCell = async (cellData: Omit<Cell, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log(`useCells [${hookIdRef.current}]: Criando nova célula:`, cellData);
+      console.log('useCells: Creating new cell:', cellData);
       
       const { data, error } = await supabase
         .from('cells')
@@ -78,11 +76,11 @@ export const useCells = () => {
         .single();
 
       if (error) {
-        console.error(`useCells [${hookIdRef.current}]: Erro ao criar célula:`, error);
+        console.error('useCells: Error creating cell:', error);
         throw error;
       }
 
-      console.log(`useCells [${hookIdRef.current}]: Célula criada com sucesso:`, data);
+      console.log('useCells: Cell created successfully:', data);
       
       if (mountedRef.current) {
         setCells(prev => [...prev, data]);
@@ -95,14 +93,14 @@ export const useCells = () => {
       
       return data;
     } catch (error) {
-      console.error(`useCells [${hookIdRef.current}]: Erro ao criar célula:`, error);
+      console.error('useCells: Error creating cell:', error);
       throw error;
     }
   };
 
   const updateCell = async (id: string, updates: Partial<Cell>) => {
     try {
-      console.log(`useCells [${hookIdRef.current}]: Atualizando célula:`, { id, updates });
+      console.log('useCells: Updating cell:', { id, updates });
       
       const { data, error } = await supabase
         .from('cells')
@@ -112,11 +110,11 @@ export const useCells = () => {
         .single();
 
       if (error) {
-        console.error(`useCells [${hookIdRef.current}]: Erro ao atualizar célula:`, error);
+        console.error('useCells: Error updating cell:', error);
         throw error;
       }
 
-      console.log(`useCells [${hookIdRef.current}]: Célula atualizada com sucesso:`, data);
+      console.log('useCells: Cell updated successfully:', data);
       
       if (mountedRef.current) {
         setCells(prev => prev.map(cell => cell.id === id ? data : cell));
@@ -129,14 +127,14 @@ export const useCells = () => {
       
       return data;
     } catch (error) {
-      console.error(`useCells [${hookIdRef.current}]: Erro ao atualizar célula:`, error);
+      console.error('useCells: Error updating cell:', error);
       throw error;
     }
   };
 
   const deleteCell = async (id: string) => {
     try {
-      console.log(`useCells [${hookIdRef.current}]: Deletando célula:`, id);
+      console.log('useCells: Deleting cell:', id);
       
       const { error } = await supabase
         .from('cells')
@@ -144,11 +142,11 @@ export const useCells = () => {
         .eq('id', id);
 
       if (error) {
-        console.error(`useCells [${hookIdRef.current}]: Erro ao deletar célula:`, error);
+        console.error('useCells: Error deleting cell:', error);
         throw error;
       }
 
-      console.log(`useCells [${hookIdRef.current}]: Célula deletada com sucesso`);
+      console.log('useCells: Cell deleted successfully');
       
       if (mountedRef.current) {
         setCells(prev => prev.filter(cell => cell.id !== id));
@@ -159,91 +157,66 @@ export const useCells = () => {
         description: "Célula deletada com sucesso!"
       });
     } catch (error) {
-      console.error(`useCells [${hookIdRef.current}]: Erro ao deletar célula:`, error);
+      console.error('useCells: Error deleting cell:', error);
       throw error;
     }
   };
 
   useEffect(() => {
     mountedRef.current = true;
-    console.log(`useCells [${hookIdRef.current}]: Inicializando hook...`);
+    console.log('useCells: Initializing hook...');
     
     // Fetch initial data
     fetchCells();
 
-    // Setup subscription only once with proper cleanup
+    // Setup realtime subscription
     const setupSubscription = () => {
-      if (subscriptionSetupRef.current) {
-        console.log(`useCells [${hookIdRef.current}]: Subscription already setup, skipping...`);
-        return;
+      // Clean up existing channel first
+      if (channelRef.current) {
+        console.log('useCells: Cleaning up existing channel...');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
 
-      try {
-        // Clean up existing channel first
-        if (channelRef.current) {
-          console.log(`useCells [${hookIdRef.current}]: Limpando canal anterior...`);
-          try {
-            supabase.removeChannel(channelRef.current);
-          } catch (cleanupError) {
-            console.warn(`useCells [${hookIdRef.current}]: Erro ao limpar canal anterior:`, cleanupError);
+      // Create new channel with unique name
+      const channelName = `cells-realtime-${Date.now()}-${Math.random()}`;
+      console.log('useCells: Creating channel:', channelName);
+      
+      const channel = supabase.channel(channelName);
+      channelRef.current = channel;
+
+      // Subscribe to changes
+      channel
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'cells' },
+          (payload) => {
+            if (!mountedRef.current) return;
+            
+            console.log('useCells: Realtime update:', payload);
+            // Refetch data to ensure consistency
+            fetchCells();
           }
-          channelRef.current = null;
-        }
-
-        const channelName = `cells-realtime-${hookIdRef.current}-${Date.now()}`;
-        console.log(`useCells [${hookIdRef.current}]: Criando canal:`, channelName);
-        
-        const channel = supabase.channel(channelName);
-        channelRef.current = channel;
-
-        channel
-          .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'cells' },
-            (payload) => {
-              if (!mountedRef.current) return;
-              
-              console.log(`useCells [${hookIdRef.current}]: Atualização em tempo real:`, payload);
-              // Fetch fresh data instead of trying to update state directly
-              fetchCells();
-            }
-          )
-          .subscribe((status) => {
-            console.log(`useCells [${hookIdRef.current}]: Status da inscrição:`, status);
-            if (status === 'SUBSCRIBED') {
-              subscriptionSetupRef.current = true;
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error(`useCells [${hookIdRef.current}]: Erro no canal, tentando reconectar...`);
-              subscriptionSetupRef.current = false;
-              // Don't automatically retry to avoid infinite loops
-            }
-          });
-
-      } catch (error) {
-        console.error(`useCells [${hookIdRef.current}]: Erro ao configurar inscrição:`, error);
-        subscriptionSetupRef.current = false;
-      }
+        )
+        .subscribe((status) => {
+          console.log('useCells: Subscription status:', status);
+        });
     };
 
-    // Delay subscription setup to avoid race conditions
+    // Setup subscription with a small delay to avoid race conditions
     const timeoutId = setTimeout(setupSubscription, 100);
 
     return () => {
-      console.log(`useCells [${hookIdRef.current}]: Limpando hook...`);
+      console.log('useCells: Cleaning up hook...');
       clearTimeout(timeoutId);
       mountedRef.current = false;
-      subscriptionSetupRef.current = false;
       
       if (channelRef.current) {
-        console.log(`useCells [${hookIdRef.current}]: Removendo canal...`);
-        try {
-          supabase.removeChannel(channelRef.current);
-        } catch (cleanupError) {
-          console.warn(`useCells [${hookIdRef.current}]: Erro ao remover canal:`, cleanupError);
-        }
+        console.log('useCells: Removing channel...');
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, []); // Empty dependency array to run only once
+  }, []); // Empty dependency array - run only once
 
   return {
     cells,
