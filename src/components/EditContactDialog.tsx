@@ -19,9 +19,10 @@ interface EditContactDialogProps {
   onOpenChange: (open: boolean) => void;
   contact: any;
   context?: 'cell' | 'contacts';
+  onContactUpdated?: () => void;
 }
 
-export function EditContactDialog({ open, onOpenChange, contact, context = 'contacts' }: EditContactDialogProps) {
+export function EditContactDialog({ open, onOpenChange, contact, context = 'contacts', onContactUpdated }: EditContactDialogProps) {
   const { updateContact } = useContacts();
   const { neighborhoods, cities } = useContactDialogData(open);
   const { cells, fetchCells } = useCells();
@@ -101,6 +102,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       console.log('EditContactDialog: Dados de atualização:', updateData);
       
       await updateContact(contact.id, updateData);
+      
+      // Call the callback if provided
+      if (onContactUpdated) {
+        onContactUpdated();
+      }
+      
       onOpenChange(false);
     } catch (error) {
       console.error('EditContactDialog: Erro ao atualizar contato:', error);
@@ -122,6 +129,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       await updateContact(contact.id, {
         status: 'member'
       });
+      
+      // Call the callback if provided
+      if (onContactUpdated) {
+        onContactUpdated();
+      }
       
       onOpenChange(false);
     } catch (error) {
@@ -145,6 +157,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         cell_id: form.cell_id || null,
         status: form.cell_id ? 'member' : 'pending' // Ajustar status baseado na célula
       });
+      
+      // Call the callback if provided
+      if (onContactUpdated) {
+        onContactUpdated();
+      }
+      
       onOpenChange(false);
     } catch (error) {
       console.error('EditContactDialog: Erro ao transferir célula:', error);
