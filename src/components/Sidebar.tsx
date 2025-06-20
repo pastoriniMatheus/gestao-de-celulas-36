@@ -137,7 +137,7 @@ const Sidebar = () => {
                   </span>
                 </div>
               )}
-              <h1 className="text-xl font-bold text-gray-800">Gestão Celular</h1>
+              <h1 className="text-xl font-bold text-gray-800">
 
 
 
@@ -148,7 +148,7 @@ const Sidebar = () => {
           <div className="hidden sm:block">
             <h1 className="text-lg md:text-xl font-bold text-gray-900">{churchName}</h1>
             <p className="text-xs md:text-sm text-gray-600">Sistema de Gestão</p>
-          </div>
+          </div></h1>
 
 
 
