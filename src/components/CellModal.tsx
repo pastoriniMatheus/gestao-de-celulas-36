@@ -11,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { Cell } from '@/hooks/useCells';
 import { EditContactDialog } from './EditContactDialog';
 import QRCode from 'qrcode.react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface Contact {
   id: string;
@@ -98,10 +98,10 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
   };
 
   const generateWeeklyStats = (attendancesData: Attendance[]) => {
-    const last4Weeks = [];
+    const last8Weeks = [];
     const now = new Date();
     
-    for (let i = 3; i >= 0; i--) {
+    for (let i = 7; i >= 0; i--) {
       const weekStart = new Date(now);
       weekStart.setDate(now.getDate() - (i * 7) - now.getDay());
       const weekEnd = new Date(weekStart);
@@ -109,18 +109,21 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
       
       const weekAttendances = attendancesData.filter(att => {
         const attDate = new Date(att.attendance_date);
-        return attDate >= weekStart && attDate <= weekEnd;
+        return attDate >= weekStart && attDate <= weekEnd && att.present;
       });
       
-      const presentCount = weekAttendances.filter(att => att.present).length;
+      const membersCount = weekAttendances.filter(att => !att.visitor).length;
+      const visitorsCount = weekAttendances.filter(att => att.visitor).length;
       
-      last4Weeks.push({
-        week: `Semana ${52 - i}/2025`,
-        presentes: presentCount
+      last8Weeks.push({
+        semana: `${weekStart.getDate()}/${weekStart.getMonth() + 1}`,
+        Membros: membersCount,
+        Visitantes: visitorsCount,
+        Total: membersCount + visitorsCount
       });
     }
     
-    setWeeklyStats(last4Weeks);
+    setWeeklyStats(last8Weeks);
   };
 
   const addVisitor = async () => {
@@ -242,16 +245,11 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
   const visitorsToday = todayAttendances.filter(att => att.visitor && att.present).length;
   const totalMembers = contacts.filter(c => c.status !== 'visitor').length;
 
-  const getWeekDayName = (day: number) => {
-    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    return days[day] || 'N/A';
-  };
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Users className="h-6 w-6 text-blue-600" />
               {cell.name}
@@ -259,7 +257,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
             <p className="text-sm text-gray-600">{cell.address}</p>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto space-y-6 pr-2">
             {/* Estatísticas principais */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
@@ -304,18 +302,32 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Frequência Semanal
+                  Comparativo de Frequência - Membros vs Visitantes
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={weeklyStats}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={weeklyStats}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="week" />
+                    <XAxis dataKey="semana" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="presentes" fill="#3B82F6" />
-                  </BarChart>
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Membros" 
+                      stroke="#3B82F6" 
+                      strokeWidth={3}
+                      dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Visitantes" 
+                      stroke="#F59E0B" 
+                      strokeWidth={3}
+                      dot={{ fill: '#F59E0B', strokeWidth: 2, r: 4 }}
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>

@@ -1,99 +1,29 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, MapPin, Phone, User, Home, Calendar } from 'lucide-react';
-import { useLeaderContacts } from '@/hooks/useLeaderContacts';
-import { useLeaderCells } from '@/hooks/useLeaderCells';
+import { useContacts } from '@/hooks/useContacts';
+import { useCells } from '@/hooks/useCells';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { useEffect, useMemo, useState as useReactState } from 'react';
 
-// Buscar os líderes pelo id
-const useCellLeaders = (cells) => {
-  const leaderIds = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          cells.filter((c) => c.leader_id).map((c) => c.leader_id)
-        )
-      ),
-    [cells]
-  );
-  const [leaders, setLeaders] = useReactState<{ [id: string]: any }>({});
-  useEffect(() => {
-    const fetchLeaders = async () => {
-      if (leaderIds.length === 0) return setLeaders({});
-      const ids = leaderIds as string[];
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .in('id', ids);
-      if (!error && data) {
-        const obj = {};
-        data.forEach((profile) => (obj[profile.id] = profile));
-        setLeaders(obj);
-      }
-    };
-    fetchLeaders();
-  }, [leaderIds]);
-  return leaders;
-};
-
 export const PendingContactsManager = () => {
-  const { contacts, fetchContacts } = useLeaderContacts();
-  const { cells, loading: cellsLoading } = useLeaderCells();
+  const { contacts, updateContact } = useContacts();
+  const { cells, loading: cellsLoading } = useCells();
   const permissions = useUserPermissions();
-  const { toast } = useToast();
   const [updating, setUpdating] = useState<string | null>(null);
 
-  // Buscamos os líderes via hook
-  const cellLeaders = useCellLeaders(cells);
-
   // Filtrar contatos pendentes (sem célula atribuída)
-  // Para líderes, mostrar apenas contatos sem célula que são do seu bairro/região
   const pendingContacts = contacts.filter(contact => 
     contact.status === 'pending' && !contact.cell_id
   );
 
   // Filtrar apenas células ativas (para líderes, apenas suas células)
   const activeCells = cells.filter(cell => cell.active);
-
-  // Buscar bairros das células por neighborhood_id, e nomes dos bairros
-  const [neighborhoods, setNeighborhoods] = useReactState<{ [id: string]: string }>({});
-  useEffect(() => {
-    const fetchNeighborhoods = async () => {
-      const ids = Array.from(new Set(activeCells.map(cell => cell.neighborhood_id).filter(Boolean)));
-      if (ids.length === 0) return setNeighborhoods({});
-      const { data, error } = await supabase
-        .from('neighborhoods')
-        .select('id, name')
-        .in('id', ids);
-      if (!error && data) {
-        const obj = {};
-        data.forEach(n => { obj[n.id] = n.name; });
-        setNeighborhoods(obj);
-      }
-    };
-    fetchNeighborhoods();
-  }, [activeCells.map(c => c.neighborhood_id).join(',')]);
-
-  // Agrupar células por bairro
-  const groupedCellsByNeighborhood: Record<string, typeof activeCells> = useMemo(() => {
-    const groups: Record<string, typeof activeCells> = {};
-    for (const cell of activeCells) {
-      const neighborhoodLabel = cell.neighborhood_id
-        ? (neighborhoods[cell.neighborhood_id] ?? 'Outro')
-        : 'Outro';
-      if (!groups[neighborhoodLabel]) {
-        groups[neighborhoodLabel] = [];
-      }
-      groups[neighborhoodLabel].push(cell);
-    }
-    return groups;
-  }, [activeCells, neighborhoods]);
 
   const handleAssignCell = async (contactId: string, cellId: string) => {
     if (!cellId || cellId === 'no-cell') return;
@@ -115,31 +45,16 @@ export const PendingContactsManager = () => {
     try {
       console.log('PendingContactsManager: Atribuindo contato à célula:', { contactId, cellId });
       
-      const { error } = await supabase
-        .from('contacts')
-        .update({ 
-          cell_id: cellId,
-          status: 'member'
-        })
-        .eq('id', contactId);
-
-      if (error) {
-        console.error('PendingContactsManager: Erro ao atribuir célula:', error);
-        toast({
-          title: "Erro",
-          description: `Erro ao atribuir célula: ${error.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
+      await updateContact(contactId, { 
+        cell_id: cellId,
+        status: 'member'
+      });
 
       console.log('PendingContactsManager: Contato atribuído com sucesso');
       toast({
         title: "Sucesso",
         description: "Contato atribuído à célula com sucesso!"
       });
-
-      await fetchContacts();
     } catch (error: any) {
       console.error('PendingContactsManager: Erro inesperado:', error);
       toast({
@@ -258,37 +173,27 @@ export const PendingContactsManager = () => {
                             <SelectTrigger className="flex-1">
                               <SelectValue placeholder="Selecione uma célula" />
                             </SelectTrigger>
-                            <SelectContent className="z-[50] bg-white border rounded shadow-lg">
+                            <SelectContent className="z-[50] bg-white border rounded shadow-lg max-h-60 overflow-y-auto">
                               <SelectItem value="none">Nenhuma</SelectItem>
-                              {Object.entries(groupedCellsByNeighborhood).map(([neighborhood, cellsArr]) => (
-                                <div key={neighborhood}>
-                                  <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b">
-                                    {neighborhood}
+                              {activeCells.map((cell) => (
+                                <SelectItem key={cell.id} value={cell.id} className="py-2">
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-sm flex gap-1 items-center">
+                                      <Home className="h-3 w-3 mr-1 text-blue-400" />
+                                      {cell.name}
+                                    </span>
+                                    <span className="text-xs text-gray-500 ml-5">{cell.address}</span>
                                   </div>
-                                  {cellsArr.map((cell) => (
-                                    <SelectItem key={cell.id} value={cell.id} className="pt-2 pb-1">
-                                      <div className="flex flex-col">
-                                        <span className="font-semibold text-sm flex gap-1 items-center">
-                                          <Home className="h-3 w-3 mr-1 text-blue-400" />
-                                          {cell.name}
-                                        </span>
-                                        <span className="text-xs text-gray-500 ml-5">{cell.address}</span>
-                                        {cell.leader_id && cellLeaders[cell.leader_id] && (
-                                          <span className="text-xs text-purple-700 ml-5 flex items-center gap-1">
-                                            <User className="h-3 w-3" /> 
-                                            {cellLeaders[cell.leader_id].name}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </div>
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                         {updating === contact.id && (
-                          <p className="text-xs text-blue-600">Atualizando...</p>
+                          <div className="flex items-center gap-2 text-xs text-blue-600">
+                            <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent"></div>
+                            Atribuindo...
+                          </div>
                         )}
                         {activeCells.length === 0 && (
                           <p className="text-xs text-red-600">

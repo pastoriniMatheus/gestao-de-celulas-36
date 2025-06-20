@@ -1,3 +1,4 @@
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Cell } from "@/hooks/useCells";
@@ -51,6 +52,7 @@ export const EditCellDialog = ({
 
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchLeaders = async () => {
@@ -88,9 +90,11 @@ export const EditCellDialog = ({
       }
     };
 
-    fetchLeaders();
-    fetchNeighborhoods();
-  }, []);
+    if (isOpen) {
+      fetchLeaders();
+      fetchNeighborhoods();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (cell) {
@@ -116,55 +120,118 @@ export const EditCellDialog = ({
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    
+    if (!formState.name?.trim()) {
+      toast({ 
+        title: "Erro",
+        description: "Nome da célula é obrigatório.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!formState.address?.trim()) {
+      toast({ 
+        title: "Erro",
+        description: "Endereço da célula é obrigatório.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!formState.leader_id) {
-      toast({ title: "Selecione o líder da célula." });
+      toast({ 
+        title: "Erro",
+        description: "Selecione o líder da célula.",
+        variant: "destructive"
+      });
       return;
     }
+    
     if (!formState.neighborhood_id) {
-      toast({ title: "Selecione o bairro da célula." });
+      toast({ 
+        title: "Erro",
+        description: "Selecione o bairro da célula.",
+        variant: "destructive"
+      });
       return;
     }
+    
     if (
       formState.meeting_day === undefined ||
       formState.meeting_day === null ||
       String(formState.meeting_day) === ""
     ) {
-      toast({ title: "Informe o dia da reunião." });
+      toast({ 
+        title: "Erro",
+        description: "Informe o dia da reunião.",
+        variant: "destructive"
+      });
       return;
     }
+    
     if (!formState.meeting_time) {
-      toast({ title: "Informe o horário da reunião." });
+      toast({ 
+        title: "Erro",
+        description: "Informe o horário da reunião.",
+        variant: "destructive"
+      });
       return;
     }
 
-    const { data, error } = await supabase
-      .from("cells")
-      .update({
-        ...formState,
-        meeting_day: Number(formState.meeting_day),
-      })
-      .eq("id", cell.id)
-      .select()
-      .single();
+    setSaving(true);
+    try {
+      console.log('EditCellDialog: Atualizando célula:', formState);
+      
+      const { data, error } = await supabase
+        .from("cells")
+        .update({
+          name: formState.name,
+          address: formState.address,
+          leader_id: formState.leader_id,
+          neighborhood_id: formState.neighborhood_id,
+          active: formState.active,
+          meeting_day: Number(formState.meeting_day),
+          meeting_time: formState.meeting_time,
+        })
+        .eq("id", cell.id)
+        .select()
+        .single();
 
-    if (error) {
+      if (error) {
+        console.error('EditCellDialog: Erro ao atualizar célula:', error);
+        toast({
+          title: "Erro ao atualizar a célula.",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('EditCellDialog: Célula atualizada com sucesso:', data);
+      
       toast({
-        title: "Erro ao atualizar a célula.",
-        description: error.message,
-        variant: "destructive",
+        title: "Sucesso",
+        description: "Célula atualizada com sucesso!",
       });
-    } else {
-      toast({
-        title: "Célula atualizada com sucesso!",
-      });
+      
       onCellUpdated(data);
       onClose();
+    } catch (error: any) {
+      console.error('EditCellDialog: Erro inesperado:', error);
+      toast({
+        title: "Erro inesperado",
+        description: error?.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle>Editar Célula</AlertDialogTitle>
           <AlertDialogDescription>
@@ -173,23 +240,25 @@ export const EditCellDialog = ({
         </AlertDialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="name">Nome</Label>
+            <Label htmlFor="name">Nome *</Label>
             <Input
               type="text"
               id="name"
               name="name"
               value={formState.name || ""}
               onChange={handleChange}
+              required
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="address">Endereço</Label>
+            <Label htmlFor="address">Endereço *</Label>
             <Input
               type="text"
               id="address"
               name="address"
               value={formState.address || ""}
               onChange={handleChange}
+              required
             />
           </div>
           <div>
@@ -199,7 +268,7 @@ export const EditCellDialog = ({
               name="leader_id"
               value={formState.leader_id || ""}
               onChange={handleChange}
-              className="input w-full border rounded px-2 py-2 bg-white"
+              className="w-full border rounded px-3 py-2 bg-white"
             >
               <option value="" disabled>
                 Selecione um líder
@@ -218,7 +287,7 @@ export const EditCellDialog = ({
               name="neighborhood_id"
               value={formState.neighborhood_id || ""}
               onChange={handleChange}
-              className="input w-full border rounded px-2 py-2 bg-white"
+              className="w-full border rounded px-3 py-2 bg-white"
             >
               <option value="" disabled>
                 Selecione um bairro
@@ -242,7 +311,7 @@ export const EditCellDialog = ({
               }
               onChange={handleChange}
               required
-              className="input w-full border rounded px-2 py-2 bg-white"
+              className="w-full border rounded px-3 py-2 bg-white"
             >
               <option value="" disabled>
                 Selecione o dia da semana
@@ -268,18 +337,21 @@ export const EditCellDialog = ({
             />
           </div>
           <div className="flex items-center space-x-2">
-            <Input
+            <input
               type="checkbox"
               id="active"
               name="active"
               checked={formState.active || false}
               onChange={handleChange}
+              className="w-4 h-4"
             />
             <Label htmlFor="active">Ativo</Label>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction type="submit">Salvar</AlertDialogAction>
+            <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction type="submit" disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </form>
       </AlertDialogContent>
