@@ -98,16 +98,21 @@ export const AuthPage = () => {
     }
   };
 
+  // Usar configurações do sistema ou fallbacks
+  const displayTitle = config.church_name?.text || config.form_title?.text || 'Sistema de Células';
+  const logoUrl = config.site_logo?.url;
+  const logoAlt = config.site_logo?.alt || 'Logo';
+
   if (configLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+            <div className="inline-flex items-center gap-3 mb-6">
+              <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse"></div>
               <div>
-                <div className="w-32 h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-40 h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="w-32 h-5 bg-gray-200 rounded animate-pulse"></div>
               </div>
             </div>
           </div>
@@ -116,68 +121,77 @@ export const AuthPage = () => {
     );
   }
 
-  // Usar configurações do sistema ou fallbacks
-  const displayTitle = config.church_name?.text || config.form_title?.text || 'Sistema de Células';
-  const logoUrl = config.site_logo?.url;
-  const logoAlt = config.site_logo?.alt || 'Logo';
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Logo e Título */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
+          <div className="inline-flex items-center gap-4 mb-6">
             {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt={logoAlt}
-                className="w-12 h-12 object-contain"
-              />
+              <div className="relative">
+                <img 
+                  src={logoUrl} 
+                  alt={logoAlt}
+                  className="w-16 h-16 object-contain rounded-xl shadow-lg bg-white p-2"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl"></div>
+              </div>
             ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-2xl">
                   {displayTitle.charAt(0)}
                 </span>
               </div>
             )}
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+            <div className="text-left">
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">
                 {displayTitle}
               </h1>
-              <p className="text-sm text-gray-600">Sistema de Gestão de Células</p>
+              <p className="text-lg text-gray-600">Sistema de Gestão</p>
             </div>
           </div>
+          <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mx-auto"></div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Acesso ao Sistema</CardTitle>
-            <CardDescription>
+        {/* Card de Login */}
+        <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="text-center pb-6">
+            <CardTitle className="text-2xl text-gray-800">Acesso ao Sistema</CardTitle>
+            <CardDescription className="text-gray-600">
               Entre com sua conta ou crie uma nova para começar
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Criar Conta</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Entrar
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Criar Conta
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-email" className="text-gray-700">Email</Label>
                     <Input
                       id="login-email"
                       type="email"
                       value={loginData.email}
                       onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="seu@email.com"
+                      className="h-11 bg-white/80"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="login-password">Senha</Label>
+                    <Label htmlFor="login-password" className="text-gray-700">Senha</Label>
                     <div className="relative">
                       <Input
                         id="login-password"
@@ -185,6 +199,7 @@ export const AuthPage = () => {
                         value={loginData.password}
                         onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                         placeholder="Sua senha"
+                        className="h-11 bg-white/80 pr-10"
                         required
                       />
                       <Button
@@ -203,7 +218,11 @@ export const AuthPage = () => {
                     </div>
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold" 
+                    disabled={loading}
+                  >
                     {loading ? 'Entrando...' : 'Entrar'}
                   </Button>
                 </form>
@@ -212,30 +231,32 @@ export const AuthPage = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div>
-                    <Label htmlFor="signup-name">Nome Completo</Label>
+                    <Label htmlFor="signup-name" className="text-gray-700">Nome Completo</Label>
                     <Input
                       id="signup-name"
                       value={signUpData.name}
                       onChange={(e) => setSignUpData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Seu nome completo"
+                      className="h-11 bg-white/80"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-email" className="text-gray-700">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
                       value={signUpData.email}
                       onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="seu@email.com"
+                      className="h-11 bg-white/80"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="signup-password">Senha</Label>
+                    <Label htmlFor="signup-password" className="text-gray-700">Senha</Label>
                     <div className="relative">
                       <Input
                         id="signup-password"
@@ -243,6 +264,7 @@ export const AuthPage = () => {
                         value={signUpData.password}
                         onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
                         placeholder="Mínimo 6 caracteres"
+                        className="h-11 bg-white/80 pr-10"
                         required
                       />
                       <Button
@@ -262,18 +284,23 @@ export const AuthPage = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
+                    <Label htmlFor="signup-confirm-password" className="text-gray-700">Confirmar Senha</Label>
                     <Input
                       id="signup-confirm-password"
                       type="password"
                       value={signUpData.confirmPassword}
                       onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       placeholder="Confirme sua senha"
+                      className="h-11 bg-white/80"
                       required
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold" 
+                    disabled={loading}
+                  >
                     {loading ? 'Criando conta...' : 'Criar Conta'}
                   </Button>
                 </form>
@@ -281,6 +308,13 @@ export const AuthPage = () => {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Footer */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-500">
+            © {new Date().getFullYear()} {displayTitle}. Todos os direitos reservados.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -5,26 +5,47 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Eye, EyeOff, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export const AddUserDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     role: 'user'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.email || !formData.password) {
       toast({
         title: "Erro",
-        description: "Nome e email são obrigatórios.",
+        description: "Todos os campos são obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Erro",
+        description: "A senha deve ter pelo menos 6 caracteres.",
         variant: "destructive",
       });
       return;
@@ -32,32 +53,55 @@ export const AddUserDialog = () => {
 
     setLoading(true);
     try {
-      // Criar perfil diretamente na tabela profiles
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert([{
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-          active: true
-        }])
-        .select()
-        .single();
+      // Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: formData.name,
+            role: formData.role
+          }
+        }
+      });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Criar perfil na tabela profiles
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            user_id: authData.user.id,
+            name: formData.name,
+            email: formData.email,
+            role: formData.role,
+            active: true
+          }]);
+
+        if (profileError) {
+          console.error('Erro ao criar perfil:', profileError);
+        }
+      }
 
       toast({
         title: "Sucesso",
-        description: "Usuário criado com sucesso! Ele poderá fazer login usando o email cadastrado.",
+        description: "Usuário criado com sucesso! Ele pode fazer login agora.",
       });
 
-      setFormData({ name: '', email: '', role: 'user' });
+      setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'user' });
       setIsOpen(false);
+      
+      // Recarregar a página para atualizar a lista
+      window.location.reload();
     } catch (error: any) {
       console.error('Erro ao criar usuário:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao criar usuário",
+        description: error.message === 'User already registered' 
+          ? "Este email já está cadastrado" 
+          : error.message || "Erro ao criar usuário",
         variant: "destructive",
       });
     } finally {
@@ -97,6 +141,45 @@ export const AddUserDialog = () => {
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               placeholder="email@exemplo.com"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="password">Senha *</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Mínimo 6 caracteres"
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-500" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+              placeholder="Confirme a senha"
               required
             />
           </div>

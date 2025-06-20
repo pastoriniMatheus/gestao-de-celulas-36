@@ -1,23 +1,68 @@
 
-import { Button } from "@/components/ui/button";
-import { UserMenu } from "./UserMenu";
-import { useAuth } from "./AuthProvider";
-import { BirthdayNotifications } from "./BirthdayNotifications";
+import { Bell, Settings, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from './AuthProvider';
+import { UserMenu } from './UserMenu';
+import { BirthdayNotifications } from './BirthdayNotifications';
+import { useSystemConfig } from '@/hooks/useSystemConfig';
 
-interface HeaderProps {
-  title: string;
-}
+export const Header = () => {
+  const { user, userProfile, signOut } = useAuth();
+  const { config, loading: configLoading } = useSystemConfig();
 
-export const Header = ({ title }: HeaderProps) => {
-  const { user } = useAuth();
+  const handleLogout = async () => {
+    await signOut();
+  };
+
+  // Usar configurações do sistema para o logo
+  const logoUrl = config.site_logo?.url;
+  const logoAlt = config.site_logo?.alt || 'Logo';
+  const churchName = config.church_name?.text || config.form_title?.text || 'Sistema de Células';
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-        <div className="flex items-center gap-4">
-          {user && <BirthdayNotifications />}
-          <UserMenu />
+        <div className="flex items-center gap-3">
+          {configLoading ? (
+            <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+          ) : logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={logoAlt}
+              className="w-10 h-10 object-contain rounded-lg"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">
+                {churchName.charAt(0)}
+              </span>
+            </div>
+          )}
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{churchName}</h1>
+            <p className="text-sm text-gray-600">Sistema de Gestão</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <BirthdayNotifications />
+          
+          {user && (
+            <>
+              <UserMenu />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

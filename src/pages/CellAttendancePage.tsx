@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, UserCheck, UserPlus, ArrowLeft } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { UserCheck, Users, Plus, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface Cell {
   id: string;
@@ -20,7 +22,7 @@ interface Contact {
   id: string;
   name: string;
   whatsapp: string | null;
-  attendance_code: string | null;
+  cell_id: string;
 }
 
 interface Attendance {
@@ -28,41 +30,27 @@ interface Attendance {
   contact_id: string;
   present: boolean;
   visitor: boolean;
-  attendance_date: string;
 }
 
 export default function CellAttendancePage() {
   const { cellId } = useParams();
-  const navigate = useNavigate();
   const [cell, setCell] = useState<Cell | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [loading, setLoading] = useState(false);
   const [visitorName, setVisitorName] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  // Estatísticas
-  const totalMembers = contacts.length;
-  const presentToday = attendances.filter(a => a.present && a.attendance_date === selectedDate).length;
-  const visitorsToday = attendances.filter(a => a.visitor && a.attendance_date === selectedDate).length;
+  const [visitorPhone, setVisitorPhone] = useState('');
+  const [isVisitorDialogOpen, setIsVisitorDialogOpen] = useState(false);
 
   useEffect(() => {
     if (cellId) {
       fetchCellData();
+      fetchContacts();
     }
   }, [cellId]);
 
-  useEffect(() => {
-    if (cellId && selectedDate) {
-      fetchAttendances();
-    }
-  }, [cellId, selectedDate]);
-
   const fetchCellData = async () => {
     try {
-      setLoading(true);
-      
-      // Buscar dados da célula
       const { data: cellData, error: cellError } = await supabase
         .from('cells')
         .select('id, name, address')
@@ -71,51 +59,48 @@ export default function CellAttendancePage() {
 
       if (cellError) throw cellError;
       setCell(cellData);
+    } catch (error: any) {
+      console.error('Erro ao buscar dados da célula:', error);
+      toast({
+        title: "Erro",
+        description: "Célula não encontrada",
+        variant: "destructive"
+      });
+    }
+  };
 
-      // Buscar membros da célula
+  const fetchContacts = async () => {
+    try {
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
-        .select('id, name, whatsapp, attendance_code')
+        .select('id, name, whatsapp, cell_id')
         .eq('cell_id', cellId);
 
       if (contactsError) throw contactsError;
       setContacts(contactsData || []);
 
-    } catch (error: any) {
-      console.error('Erro ao buscar dados da célula:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar dados da célula",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAttendances = async () => {
-    try {
-      const { data, error } = await supabase
+      // Buscar presenças de hoje
+      const today = new Date().toISOString().split('T')[0];
+      const { data: attendancesData, error: attendancesError } = await supabase
         .from('attendances')
-        .select('*')
+        .select('id, contact_id, present, visitor')
         .eq('cell_id', cellId)
-        .eq('attendance_date', selectedDate);
+        .eq('attendance_date', today);
 
-      if (error) throw error;
-      setAttendances(data || []);
+      if (attendancesError) throw attendancesError;
+      setAttendances(attendancesData || []);
     } catch (error: any) {
-      console.error('Erro ao buscar presenças:', error);
+      console.error('Erro ao buscar contatos:', error);
     }
   };
 
   const toggleAttendance = async (contactId: string, isPresent: boolean) => {
+    const today = new Date().toISOString().split('T')[0];
+    
     try {
-      const existingAttendance = attendances.find(
-        a => a.contact_id === contactId && a.attendance_date === selectedDate
-      );
-
+      const existingAttendance = attendances.find(a => a.contact_id === contactId);
+      
       if (existingAttendance) {
-        // Atualizar presença existente
         const { error } = await supabase
           .from('attendances')
           .update({ present: isPresent })
@@ -123,21 +108,20 @@ export default function CellAttendancePage() {
 
         if (error) throw error;
       } else {
-        // Criar nova presença
         const { error } = await supabase
           .from('attendances')
           .insert({
             contact_id: contactId,
             cell_id: cellId,
+            attendance_date: today,
             present: isPresent,
-            visitor: false,
-            attendance_date: selectedDate
+            visitor: false
           });
 
         if (error) throw error;
       }
 
-      await fetchAttendances();
+      fetchContacts();
       toast({
         title: "Sucesso",
         description: `Presença ${isPresent ? 'marcada' : 'desmarcada'} com sucesso!`
@@ -153,27 +137,58 @@ export default function CellAttendancePage() {
   };
 
   const addVisitor = async () => {
-    if (!visitorName.trim()) return;
+    if (!visitorName.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome do visitante é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
 
+    const today = new Date().toISOString().split('T')[0];
+    
     try {
-      const { error } = await supabase
+      setLoading(true);
+      
+      // Criar contato visitante
+      const { data: visitorContact, error: contactError } = await supabase
+        .from('contacts')
+        .insert({
+          name: visitorName,
+          whatsapp: visitorPhone || null,
+          cell_id: cellId,
+          neighborhood: 'Visitante',
+          city_id: null,
+          status: 'visitor'
+        })
+        .select()
+        .single();
+
+      if (contactError) throw contactError;
+
+      // Marcar presença do visitante
+      const { error: attendanceError } = await supabase
         .from('attendances')
         .insert({
-          contact_id: null,
+          contact_id: visitorContact.id,
           cell_id: cellId,
+          attendance_date: today,
           present: true,
-          visitor: true,
-          attendance_date: selectedDate
+          visitor: true
         });
 
-      if (error) throw error;
+      if (attendanceError) throw attendanceError;
 
-      setVisitorName('');
-      await fetchAttendances();
       toast({
         title: "Sucesso",
         description: "Visitante adicionado com sucesso!"
       });
+
+      setVisitorName('');
+      setVisitorPhone('');
+      setIsVisitorDialogOpen(false);
+      fetchContacts();
     } catch (error: any) {
       console.error('Erro ao adicionar visitante:', error);
       toast({
@@ -181,168 +196,142 @@ export default function CellAttendancePage() {
         description: "Erro ao adicionar visitante",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const isContactPresent = (contactId: string) => {
-    return attendances.some(a => a.contact_id === contactId && a.present && a.attendance_date === selectedDate);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">Carregando...</span>
-      </div>
-    );
-  }
-
   if (!cell) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p>Célula não encontrada</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando...</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/cells')}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{cell.name}</h1>
-          <p className="text-gray-600">{cell.address}</p>
-        </div>
-      </div>
-
-      {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total de Membros</p>
-                <p className="text-2xl font-bold">{totalMembers}</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Card className="shadow-xl">
+          <CardHeader className="text-center pb-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <UserCheck className="h-8 w-8 text-blue-600" />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Presentes na Data</p>
-                <p className="text-2xl font-bold">{presentToday}</p>
+            <CardTitle className="text-2xl font-bold text-gray-800">
+              Lista de Presença
+            </CardTitle>
+            <CardDescription className="text-base">
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <Users className="h-4 w-4 text-blue-600" />
+                <span className="font-semibold">{cell.name}</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-600">Visitantes na Data</p>
-                <p className="text-2xl font-bold">{visitorsToday}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Controle de Presença */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Controle de Presença</CardTitle>
-          <CardDescription>
-            Selecione uma data e marque a presença dos membros
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Data da Reunião:</label>
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-auto"
-            />
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Membros:</h3>
-            <div className="space-y-2">
-              {contacts.map((contact) => (
-                <div key={contact.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="font-medium">{contact.name}</p>
-                      {contact.attendance_code && (
-                        <p className="text-sm text-blue-600">Código: {contact.attendance_code}</p>
-                      )}
-                    </div>
-                    {isContactPresent(contact.id) && (
-                      <Badge variant="default" className="bg-green-100 text-green-800">
-                        Presente
-                      </Badge>
-                    )}
-                  </div>
-                  <Button
-                    variant={isContactPresent(contact.id) ? "destructive" : "default"}
-                    size="sm"
-                    onClick={() => toggleAttendance(contact.id, !isContactPresent(contact.id))}
-                  >
-                    {isContactPresent(contact.id) ? 'Desmarcar' : 'Marcar Presente'}
+              <p className="text-sm text-gray-500 mt-1">{cell.address}</p>
+              <Badge variant="outline" className="mt-2">
+                {new Date().toLocaleDateString('pt-BR')}
+              </Badge>
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Membros da Célula</h3>
+              <Dialog open={isVisitorDialogOpen} onOpenChange={setIsVisitorDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-green-600 hover:bg-green-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Visitante
                   </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Adicionar Visitante:</h3>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Nome do visitante"
-                value={visitorName}
-                onChange={(e) => setVisitorName(e.target.value)}
-              />
-              <Button onClick={addVisitor}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Adicionar
-              </Button>
-            </div>
-          </div>
-
-          {visitorsToday > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Visitantes da Célula:</h3>
-              <div className="space-y-2">
-                {attendances
-                  .filter(a => a.visitor && a.attendance_date === selectedDate)
-                  .map((attendance, index) => (
-                    <div key={attendance.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                      <div className="flex items-center gap-2">
-                        <UserPlus className="w-4 h-4 text-orange-600" />
-                        <span className="font-medium">Visitante {index + 1}</span>
-                        <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                          Visitante
-                        </Badge>
-                      </div>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Visitante</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Nome *</label>
+                      <Input
+                        value={visitorName}
+                        onChange={(e) => setVisitorName(e.target.value)}
+                        placeholder="Nome do visitante"
+                      />
                     </div>
-                  ))}
-              </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">WhatsApp (opcional)</label>
+                      <Input
+                        value={visitorPhone}
+                        onChange={(e) => setVisitorPhone(e.target.value)}
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                    <Button 
+                      onClick={addVisitor} 
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      {loading ? 'Adicionando...' : 'Adicionar Visitante'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>WhatsApp</TableHead>
+                    <TableHead>Presente</TableHead>
+                    <TableHead>Tipo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contacts.map((contact) => {
+                    const attendance = attendances.find(a => a.contact_id === contact.id);
+                    const isPresent = attendance?.present || false;
+                    const isVisitor = attendance?.visitor || false;
+                    
+                    return (
+                      <TableRow key={contact.id}>
+                        <TableCell className="font-medium">{contact.name}</TableCell>
+                        <TableCell>{contact.whatsapp || '-'}</TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={isPresent}
+                            onCheckedChange={(checked) => toggleAttendance(contact.id, !!checked)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={isVisitor ? "secondary" : "default"}>
+                            {isVisitor ? 'Visitante' : 'Membro'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {contacts.length === 0 && (
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum membro encontrado</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Os membros da célula aparecerão aqui quando forem cadastrados.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
