@@ -1,4 +1,5 @@
 
+import { Route } from 'react-router-dom';
 import CellAttendancePage from "../pages/CellAttendancePage";
 
 export const cellRoutes = [

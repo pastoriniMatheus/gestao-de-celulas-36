@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Home, MapPin, Clock, Trash2, Users, Eye } from 'lucide-react';
+import { Home, MapPin, Clock, Trash2, Users, Eye, UserCheck } from 'lucide-react';
 import { useCells } from '@/hooks/useCells';
 import { EditCellDialog } from './EditCellDialog';
 import { useState } from 'react';
@@ -50,6 +50,11 @@ export const CellsList = () => {
   const handleViewDetails = (cellId: string) => {
     console.log('CellsList: Navegando para célula:', cellId);
     navigate(`/cells/${cellId}`);
+  };
+
+  const handleAttendanceClick = (cellId: string) => {
+    console.log('CellsList: Navegando para controle de presença:', cellId);
+    navigate(`/cells/${cellId}/attendance`);
   };
 
   const handleEditCell = (cell: any) => {
@@ -148,10 +153,18 @@ export const CellsList = () => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => handleAttendanceClick(cell.id)}
+                      title="Controle de presença"
+                    >
+                      <UserCheck className="h-4 w-4 text-green-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleEditCell(cell)}
                       title="Editar célula"
                     >
-                      <Users className="h-4 w-4 text-green-500" />
+                      <Users className="h-4 w-4 text-orange-500" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -177,9 +190,8 @@ export const CellsList = () => {
                       {getWeekDayName(cell.meeting_day)} às {formatTime(cell.meeting_time)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>Clique no ícone de olho para ver membros</span>
+                  <div className="text-xs text-gray-500 mt-2">
+                    Clique nos ícones para gerenciar a célula
                   </div>
                 </div>
               </CardContent>

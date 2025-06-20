@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, MapPin, Calendar, Clock, User, Edit, QrCode } from 'lucide-react';
+import { ArrowLeft, Users, MapPin, Calendar, Clock, User, Edit, QrCode, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EditCellDialog } from './EditCellDialog';
@@ -62,7 +62,9 @@ export const CellDetails = () => {
         throw new Error('Célula não encontrada');
       }
 
-      setCell(cellData);
+      if (mountedRef.current) {
+        setCell(cellData);
+      }
 
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
@@ -73,17 +75,27 @@ export const CellDetails = () => {
         throw new Error(`Erro ao buscar contatos da célula: ${contactsError.message}`);
       }
 
-      setContacts(contactsData || []);
+      if (mountedRef.current) {
+        setContacts(contactsData || []);
+      }
     } catch (error: any) {
       console.error(error);
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive"
-      });
+      if (mountedRef.current) {
+        toast({
+          title: "Erro",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleAttendanceClick = () => {
+    navigate(`/cells/${id}/attendance`);
   };
 
   useEffect(() => {
@@ -126,6 +138,7 @@ export const CellDetails = () => {
         <ArrowLeft className="w-4 h-4 mr-2" />
         Voltar para Células
       </Button>
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -137,7 +150,7 @@ export const CellDetails = () => {
             {cell.name}
           </CardTitle>
           <CardDescription>
-            Detalhes e membros da célula
+            Detalhes e gestão da célula
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -167,7 +180,12 @@ export const CellDetails = () => {
               </div>
             )}
           </div>
+          
           <div className="flex justify-end gap-2">
+            <Button onClick={handleAttendanceClick} variant="default">
+              <UserCheck className="w-4 h-4 mr-2" />
+              Controle de Presença
+            </Button>
             <CellQrCode cellId={cell.id} />
             <EditCellDialog 
               cell={cell} 
@@ -183,7 +201,7 @@ export const CellDetails = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
-            Membros da Célula
+            Membros da Célula ({contacts.length})
           </CardTitle>
           <CardDescription>
             Lista de membros pertencentes a esta célula
@@ -205,6 +223,12 @@ export const CellDetails = () => {
                   <div className="text-xs text-gray-500">
                     {contact.whatsapp ? contact.whatsapp : 'Sem WhatsApp'}
                   </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {contact.neighborhood}
+                  </div>
+                  <Badge variant="outline" className="mt-2">
+                    {contact.status}
+                  </Badge>
                 </div>
               ))}
             </div>

@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { QRRedirect } from "./pages/QRRedirect";
 import FormPage from "./pages/FormPage";
+import { CellDetails } from "./components/CellDetails";
 import { cellRoutes } from "@/routes/cells";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,9 @@ const App = () => (
           {cellRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
+          
+          {/* Rota para detalhes da célula */}
+          <Route path="/cells/:id" element={<CellDetails />} />
           
           {/* Rotas principais - todas apontam para Index */}
           <Route path="/" element={<Index />} />
