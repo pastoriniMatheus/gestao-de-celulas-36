@@ -19,6 +19,8 @@ import { cn } from '@/lib/utils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useSystemConfig } from '@/hooks/useSystemConfig';
 
+const churchName = config?.church_name?.text || config?.form_title?.text || 'Sistema de Células';
+
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
@@ -136,6 +138,21 @@ const Sidebar = () => {
                 </div>
               )}
               <h1 className="text-xl font-bold text-gray-800">Gestão Celular</h1>
+
+
+
+              
+              <span className="text-white font-bold text-sm md:text-lg">
+                {churchName.charAt(0)}
+              </span>
+          <div className="hidden sm:block">
+            <h1 className="text-lg md:text-xl font-bold text-gray-900">{churchName}</h1>
+            <p className="text-xs md:text-sm text-gray-600">Sistema de Gestão</p>
+          </div>
+
+
+
+              
             </div>
           )}
           {isCollapsed && (
