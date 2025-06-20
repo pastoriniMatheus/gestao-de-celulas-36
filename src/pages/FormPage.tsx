@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, AlertCircle, Home } from 'lucide-react';
+import { CalendarIcon, AlertCircle, Home, MapPin, User, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { useCities } from '@/hooks/useCities';
+import { useNeighborhoods } from '@/hooks/useNeighborhoods';
 
 const FormPage = () => {
   const [searchParams] = useSearchParams();
@@ -24,12 +27,18 @@ const FormPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [eventInfo, setEventInfo] = useState<any>(null);
   const [qrInfo, setQrInfo] = useState<any>(null);
+  const { settings } = useSystemSettings();
+  const { cities } = useCities();
+  const { neighborhoods } = useNeighborhoods(formData.city_id);
   
   // Estados do formulário
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     whatsapp: '',
+    address: '',
     neighborhood: '',
+    city_id: '',
     birth_date: null as Date | null,
     encounter_with_god: false,
     baptized: false
@@ -98,8 +107,11 @@ const FormPage = () => {
     try {
       const contactData = {
         name: formData.name.trim(),
+        email: formData.email.trim() || null,
         whatsapp: formData.whatsapp.trim() || null,
+        address: formData.address.trim() || null,
         neighborhood: formData.neighborhood.trim(),
+        city_id: formData.city_id || null,
         birth_date: formData.birth_date ? formData.birth_date.toISOString().split('T')[0] : null,
         encounter_with_god: formData.encounter_with_god,
         baptized: formData.baptized,
@@ -137,8 +149,11 @@ const FormPage = () => {
       // Limpar formulário
       setFormData({
         name: '',
+        email: '',
         whatsapp: '',
+        address: '',
         neighborhood: '',
+        city_id: '',
         birth_date: null,
         encounter_with_god: false,
         baptized: false
@@ -169,8 +184,8 @@ const FormPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center shadow-xl">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center shadow-2xl border-0 bg-white/80 backdrop-blur-lg">
           <CardContent className="p-8">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Carregando...</h3>
@@ -182,22 +197,34 @@ const FormPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-        <CardHeader className="text-center pb-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-          <CardTitle className="text-2xl font-bold">
-            {eventInfo ? `Cadastro - ${eventInfo.name}` : 
-             qrInfo ? `Cadastro - ${qrInfo.title}` : 
-             'Cadastro de Visitante'}
-          </CardTitle>
-          <CardDescription className="text-blue-100">
-            {eventInfo ? `Evento: ${format(new Date(eventInfo.date), 'dd/MM/yyyy', { locale: ptBR })}` :
-             qrInfo ? 'Preencha seus dados para entrarmos em contato' :
-             'Preencha o formulário abaixo'}
-          </CardDescription>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-4xl shadow-2xl border-0 bg-white/90 backdrop-blur-lg">
+        <CardHeader className="text-center pb-6 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 text-white rounded-t-lg relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20"></div>
+          <div className="relative z-10">
+            {settings.logo_url && (
+              <div className="flex justify-center mb-4">
+                <img 
+                  src={settings.logo_url} 
+                  alt="Logo" 
+                  className="h-16 w-auto filter drop-shadow-lg"
+                />
+              </div>
+            )}
+            <CardTitle className="text-3xl font-bold mb-2">
+              {eventInfo ? `${eventInfo.name}` : 
+               qrInfo ? `${qrInfo.title}` : 
+               settings.church_name || 'Cadastro de Visitante'}
+            </CardTitle>
+            <CardDescription className="text-blue-100 text-lg">
+              {eventInfo ? `Evento: ${format(new Date(eventInfo.date), 'dd/MM/yyyy', { locale: ptBR })}` :
+               qrInfo ? 'Preencha seus dados para entrarmos em contato' :
+               'Seja bem-vindo! Preencha o formulário abaixo'}
+            </CardDescription>
+          </div>
         </CardHeader>
 
-        <CardContent className="space-y-6 p-8">
+        <CardContent className="space-y-8 p-8">
           {/* Mostrar erro se houver */}
           {errorCode && (
             <Alert className="border-red-200 bg-red-50">
@@ -218,122 +245,193 @@ const FormPage = () => {
 
           {/* Formulário - só mostrar se não houver erro */}
           {!errorCode && (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Nome Completo *</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Seu nome completo"
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Dados Pessoais */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <User className="h-5 w-5 text-blue-600" />
+                  Dados Pessoais
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Nome Completo *</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Seu nome completo"
+                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp" className="text-sm font-semibold text-gray-700">WhatsApp</Label>
-                  <Input
-                    id="whatsapp"
-                    type="tel"
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
-                    placeholder="(00) 00000-0000"
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700">E-mail</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="seu@email.com"
+                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp" className="text-sm font-semibold text-gray-700">WhatsApp</Label>
+                    <Input
+                      id="whatsapp"
+                      type="tel"
+                      value={formData.whatsapp}
+                      onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                      placeholder="(00) 00000-0000"
+                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Data de Nascimento</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal border-gray-300 hover:border-blue-400 h-12",
+                            !formData.birth_date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.birth_date ? (
+                            format(formData.birth_date, "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={formData.birth_date || undefined}
+                          onSelect={(date) => setFormData(prev => ({ ...prev, birth_date: date || null }))}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="neighborhood" className="text-sm font-semibold text-gray-700">Bairro</Label>
-                  <Input
-                    id="neighborhood"
-                    type="text"
-                    value={formData.neighborhood}
-                    onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
-                    placeholder="Seu bairro"
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
+              {/* Endereço */}
+              <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                  Endereço
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="city" className="text-sm font-semibold text-gray-700">Cidade</Label>
+                    <Select value={formData.city_id} onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value, neighborhood: '' }))}>
+                      <SelectTrigger className="border-gray-300 focus:border-green-500 focus:ring-green-500 h-12">
+                        <SelectValue placeholder="Selecione sua cidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.map((city) => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {city.name} - {city.state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-gray-700">Data de Nascimento</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal border-gray-300 hover:border-blue-400",
-                          !formData.birth_date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.birth_date ? (
-                          format(formData.birth_date, "dd/MM/yyyy", { locale: ptBR })
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.birth_date || undefined}
-                        onSelect={(date) => setFormData(prev => ({ ...prev, birth_date: date || null }))}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div className="space-y-2">
+                    <Label htmlFor="neighborhood" className="text-sm font-semibold text-gray-700">Bairro</Label>
+                    <Select 
+                      value={formData.neighborhood} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
+                      disabled={!formData.city_id}
+                    >
+                      <SelectTrigger className="border-gray-300 focus:border-green-500 focus:ring-green-500 h-12">
+                        <SelectValue placeholder={formData.city_id ? "Selecione seu bairro" : "Selecione primeiro a cidade"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {neighborhoods.map((neighborhood) => (
+                          <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                            {neighborhood.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="address" className="text-sm font-semibold text-gray-700">Endereço Completo</Label>
+                    <Input
+                      id="address"
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                      placeholder="Rua, número, complemento"
+                      className="border-gray-300 focus:border-green-500 focus:ring-green-500 h-12"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-4 p-6 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="encounter"
-                    checked={formData.encounter_with_god}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, encounter_with_god: !!checked }))
-                    }
-                  />
-                  <Label
-                    htmlFor="encounter"
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    Já participei de um Encontro com Deus
-                  </Label>
-                </div>
+              {/* Informações Espirituais */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Informações Espirituais</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="encounter"
+                      checked={formData.encounter_with_god}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ ...prev, encounter_with_god: !!checked }))
+                      }
+                    />
+                    <Label
+                      htmlFor="encounter"
+                      className="text-sm font-medium text-gray-700 cursor-pointer"
+                    >
+                      Já participei de um Encontro com Deus
+                    </Label>
+                  </div>
 
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="baptized"
-                    checked={formData.baptized}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, baptized: !!checked }))
-                    }
-                  />
-                  <Label
-                    htmlFor="baptized"
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    Sou batizado
-                  </Label>
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="baptized"
+                      checked={formData.baptized}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ ...prev, baptized: !!checked }))
+                      }
+                    />
+                    <Label
+                      htmlFor="baptized"
+                      className="text-sm font-medium text-gray-700 cursor-pointer"
+                    >
+                      Sou batizado
+                    </Label>
+                  </div>
                 </div>
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="w-full bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-700 hover:via-blue-800 hover:to-indigo-700 text-white font-semibold py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-lg"
                 disabled={submitting}
               >
-                {submitting ? "Enviando..." : "Enviar Cadastro"}
+                {submitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    Enviando...
+                  </div>
+                ) : "Enviar Cadastro"}
               </Button>
             </form>
           )}

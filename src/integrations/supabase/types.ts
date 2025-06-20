@@ -206,6 +206,7 @@ export type Database = {
       }
       contacts: {
         Row: {
+          address: string | null
           age: number | null
           attendance_code: string | null
           baptized: boolean
@@ -213,6 +214,7 @@ export type Database = {
           cell_id: string | null
           city_id: string | null
           created_at: string
+          email: string | null
           encounter_with_god: boolean
           id: string
           name: string
@@ -223,6 +225,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          address?: string | null
           age?: number | null
           attendance_code?: string | null
           baptized?: boolean
@@ -230,6 +233,7 @@ export type Database = {
           cell_id?: string | null
           city_id?: string | null
           created_at?: string
+          email?: string | null
           encounter_with_god?: boolean
           id?: string
           name: string
@@ -240,6 +244,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          address?: string | null
           age?: number | null
           attendance_code?: string | null
           baptized?: boolean
@@ -247,6 +252,7 @@ export type Database = {
           cell_id?: string | null
           city_id?: string | null
           created_at?: string
+          email?: string | null
           encounter_with_god?: boolean
           id?: string
           name?: string

@@ -2,16 +2,18 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Home, MapPin, Clock, Edit, Trash2, Users, Eye } from 'lucide-react';
-import { useCells, Cell } from '@/hooks/useCells';
+import { Home, MapPin, Clock, Trash2, Users, Eye } from 'lucide-react';
+import { useCells } from '@/hooks/useCells';
 import { EditCellDialog } from './EditCellDialog';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 export const CellsList = () => {
-  const { cells, loading, deleteCell } = useCells();
+  const { cells, loading, deleteCell, fetchCells } = useCells();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingCell, setEditingCell] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -41,6 +43,17 @@ export const CellsList = () => {
 
   const handleViewDetails = (cellId: string) => {
     navigate(`/cells/${cellId}`);
+  };
+
+  const handleEditCell = (cell: any) => {
+    setEditingCell(cell);
+    setEditDialogOpen(true);
+  };
+
+  const handleCellUpdated = () => {
+    fetchCells();
+    setEditDialogOpen(false);
+    setEditingCell(null);
   };
 
   const getWeekDayName = (day: number) => {
@@ -93,7 +106,7 @@ export const CellsList = () => {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {cells.map((cell) => (
-            <Card key={cell.id} className="border border-gray-200">
+            <Card key={cell.id} className="border border-gray-200 hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div>
@@ -114,17 +127,20 @@ export const CellsList = () => {
                     >
                       <Eye className="h-4 w-4 text-blue-500" />
                     </Button>
-                    <EditCellDialog
-                      cell={cell}
-                      isOpen={false}
-                      onClose={() => {}}
-                      onCellUpdated={() => {}}
-                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditCell(cell)}
+                      title="Editar célula"
+                    >
+                      <Users className="h-4 w-4 text-green-500" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(cell.id, cell.name)}
                       disabled={deletingId === cell.id}
+                      title="Excluir célula"
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
@@ -145,13 +161,26 @@ export const CellsList = () => {
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
                     <Users className="h-4 w-4" />
-                    <span>Clique no ícone de olho para ver membros</span>
+                    <span>Clique no ícono de olho para ver membros</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Dialog de edição */}
+        {editingCell && (
+          <EditCellDialog
+            cell={editingCell}
+            isOpen={editDialogOpen}
+            onClose={() => {
+              setEditDialogOpen(false);
+              setEditingCell(null);
+            }}
+            onCellUpdated={handleCellUpdated}
+          />
+        )}
       </CardContent>
     </Card>
   );
