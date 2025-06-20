@@ -34,7 +34,7 @@ export const KanbanPipeline = () => {
   const [stages, setStages] = useState<PipelineStage[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCell, setSelectedCell] = useState<String>('all');
+  const [selectedCell, setSelectedCell] = useState<string>('all');
   const { cells } = useLeaderCells();
 
   useEffect(() => {
@@ -196,7 +196,7 @@ export const KanbanPipeline = () => {
                       ref={provided.innerRef}
                       className="space-y-3 min-h-32"
                     >
-                      {getContact sWithoutStage().map((contact, index) => (
+                      {getContactsWithoutStage().map((contact, index) => (
                         <Draggable key={contact.id} draggableId={contact.id} index={index}>
                           {(provided, snapshot) => (
                             <div
