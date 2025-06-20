@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import FormPage from "./pages/FormPage";
-import QRRedirect from "./pages/QRRedirect";
+import { QRRedirect } from "./pages/QRRedirect";
 import CellAttendancePage from "./pages/CellAttendancePage";
 import MemberAttendancePage from "./pages/MemberAttendancePage";
 import NotFound from "./pages/NotFound";
