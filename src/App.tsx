@@ -24,6 +24,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/form" element={<FormPage />} />
+            <Route path="/cells" element={<Index />} />
             <Route path="/qr/:keyword" element={<QRRedirect />} />
             <Route path="/cells/:cellId/attendance" element={<CellAttendancePage />} />
             <Route path="/attendance/:cellId" element={<MemberAttendancePage />} />
