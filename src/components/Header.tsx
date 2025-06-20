@@ -31,7 +31,18 @@ export const Header = () => {
           {configLoading ? (
             <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-200 rounded-lg animate-pulse"></div>
           ) : logoUrl ? (
-            
+            <img 
+              src={logoUrl} 
+              alt={logoAlt}
+              className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-lg border border-gray-200"
+              onError={(e) => {
+                console.error('Erro ao carregar logo:', logoUrl);
+                e.currentTarget.style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log('Logo carregado com sucesso:', logoUrl);
+              }}
+            />
           ) : (
             <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm md:text-lg">
@@ -39,8 +50,7 @@ export const Header = () => {
               </span>
             </div>
           )}
-      
-
+         
         <div className="flex items-center gap-2 md:gap-3">
           <BirthdayNotifications />
           
