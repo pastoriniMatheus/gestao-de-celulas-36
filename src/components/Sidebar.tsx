@@ -135,17 +135,7 @@ const Sidebar = () => {
                   </span>
                 </div>
               )}
-              <h1 className="text-xl font-bold text-gray-800">{churchName}</h1>
-            <p className="text-xs md:text-sm text-gray-600">Sistema de Gestão</p>
-          </div>
-
-
-
-
-
-
-
-              
+              <h1 className="text-xl font-bold text-gray-800">Gestão Celular</h1>
             </div>
           )}
           {isCollapsed && (
