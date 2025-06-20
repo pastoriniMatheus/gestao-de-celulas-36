@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,20 +92,23 @@ export const CellDetails = () => {
     mountedRef.current = true;
     fetchCellDetails();
 
-    // Setup realtime subscription for cell updates only if no existing channel
+    // Setup realtime subscription with proper cleanup
     const setupSubscription = () => {
       try {
-        // Only create subscription if none exists
+        // Clean up existing channel first
         if (channelRef.current) {
-          return;
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
         }
 
         // Create new channel with unique name
-        const channelName = `cell-details-${id}-${Date.now()}-${Math.random()}`;
+        const channelName = `cell-details-${id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Creating cell details channel:', channelName);
+        
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
 
-        // Subscribe to changes
+        // Subscribe to changes for this specific cell
         channel
           .on('postgres_changes', 
             { 
@@ -126,7 +128,8 @@ export const CellDetails = () => {
             { 
               event: '*', 
               schema: 'public', 
-              table: 'contacts'
+              table: 'contacts',
+              filter: `cell_id=eq.${id}`
             },
             (payload) => {
               if (!mountedRef.current) return;
@@ -149,11 +152,12 @@ export const CellDetails = () => {
     return () => {
       mountedRef.current = false;
       if (channelRef.current) {
+        console.log('Cleaning up cell details channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [id]);
+  }, [id]); // Only depend on id
 
   if (loading) {
     return (

@@ -122,16 +122,19 @@ export const useCells = () => {
     mountedRef.current = true;
     fetchCells();
 
-    // Setup realtime subscription only if no existing channel
+    // Setup realtime subscription with proper cleanup
     const setupSubscription = () => {
       try {
-        // Only create subscription if none exists
+        // Clean up existing channel first
         if (channelRef.current) {
-          return;
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
         }
 
         // Create new channel with unique name
-        const channelName = `cells-${Date.now()}-${Math.random()}`;
+        const channelName = `cells-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Creating cells channel:', channelName);
+        
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
 
@@ -160,11 +163,12 @@ export const useCells = () => {
     return () => {
       mountedRef.current = false;
       if (channelRef.current) {
+        console.log('Cleaning up cells channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   return {
     cells,

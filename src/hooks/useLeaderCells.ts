@@ -83,17 +83,19 @@ export const useLeaderCells = () => {
     mountedRef.current = true;
     fetchCells();
 
-    // Setup realtime subscription apenas uma vez
-    const setupSubscription = async () => {
+    // Setup realtime subscription with proper cleanup
+    const setupSubscription = () => {
       try {
-        // Remove existing channel if it exists
+        // Clean up existing channel first
         if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
+          supabase.removeChannel(channelRef.current);
           channelRef.current = null;
         }
 
         // Create new channel with unique name
-        const channelName = `leader-cells-${permissions.userProfile?.id || 'unknown'}-${Date.now()}`;
+        const channelName = `leader-cells-${permissions.userProfile?.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Creating leader cells channel:', channelName);
+        
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
 
@@ -123,11 +125,12 @@ export const useLeaderCells = () => {
     return () => {
       mountedRef.current = false;
       if (channelRef.current) {
+        console.log('Cleaning up leader cells channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [permissions.userProfile?.id, permissions.isLeader, permissions.isAdmin]);
+  }, [permissions.userProfile?.id, permissions.isLeader]); // Only depend on stable values
 
   return {
     cells,
