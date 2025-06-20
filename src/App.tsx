@@ -25,6 +25,12 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/form" element={<FormPage />} />
             <Route path="/cells" element={<Index />} />
+            <Route path="/contacts" element={<Index />} />
+            <Route path="/pipeline" element={<Index />} />
+            <Route path="/messaging" element={<Index />} />
+            <Route path="/events" element={<Index />} />
+            <Route path="/settings" element={<Index />} />
+            <Route path="/users" element={<Index />} />
             <Route path="/qr/:keyword" element={<QRRedirect />} />
             <Route path="/cells/:cellId/attendance" element={<CellAttendancePage />} />
             <Route path="/attendance/:cellId" element={<MemberAttendancePage />} />

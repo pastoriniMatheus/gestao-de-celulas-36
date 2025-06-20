@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { UserCog, Shield, User, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthProvider';
+import { AddUserDialog } from './AddUserDialog';
 
 interface UserProfile {
   id: string;
@@ -164,13 +166,18 @@ export const UsersManager = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserCog className="h-5 w-5 text-blue-600" />
-            Gerenciamento de Usuários
-          </CardTitle>
-          <CardDescription>
-            Gerencie usuários, papéis e permissões do sistema
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <UserCog className="h-5 w-5 text-blue-600" />
+                Gerenciamento de Usuários
+              </CardTitle>
+              <CardDescription>
+                Gerencie usuários, papéis e permissões do sistema
+              </CardDescription>
+            </div>
+            <AddUserDialog />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
