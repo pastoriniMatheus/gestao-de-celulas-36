@@ -43,6 +43,7 @@ export const CellDetails = () => {
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
   const subscriptionSetupRef = useRef(false);
+  const componentIdRef = useRef(Math.random().toString(36).substr(2, 9));
 
   const fetchCellDetails = async () => {
     if (!id) return;
@@ -96,20 +97,24 @@ export const CellDetails = () => {
     // Setup realtime subscription with proper cleanup
     const setupSubscription = () => {
       if (subscriptionSetupRef.current) {
-        console.log('CellDetails: Subscription already setup, skipping...');
+        console.log(`CellDetails [${componentIdRef.current}]: Subscription already setup, skipping...`);
         return;
       }
 
       try {
         // Clean up existing channel first
         if (channelRef.current) {
-          supabase.removeChannel(channelRef.current);
+          try {
+            supabase.removeChannel(channelRef.current);
+          } catch (cleanupError) {
+            console.warn(`CellDetails [${componentIdRef.current}]: Erro ao limpar canal anterior:`, cleanupError);
+          }
           channelRef.current = null;
         }
 
         // Create new channel with unique name
-        const channelName = `cell-details-${id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        console.log('Creating cell details channel:', channelName);
+        const channelName = `cell-details-${id}-${componentIdRef.current}-${Date.now()}`;
+        console.log(`CellDetails [${componentIdRef.current}]: Creating cell details channel:`, channelName);
         
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
@@ -126,7 +131,7 @@ export const CellDetails = () => {
             (payload) => {
               if (!mountedRef.current) return;
               
-              console.log('Cell details realtime update:', payload);
+              console.log(`CellDetails [${componentIdRef.current}]: Cell details realtime update:`, payload);
               fetchCellDetails();
             }
           )
@@ -140,31 +145,41 @@ export const CellDetails = () => {
             (payload) => {
               if (!mountedRef.current) return;
               
-              console.log('Cell contacts realtime update:', payload);
+              console.log(`CellDetails [${componentIdRef.current}]: Cell contacts realtime update:`, payload);
               fetchCellDetails();
             }
           )
           .subscribe((status) => {
-            console.log('Cell details subscription status:', status);
+            console.log(`CellDetails [${componentIdRef.current}]: Cell details subscription status:`, status);
             if (status === 'SUBSCRIBED') {
               subscriptionSetupRef.current = true;
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error(`CellDetails [${componentIdRef.current}]: Erro no canal`);
+              subscriptionSetupRef.current = false;
             }
           });
 
       } catch (error) {
-        console.error('Error setting up cell details subscription:', error);
+        console.error(`CellDetails [${componentIdRef.current}]: Error setting up cell details subscription:`, error);
+        subscriptionSetupRef.current = false;
       }
     };
 
-    setupSubscription();
+    // Delay subscription setup to avoid race conditions
+    const timeoutId = setTimeout(setupSubscription, 100);
 
     return () => {
+      clearTimeout(timeoutId);
       mountedRef.current = false;
       subscriptionSetupRef.current = false;
       
       if (channelRef.current) {
-        console.log('Cleaning up cell details channel');
-        supabase.removeChannel(channelRef.current);
+        console.log(`CellDetails [${componentIdRef.current}]: Cleaning up cell details channel`);
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (cleanupError) {
+          console.warn(`CellDetails [${componentIdRef.current}]: Erro ao limpar canal:`, cleanupError);
+        }
         channelRef.current = null;
       }
     };
