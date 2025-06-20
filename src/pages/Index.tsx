@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
@@ -9,10 +10,10 @@ import { MessagingCenter } from '@/components/MessagingCenter';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
 import { UsersManager } from '@/components/UsersManager';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { UserMenu } from '@/components/UserMenu';
+import { Header } from '@/components/Header';
+
 const Index = () => {
   const location = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -37,6 +38,7 @@ const Index = () => {
     setActiveSection(section);
     console.log('Seção ativa:', section, 'URL atual:', location.pathname);
   }, [location.pathname]);
+
   const renderContent = () => {
     console.log('Renderizando conteúdo para seção:', activeSection);
     switch (activeSection) {
@@ -61,20 +63,34 @@ const Index = () => {
         return <Dashboard />;
     }
   };
-  return <AuthProvider>
+
+  return (
+    <AuthProvider>
       <ProtectedRoute>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
+          {/* Sidebar Fixo */}
+          <div className="fixed left-0 top-0 h-full z-30">
             <Sidebar />
+          </div>
+          
+          {/* Conteúdo Principal com margem para o sidebar */}
+          <div className="flex-1 flex flex-col ml-64">
+            {/* Header Fixo */}
+            <div className="sticky top-0 z-20">
+              <Header />
+            </div>
+            
+            {/* Área de Conteúdo com Scroll */}
             <main className="flex-1 p-6 overflow-auto">
               <div className="max-w-7xl mx-auto">
-                
                 {renderContent()}
               </div>
             </main>
           </div>
-        </SidebarProvider>
+        </div>
       </ProtectedRoute>
-    </AuthProvider>;
+    </AuthProvider>
+  );
 };
+
 export default Index;

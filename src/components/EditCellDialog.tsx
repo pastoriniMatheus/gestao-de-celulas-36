@@ -1,4 +1,3 @@
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -162,17 +161,20 @@ export const EditCellDialog = ({
     try {
       console.log('EditCellDialog: Atualizando célula:', formState);
       
+      const updateData = {
+        name: formState.name,
+        address: formState.address,
+        leader_id: formState.leader_id || null,
+        neighborhood_id: formState.neighborhood_id || null,
+        active: formState.active,
+        meeting_day: Number(formState.meeting_day),
+        meeting_time: formState.meeting_time,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from("cells")
-        .update({
-          name: formState.name,
-          address: formState.address,
-          leader_id: formState.leader_id || null,
-          neighborhood_id: formState.neighborhood_id || null,
-          active: formState.active,
-          meeting_day: Number(formState.meeting_day),
-          meeting_time: formState.meeting_time,
-        })
+        .update(updateData)
         .eq("id", cell.id)
         .select()
         .single();
@@ -194,13 +196,9 @@ export const EditCellDialog = ({
         description: "Célula atualizada com sucesso!",
       });
       
+      // Chamar callback para atualizar a lista
       onCellUpdated(data);
       onClose();
-      
-      // Forçar refresh da página para garantir que a lista seja atualizada
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
       
     } catch (error: any) {
       console.error('EditCellDialog: Erro inesperado:', error);

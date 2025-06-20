@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -55,14 +54,15 @@ export const AddUserDialog = () => {
     try {
       console.log('Criando usuário:', formData.email);
       
-      // Usar admin API para criar usuário
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Usar signup normal ao invés da API admin
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        email_confirm: true, // Auto-confirmar email
-        user_metadata: {
-          name: formData.name,
-          role: formData.role
+        options: {
+          data: {
+            name: formData.name,
+            role: formData.role
+          }
         }
       });
 
@@ -96,7 +96,7 @@ export const AddUserDialog = () => {
           console.log('Perfil criado com sucesso');
           toast({
             title: "Sucesso",
-            description: "Usuário criado com sucesso!",
+            description: "Usuário criado com sucesso! Um email de confirmação foi enviado.",
           });
         }
       }
