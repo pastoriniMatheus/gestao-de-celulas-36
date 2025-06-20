@@ -16,6 +16,24 @@ import { useCells } from '@/hooks/useCells';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+interface Contact {
+  id: string;
+  name: string;
+  whatsapp: string | null;
+  neighborhood: string;
+  city_id: string | null;
+  cell_id: string | null;
+  status: string;
+  encounter_with_god: boolean;
+  baptized: boolean;
+  pipeline_stage_id: string | null;
+  age: number | null;
+  birth_date: string | null;
+  attendance_code: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export const ContactsManager = () => {
   const { contacts, loading } = useLeaderContacts();
   const { neighborhoods } = useLocationManager();
@@ -24,7 +42,7 @@ export const ContactsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCell, setSelectedCell] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [editingContact, setEditingContact] = useState<any>(null);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,10 +214,14 @@ export const ContactsManager = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <EditContactDialog 
-                        contact={contact}
-                        onContactUpdated={() => {}}
-                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingContact(contact)}
+                        title="Editar contato"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       {permissions.isAdmin && (
                         <Button
                           size="sm"
@@ -240,6 +262,16 @@ export const ContactsManager = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Contact Dialog */}
+      {editingContact && (
+        <EditContactDialog
+          open={!!editingContact}
+          onOpenChange={(open) => !open && setEditingContact(null)}
+          contact={editingContact}
+          context="contacts"
+        />
+      )}
     </div>
   );
 };
