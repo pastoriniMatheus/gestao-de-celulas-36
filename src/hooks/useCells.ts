@@ -21,6 +21,7 @@ export const useCells = () => {
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
+  const subscriptionSetupRef = useRef(false);
 
   const fetchCells = async () => {
     try {
@@ -166,10 +167,18 @@ export const useCells = () => {
     mountedRef.current = true;
     console.log('useCells: Inicializando hook...');
     
+    // Fetch initial data
     fetchCells();
 
+    // Setup subscription only once
     const setupSubscription = () => {
+      if (subscriptionSetupRef.current) {
+        console.log('useCells: Subscription already setup, skipping...');
+        return;
+      }
+
       try {
+        // Clean up existing channel first
         if (channelRef.current) {
           console.log('useCells: Limpando canal anterior...');
           supabase.removeChannel(channelRef.current);
@@ -194,6 +203,9 @@ export const useCells = () => {
           )
           .subscribe((status) => {
             console.log('useCells: Status da inscrição:', status);
+            if (status === 'SUBSCRIBED') {
+              subscriptionSetupRef.current = true;
+            }
           });
 
       } catch (error) {
@@ -206,13 +218,15 @@ export const useCells = () => {
     return () => {
       console.log('useCells: Limpando hook...');
       mountedRef.current = false;
+      subscriptionSetupRef.current = false;
+      
       if (channelRef.current) {
         console.log('useCells: Removendo canal...');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   return {
     cells,

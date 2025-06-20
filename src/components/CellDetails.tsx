@@ -42,6 +42,7 @@ export const CellDetails = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const channelRef = useRef<any>(null);
   const mountedRef = useRef(true);
+  const subscriptionSetupRef = useRef(false);
 
   const fetchCellDetails = async () => {
     if (!id) return;
@@ -94,6 +95,11 @@ export const CellDetails = () => {
 
     // Setup realtime subscription with proper cleanup
     const setupSubscription = () => {
+      if (subscriptionSetupRef.current) {
+        console.log('CellDetails: Subscription already setup, skipping...');
+        return;
+      }
+
       try {
         // Clean up existing channel first
         if (channelRef.current) {
@@ -140,6 +146,9 @@ export const CellDetails = () => {
           )
           .subscribe((status) => {
             console.log('Cell details subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+              subscriptionSetupRef.current = true;
+            }
           });
 
       } catch (error) {
@@ -151,6 +160,8 @@ export const CellDetails = () => {
 
     return () => {
       mountedRef.current = false;
+      subscriptionSetupRef.current = false;
+      
       if (channelRef.current) {
         console.log('Cleaning up cell details channel');
         supabase.removeChannel(channelRef.current);
