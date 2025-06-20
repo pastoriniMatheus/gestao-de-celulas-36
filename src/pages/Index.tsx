@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
@@ -14,13 +13,14 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { UserMenu } from '@/components/UserMenu';
-
 const Index = () => {
   const location = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
 
   // Mapear as rotas para as seções
-  const pathToSection: { [key: string]: string } = {
+  const pathToSection: {
+    [key: string]: string;
+  } = {
     '/': 'dashboard',
     '/contacts': 'contacts',
     '/cells': 'cells',
@@ -37,7 +37,6 @@ const Index = () => {
     setActiveSection(section);
     console.log('Seção ativa:', section, 'URL atual:', location.pathname);
   }, [location.pathname]);
-
   const renderContent = () => {
     console.log('Renderizando conteúdo para seção:', activeSection);
     switch (activeSection) {
@@ -62,26 +61,20 @@ const Index = () => {
         return <Dashboard />;
     }
   };
-
-  return (
-    <AuthProvider>
+  return <AuthProvider>
       <ProtectedRoute>
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
             <Sidebar />
             <main className="flex-1 p-6 overflow-auto">
               <div className="max-w-7xl mx-auto">
-                <div className="flex justify-end mb-4">
-                  <UserMenu />
-                </div>
+                
                 {renderContent()}
               </div>
             </main>
           </div>
         </SidebarProvider>
       </ProtectedRoute>
-    </AuthProvider>
-  );
+    </AuthProvider>;
 };
-
 export default Index;
