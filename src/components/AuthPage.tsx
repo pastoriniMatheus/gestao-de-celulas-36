@@ -105,14 +105,14 @@ export const AuthPage = () => {
 
   if (configLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 mb-6">
-              <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse"></div>
+            <div className="inline-flex items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-gray-800 rounded-xl animate-pulse"></div>
               <div>
-                <div className="w-40 h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="w-32 h-5 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-48 h-10 bg-gray-800 rounded animate-pulse mb-3"></div>
+                <div className="w-40 h-6 bg-gray-800 rounded animate-pulse"></div>
               </div>
             </div>
           </div>
@@ -122,76 +122,93 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/50 via-black to-gray-900/50"></div>
+      <div className="absolute inset-0" style={{
+        backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%)',
+      }}></div>
+      
+      <div className="w-full max-w-md relative z-10">
         {/* Logo e Título */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-4 mb-6">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-6 mb-8">
             {logoUrl ? (
-              <div className="relative">
-                <img 
-                  src={logoUrl} 
-                  alt={logoAlt}
-                  className="w-16 h-16 object-contain rounded-xl shadow-lg bg-white p-2"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl"></div>
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-gradient-to-r from-white/20 to-gray-300/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
+                <div className="relative w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
+                  <img 
+                    src={logoUrl} 
+                    alt={logoAlt}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
               </div>
             ) : (
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-2xl">
-                  {displayTitle.charAt(0)}
-                </span>
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-gradient-to-r from-white/20 to-gray-300/20 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
+                <div className="relative w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
+                  <span className="text-white font-bold text-3xl">
+                    {displayTitle.charAt(0)}
+                  </span>
+                </div>
               </div>
             )}
             <div className="text-left">
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">
+              <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
                 {displayTitle}
               </h1>
-              <p className="text-lg text-gray-600">Sistema de Gestão</p>
+              <p className="text-xl text-gray-300">Sistema de Gestão</p>
             </div>
           </div>
-          <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mx-auto"></div>
+          <div className="w-32 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto"></div>
         </div>
 
         {/* Card de Login */}
-        <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl text-gray-800">Acesso ao Sistema</CardTitle>
-            <CardDescription className="text-gray-600">
+        <Card className="shadow-2xl border-0 bg-white/5 backdrop-blur-md border border-white/10">
+          <CardHeader className="text-center pb-8">
+            <CardTitle className="text-3xl text-white font-light">Acesso ao Sistema</CardTitle>
+            <CardDescription className="text-gray-300 text-base">
               Entre com sua conta ou crie uma nova para começar
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/5 border border-white/10">
+                <TabsTrigger 
+                  value="login" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white border-0"
+                >
                   Entrar
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <TabsTrigger 
+                  value="signup" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white border-0"
+                >
                   Criar Conta
                 </TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-6">
                   <div>
-                    <Label htmlFor="login-email" className="text-gray-700">Email</Label>
+                    <Label htmlFor="login-email" className="text-white text-base">Email</Label>
                     <Input
                       id="login-email"
                       type="email"
                       value={loginData.email}
                       onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="seu@email.com"
-                      className="h-11 bg-white/80"
+                      className="h-12 bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-white/40 focus:bg-white/10 transition-all"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="login-password" className="text-gray-700">Senha</Label>
+                    <Label htmlFor="login-password" className="text-white text-base">Senha</Label>
                     <div className="relative">
                       <Input
                         id="login-password"
@@ -199,20 +216,20 @@ export const AuthPage = () => {
                         value={loginData.password}
                         onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                         placeholder="Sua senha"
-                        className="h-11 bg-white/80 pr-10"
+                        className="h-12 bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-white/40 focus:bg-white/10 transition-all pr-12"
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        className="absolute right-0 top-0 h-full px-4 py-2 hover:bg-transparent text-gray-400 hover:text-white"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray-500" />
+                          <EyeOff className="h-5 w-5" />
                         ) : (
-                          <Eye className="h-4 w-4 text-gray-500" />
+                          <Eye className="h-5 w-5" />
                         )}
                       </Button>
                     </div>
@@ -220,7 +237,7 @@ export const AuthPage = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold" 
+                    className="w-full h-12 bg-white text-black hover:bg-gray-100 font-semibold text-base transition-all duration-200" 
                     disabled={loading}
                   >
                     {loading ? 'Entrando...' : 'Entrar'}
@@ -229,34 +246,34 @@ export const AuthPage = () => {
               </TabsContent>
               
               <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-6">
                   <div>
-                    <Label htmlFor="signup-name" className="text-gray-700">Nome Completo</Label>
+                    <Label htmlFor="signup-name" className="text-white text-base">Nome Completo</Label>
                     <Input
                       id="signup-name"
                       value={signUpData.name}
                       onChange={(e) => setSignUpData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Seu nome completo"
-                      className="h-11 bg-white/80"
+                      className="h-12 bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-white/40 focus:bg-white/10 transition-all"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="signup-email" className="text-gray-700">Email</Label>
+                    <Label htmlFor="signup-email" className="text-white text-base">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
                       value={signUpData.email}
                       onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="seu@email.com"
-                      className="h-11 bg-white/80"
+                      className="h-12 bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-white/40 focus:bg-white/10 transition-all"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="signup-password" className="text-gray-700">Senha</Label>
+                    <Label htmlFor="signup-password" className="text-white text-base">Senha</Label>
                     <div className="relative">
                       <Input
                         id="signup-password"
@@ -264,41 +281,41 @@ export const AuthPage = () => {
                         value={signUpData.password}
                         onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
                         placeholder="Mínimo 6 caracteres"
-                        className="h-11 bg-white/80 pr-10"
+                        className="h-12 bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-white/40 focus:bg-white/10 transition-all pr-12"
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        className="absolute right-0 top-0 h-full px-4 py-2 hover:bg-transparent text-gray-400 hover:text-white"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray-500" />
+                          <EyeOff className="h-5 w-5" />
                         ) : (
-                          <Eye className="h-4 w-4 text-gray-500" />
+                          <Eye className="h-5 w-5" />
                         )}
                       </Button>
                     </div>
                   </div>
                   
                   <div>
-                    <Label htmlFor="signup-confirm-password" className="text-gray-700">Confirmar Senha</Label>
+                    <Label htmlFor="signup-confirm-password" className="text-white text-base">Confirmar Senha</Label>
                     <Input
                       id="signup-confirm-password"
                       type="password"
                       value={signUpData.confirmPassword}
                       onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       placeholder="Confirme sua senha"
-                      className="h-11 bg-white/80"
+                      className="h-12 bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-white/40 focus:bg-white/10 transition-all"
                       required
                     />
                   </div>
                   
                   <Button 
                     type="submit" 
-                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold" 
+                    className="w-full h-12 bg-white text-black hover:bg-gray-100 font-semibold text-base transition-all duration-200" 
                     disabled={loading}
                   >
                     {loading ? 'Criando conta...' : 'Criar Conta'}
@@ -310,8 +327,8 @@ export const AuthPage = () => {
         </Card>
 
         {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-500">
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-400">
             © {new Date().getFullYear()} {displayTitle}. Todos os direitos reservados.
           </p>
         </div>
