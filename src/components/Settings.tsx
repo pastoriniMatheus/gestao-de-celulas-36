@@ -1,10 +1,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings as SettingsIcon, Image, Palette, Database } from 'lucide-react';
-import { SystemSettingsManager } from './SystemSettingsManager';
+import { Settings as SettingsIcon, Palette, MapPin, FileText, Webhook, MessageSquare } from 'lucide-react';
 import { AppearanceSettings } from './AppearanceSettings';
-import { LogoUploadSettings } from './LogoUploadSettings';
+import { LocationManager } from './LocationManager';
+import { FormSettings } from './FormSettings';
+import { WebhookManager } from './WebhookManager';
+import { MessageTemplateManager } from './MessageTemplateManager';
 
 export const Settings = () => {
   return (
@@ -16,37 +18,53 @@ export const Settings = () => {
             Configurações do Sistema
           </CardTitle>
           <CardDescription className="text-base">
-            Configure as preferências e aparência do sistema
+            Configure as preferências e funcionalidades do sistema
           </CardDescription>
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="logo" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="logo" className="flex items-center gap-2">
-            <Image className="h-4 w-4" />
-            Logo & Marca
-          </TabsTrigger>
+      <Tabs defaultValue="appearance" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="appearance" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             Aparência
           </TabsTrigger>
-          <TabsTrigger value="system" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            Sistema
+          <TabsTrigger value="locations" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Bairros/Cidades
+          </TabsTrigger>
+          <TabsTrigger value="form" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Formulário
+          </TabsTrigger>
+          <TabsTrigger value="webhooks" className="flex items-center gap-2">
+            <Webhook className="h-4 w-4" />
+            Webhooks
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Mensagens
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="logo">
-          <LogoUploadSettings />
-        </TabsContent>
 
         <TabsContent value="appearance">
           <AppearanceSettings />
         </TabsContent>
 
-        <TabsContent value="system">
-          <SystemSettingsManager />
+        <TabsContent value="locations">
+          <LocationManager />
+        </TabsContent>
+
+        <TabsContent value="form">
+          <FormSettings />
+        </TabsContent>
+
+        <TabsContent value="webhooks">
+          <WebhookManager />
+        </TabsContent>
+
+        <TabsContent value="messages">
+          <MessageTemplateManager />
         </TabsContent>
       </Tabs>
     </div>

@@ -4,73 +4,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Palette, Upload, Save, Image } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Palette, Upload, Save } from 'lucide-react';
+import { useSystemConfig } from '@/hooks/useSystemConfig';
 import { toast } from '@/hooks/use-toast';
 
-interface AppearanceConfig {
-  site_logo: { url: string; alt: string };
-  favicon: { url: string };
-  church_name: { text: string };
-  primary_color: { color: string };
-  secondary_color: { color: string };
-  accent_color: { color: string };
-  background_color: { color: string };
-}
-
 export const AppearanceSettings = () => {
-  const [loading, setLoading] = useState(true);
+  const { config, updateConfig, loading } = useSystemConfig();
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoAlt, setLogoAlt] = useState('');
+  const [primaryColor, setPrimaryColor] = useState('#3b82f6');
+  const [secondaryColor, setSecondaryColor] = useState('#6b7280');
+  const [accentColor, setAccentColor] = useState('#10b981');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const faviconInputRef = useRef<HTMLInputElement>(null);
-  
-  const [config, setConfig] = useState<AppearanceConfig>({
-    site_logo: { url: '', alt: 'Logo da Igreja' },
-    favicon: { url: '' },
-    church_name: { text: '' },
-    primary_color: { color: '#3b82f6' },
-    secondary_color: { color: '#6b7280' },
-    accent_color: { color: '#10b981' },
-    background_color: { color: '#f8fafc' }
-  });
 
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('key, value')
-        .in('key', ['site_logo', 'favicon', 'church_name', 'primary_color', 'secondary_color', 'accent_color', 'background_color']);
-
-      if (error) {
-        console.error('Erro ao carregar configurações de aparência:', error);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        const settings: any = {};
-        data.forEach(item => {
-          settings[item.key] = item.value;
-        });
-        setConfig(prev => ({ ...prev, ...settings }));
-      }
-    } catch (error) {
-      console.error('Erro crítico ao carregar configurações:', error);
-    } finally {
-      setLoading(false);
+    if (config) {
+      setLogoUrl(config.site_logo?.url || '');
+      setLogoAlt(config.site_logo?.alt || 'Logo da Igreja');
+      // Cores podem ser expandidas no futuro
     }
-  };
+  }, [config]);
 
-  const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
+  const handleFileUpload = async (file: File) => {
     if (!file) return;
 
-    // Validar tipo de arquivo
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml'];
     if (!allowedTypes.includes(file.type)) {
       toast({
@@ -81,7 +40,6 @@ export const AppearanceSettings = () => {
       return;
     }
 
-    // Validar tamanho (máximo 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "Erro",
@@ -93,26 +51,13 @@ export const AppearanceSettings = () => {
 
     setUploading(true);
     try {
-      // Converter arquivo para base64 para simular upload
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         const result = e.target?.result as string;
-        
-        if (type === 'logo') {
-          setConfig(prev => ({
-            ...prev,
-            site_logo: { ...prev.site_logo, url: result }
-          }));
-        } else {
-          setConfig(prev => ({
-            ...prev,
-            favicon: { url: result }
-          }));
-        }
-
+        setLogoUrl(result);
         toast({
           title: "Sucesso",
-          description: `${type === 'logo' ? 'Logo' : 'Favicon'} carregado! Não esqueça de salvar as configurações.`,
+          description: "Logo carregado! Não esqueça de salvar as configurações.",
         });
       };
       reader.readAsDataURL(file);
@@ -128,46 +73,26 @@ export const AppearanceSettings = () => {
     }
   };
 
-  const saveSettings = async () => {
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      setSaving(true);
-      
-      const updates = [
-        { key: 'site_logo', value: config.site_logo },
-        { key: 'favicon', value: config.favicon },
-        { key: 'church_name', value: config.church_name },
-        { key: 'primary_color', value: config.primary_color },
-        { key: 'secondary_color', value: config.secondary_color },
-        { key: 'accent_color', value: config.accent_color },
-        { key: 'background_color', value: config.background_color }
-      ];
-
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('system_settings')
-          .upsert({ 
-            key: update.key, 
-            value: update.value 
-          }, { 
-            onConflict: 'key' 
-          });
-
-        if (error) {
-          console.error(`Erro ao salvar ${update.key}:`, error);
-          throw error;
+      await updateConfig({
+        site_logo: {
+          url: logoUrl,
+          alt: logoAlt
         }
-      }
+      });
 
       toast({
         title: "Sucesso",
-        description: "Configurações de aparência salvas com sucesso!",
+        description: "Configurações de aparência salvas com sucesso!"
       });
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       toast({
         title: "Erro",
         description: "Erro ao salvar configurações",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setSaving(false);
@@ -195,24 +120,10 @@ export const AppearanceSettings = () => {
           Aparência do Sistema
         </CardTitle>
         <CardDescription>
-          Configure o visual e identidade da sua igreja
+          Configure o logo e visual da sua igreja
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Nome da Igreja */}
-        <div className="space-y-2">
-          <Label htmlFor="church-name">Nome da Igreja</Label>
-          <Input
-            id="church-name"
-            value={config.church_name.text}
-            onChange={(e) => setConfig(prev => ({
-              ...prev,
-              church_name: { text: e.target.value }
-            }))}
-            placeholder="Nome da sua igreja"
-          />
-        </div>
-
         {/* Logo da Igreja */}
         <div className="space-y-2">
           <Label>Logo da Igreja</Label>
@@ -220,11 +131,8 @@ export const AppearanceSettings = () => {
             <div className="flex-1">
               <Input
                 type="url"
-                value={config.site_logo.url}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  site_logo: { ...prev.site_logo, url: e.target.value }
-                }))}
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
                 placeholder="https://exemplo.com/logo.png ou carregue um arquivo"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -249,15 +157,15 @@ export const AppearanceSettings = () => {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file, 'logo');
+                  if (file) handleFileUpload(file);
                 }}
               />
             </div>
           </div>
-          {config.site_logo.url && (
+          {logoUrl && (
             <div className="mt-2">
               <img 
-                src={config.site_logo.url} 
+                src={logoUrl} 
                 alt="Preview do logo"
                 className="h-16 w-auto border rounded"
                 onError={(e) => {
@@ -268,166 +176,22 @@ export const AppearanceSettings = () => {
           )}
         </div>
 
-        {/* Favicon */}
+        {/* Texto Alternativo */}
         <div className="space-y-2">
-          <Label>Favicon</Label>
-          <div className="flex gap-4 items-start">
-            <div className="flex-1">
-              <Input
-                type="url"
-                value={config.favicon.url}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  favicon: { url: e.target.value }
-                }))}
-                placeholder="https://exemplo.com/favicon.png ou carregue um arquivo"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                URL do ícone que aparecerá na aba do navegador
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => faviconInputRef.current?.click()}
-                disabled={uploading}
-                className="flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                {uploading ? 'Carregando...' : 'Carregar'}
-              </Button>
-              <input
-                ref={faviconInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file, 'favicon');
-                }}
-              />
-            </div>
-          </div>
-          {config.favicon.url && (
-            <div className="mt-2">
-              <img 
-                src={config.favicon.url} 
-                alt="Preview do favicon"
-                className="h-8 w-8 border rounded"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Cores do Sistema */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="primary-color">Cor Primária</Label>
-            <div className="flex gap-2">
-              <Input
-                id="primary-color"
-                type="color"
-                value={config.primary_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  primary_color: { color: e.target.value }
-                }))}
-                className="w-16 h-10"
-              />
-              <Input
-                value={config.primary_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  primary_color: { color: e.target.value }
-                }))}
-                placeholder="#3b82f6"
-                className="flex-1"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="secondary-color">Cor Secundária</Label>
-            <div className="flex gap-2">
-              <Input
-                id="secondary-color"
-                type="color"
-                value={config.secondary_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  secondary_color: { color: e.target.value }
-                }))}
-                className="w-16 h-10"
-              />
-              <Input
-                value={config.secondary_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  secondary_color: { color: e.target.value }
-                }))}
-                placeholder="#6b7280"
-                className="flex-1"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accent-color">Cor de Destaque</Label>
-            <div className="flex gap-2">
-              <Input
-                id="accent-color"
-                type="color"
-                value={config.accent_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  accent_color: { color: e.target.value }
-                }))}
-                className="w-16 h-10"
-              />
-              <Input
-                value={config.accent_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  accent_color: { color: e.target.value }
-                }))}
-                placeholder="#10b981"
-                className="flex-1"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="background-color">Cor de Fundo</Label>
-            <div className="flex gap-2">
-              <Input
-                id="background-color"
-                type="color"
-                value={config.background_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  background_color: { color: e.target.value }
-                }))}
-                className="w-16 h-10"
-              />
-              <Input
-                value={config.background_color.color}
-                onChange={(e) => setConfig(prev => ({
-                  ...prev,
-                  background_color: { color: e.target.value }
-                }))}
-                placeholder="#f8fafc"
-                className="flex-1"
-              />
-            </div>
-          </div>
+          <Label htmlFor="logoAlt">Texto Alternativo do Logo</Label>
+          <Input
+            id="logoAlt"
+            value={logoAlt}
+            onChange={(e) => setLogoAlt(e.target.value)}
+            placeholder="Logo da Igreja"
+          />
+          <p className="text-sm text-gray-500">
+            Texto que aparece quando a imagem não carrega
+          </p>
         </div>
 
         <Button 
-          onClick={saveSettings} 
+          onClick={handleSave} 
           disabled={saving || uploading}
           className="w-full"
         >
