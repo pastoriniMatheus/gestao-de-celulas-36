@@ -196,6 +196,12 @@ export const EditCellDialog = ({
       
       onCellUpdated(data);
       onClose();
+      
+      // Forçar refresh da página para garantir que a lista seja atualizada
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error: any) {
       console.error('EditCellDialog: Erro inesperado:', error);
       toast({

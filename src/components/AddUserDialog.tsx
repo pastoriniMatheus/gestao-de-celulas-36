@@ -55,16 +55,14 @@ export const AddUserDialog = () => {
     try {
       console.log('Criando usuário:', formData.email);
       
-      // Criar usuário no Supabase Auth com email redirect
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Usar admin API para criar usuário
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name: formData.name,
-            role: formData.role
-          }
+        email_confirm: true, // Auto-confirmar email
+        user_metadata: {
+          name: formData.name,
+          role: formData.role
         }
       });
 
@@ -89,16 +87,19 @@ export const AddUserDialog = () => {
 
         if (profileError) {
           console.error('Erro ao criar perfil:', profileError);
-          // Não fazer throw aqui pois o usuário já foi criado no auth
+          toast({
+            title: "Usuário criado",
+            description: "Usuário criado no sistema de autenticação, mas houve erro ao criar perfil.",
+            variant: "default",
+          });
         } else {
           console.log('Perfil criado com sucesso');
+          toast({
+            title: "Sucesso",
+            description: "Usuário criado com sucesso!",
+          });
         }
       }
-
-      toast({
-        title: "Sucesso",
-        description: "Usuário criado com sucesso! Ele pode fazer login agora.",
-      });
 
       setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'user' });
       setIsOpen(false);

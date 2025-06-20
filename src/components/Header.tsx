@@ -61,19 +61,7 @@ export const Header = () => {
           
           {user && userProfile ? (
             <div className="flex items-center gap-2">
-              <div className="block">
-                <UserMenu />
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-gray-600 hover:text-gray-900 p-2 flex items-center"
-                title="Sair"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden md:inline ml-1">Sair</span>
-              </Button>
+              <UserMenu />
             </div>
           ) : (
             <div className="text-sm text-gray-500">Carregando...</div>

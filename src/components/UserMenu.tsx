@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from './AuthProvider';
+import { EditProfileDialog } from './EditProfileDialog';
 
 export const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
@@ -86,9 +87,8 @@ export const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Perfil</span>
+        <DropdownMenuItem asChild>
+          <EditProfileDialog />
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
