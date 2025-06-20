@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useBirthdayNotifications } from '@/hooks/useBirthdayNotifications';
 import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export const BirthdayNotifications = () => {
   const { todayBirthdays, loading, markNotificationSent } = useBirthdayNotifications();
@@ -35,6 +37,15 @@ export const BirthdayNotifications = () => {
     });
   };
 
+  const formatBirthDate = (birthDate: string) => {
+    try {
+      const date = new Date(birthDate);
+      return format(date, "dd 'de' MMMM", { locale: ptBR });
+    } catch (error) {
+      return birthDate;
+    }
+  };
+
   if (loading) return null;
 
   return (
@@ -59,7 +70,7 @@ export const BirthdayNotifications = () => {
             <div>
               <CardTitle className="text-sm flex items-center gap-2">
                 <Gift className="h-4 w-4 text-orange-500" />
-                Aniversariantes Hoje
+                Aniversariantes
               </CardTitle>
               <CardDescription className="text-xs">
                 {todayBirthdays.length === 0 
@@ -79,20 +90,23 @@ export const BirthdayNotifications = () => {
               </p>
             ) : (
               todayBirthdays.map((contact) => (
-                <div key={contact.contact_id} className="flex items-center justify-between p-2 bg-orange-50 rounded-md">
-                  <div>
-                    <p className="text-sm font-medium">{contact.contact_name}</p>
+                <div key={contact.contact_id} className="flex items-center justify-between p-3 bg-orange-50 rounded-md border border-orange-100">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{contact.contact_name}</p>
+                    <p className="text-xs text-orange-600 font-medium">
+                      {formatBirthDate(contact.birth_date)}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {contact.age ? `${contact.age} anos` : 'Idade não informada'}
+                      {contact.age !== null && contact.age !== undefined ? `${contact.age} anos` : 'Idade não calculada'}
                     </p>
                   </div>
                   <Button
                     size="sm"
                     onClick={() => handleSendMessage(contact.contact_id, contact.contact_name, contact.whatsapp)}
-                    className="bg-green-600 hover:bg-green-700 h-7"
+                    className="bg-green-600 hover:bg-green-700 h-7 text-xs"
                   >
                     <Phone className="h-3 w-3 mr-1" />
-                    WhatsApp
+                    Enviar
                   </Button>
                 </div>
               ))

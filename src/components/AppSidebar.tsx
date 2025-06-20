@@ -165,8 +165,8 @@ export function AppSidebar() {
             </div>
           )}
           <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">Gestão Celular</h1>
-            <p className="text-xs text-muted-foreground">{churchName}</p>
+            <h1 className="text-lg font-semibold text-sidebar-foreground">{churchName}</h1>
+            <p className="text-xs text-muted-foreground">Gestão Celular</p>
           </div>
         </div>
       </SidebarHeader>
