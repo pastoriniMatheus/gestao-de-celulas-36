@@ -108,7 +108,7 @@ export const CellsList = () => {
           <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma célula encontrada</h3>
           <p className="text-gray-600 mb-4">
-            {loading ? 'Carregando células...' : 'Comece criando sua primeira célula.'}
+            Comece criando sua primeira célula.
           </p>
           <Button onClick={() => fetchCells()} variant="outline">
             Recarregar Células
