@@ -4,8 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 export const useUserPermissions = () => {
   const { userProfile } = useAuth();
 
-  console.log('useUserPerm
-issions - userProfile:', userProfile);
+  console.log('useUserPermissions - userProfile:', userProfile);
   console.log('useUserPermissions - role:', userProfile?.role);
 
   // Admin tem acesso a tudo
