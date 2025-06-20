@@ -4,7 +4,8 @@ import { useAuth } from '@/components/AuthProvider';
 export const useUserPermissions = () => {
   const { userProfile } = useAuth();
 
-  console.log('useUserPermissions - userProfile:', userProfile);
+  console.log('useUserPerm
+issions - userProfile:', userProfile);
   console.log('useUserPermissions - role:', userProfile?.role);
 
   // Admin tem acesso a tudo
@@ -14,9 +15,9 @@ export const useUserPermissions = () => {
   console.log('useUserPermissions - isAdmin:', isAdmin);
   console.log('useUserPermissions - isLeader:', isLeader);
 
-  // Para admin, todas as permissões devem ser true
+  // Permissões específicas
   const canAccessUserManagement = isAdmin;
-  const canAccessSettings = isAdmin;
+  const canAccessSettings = isAdmin; // Apenas admin pode acessar configurações
   const canAccessEvents = isAdmin;
   const canAccessQRCodes = isAdmin;
   const canAccessMessaging = isAdmin || isLeader;

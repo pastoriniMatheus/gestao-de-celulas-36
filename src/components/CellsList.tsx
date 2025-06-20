@@ -1,16 +1,35 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Home, MapPin, Clock, Trash2, Users, Edit, UserCheck } from 'lucide-react';
+import { useLeaderCells } from '@/hooks/useLeaderCells';
 import { useCells } from '@/hooks/useCells';
 import { EditCellDialog } from './EditCellDialog';
 import { CellModal } from './CellModal';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useLeaderPermissions } from '@/hooks/useLeaderPermissions';
 
 export const CellsList = () => {
-  const { cells, loading, deleteCell, fetchCells } = useCells();
+  const { canManageAllCells } = useLeaderPermissions();
+  
+  // Usar o hook apropriado baseado nas permissões
+  const { 
+    cells: allCells, 
+    loading: allLoading, 
+    deleteCell, 
+    fetchCells 
+  } = canManageAllCells ? useCells() : { cells: [], loading: false, deleteCell: null, fetchCells: () => {} };
+  
+  const { 
+    cells: leaderCells, 
+    loading: leaderLoading 
+  } = useLeaderCells();
+  
+  // Usar as células apropriadas baseado nas permissões
+  const cells = canManageAllCells ? allCells : leaderCells;
+  const loading = canManageAllCells ? allLoading : leaderLoading;
+  
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingCell, setEditingCell] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -21,10 +40,20 @@ export const CellsList = () => {
   console.log('CellsList: Estado atual:', { 
     cellsCount: cells.length, 
     loading, 
-    cells: cells.slice(0, 3)
+    cells: cells.slice(0, 3),
+    canManageAllCells
   });
 
   const handleDelete = async (id: string, name: string) => {
+    if (!canManageAllCells || !deleteCell) {
+      toast({
+        title: "Erro",
+        description: "Você não tem permissão para excluir células",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!confirm(`Tem certeza que deseja excluir a célula "${name}"?`)) {
       return;
     }
@@ -54,12 +83,22 @@ export const CellsList = () => {
   };
 
   const handleEditCell = (cell: any) => {
+    if (!canManageAllCells) {
+      toast({
+        title: "Informação",
+        description: "Você pode visualizar os detalhes clicando na célula",
+        variant: "default",
+      });
+      return;
+    }
     setEditingCell(cell);
     setEditDialogOpen(true);
   };
 
   const handleCellUpdated = () => {
-    fetchCells();
+    if (canManageAllCells) {
+      fetchCells();
+    }
     setEditDialogOpen(false);
     setEditingCell(null);
     setCellModalOpen(false);
@@ -96,20 +135,25 @@ export const CellsList = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Células</CardTitle>
+          <CardTitle>{canManageAllCells ? 'Lista de Células' : 'Minhas Células'}</CardTitle>
           <CardDescription>
-            Gerencie todas as células da igreja
+            {canManageAllCells 
+              ? 'Gerencie todas as células da igreja'
+              : 'Suas células como líder'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 text-center">
           <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma célula encontrada</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {canManageAllCells ? 'Nenhuma célula encontrada' : 'Você não possui células'}
+          </h3>
           <p className="text-gray-600 mb-4">
-            Comece criando sua primeira célula.
+            {canManageAllCells 
+              ? 'Comece criando sua primeira célula.'
+              : 'Entre em contato com o administrador para ser atribuído a uma célula.'
+            }
           </p>
-          <Button onClick={() => fetchCells()} variant="outline">
-            Recarregar Células
-          </Button>
         </CardContent>
       </Card>
     );
@@ -119,7 +163,9 @@ export const CellsList = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Células ({cells.length})</CardTitle>
+          <CardTitle>
+            {canManageAllCells ? `Lista de Células (${cells.length})` : `Minhas Células (${cells.length})`}
+          </CardTitle>
           <CardDescription>
             Clique em uma célula para ver detalhes, estatísticas e controle de presença
           </CardDescription>
@@ -144,23 +190,27 @@ export const CellsList = () => {
                       </Badge>
                     </div>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditCell(cell)}
-                        title="Editar célula"
-                      >
-                        <Edit className="h-4 w-4 text-orange-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(cell.id, cell.name)}
-                        disabled={deletingId === cell.id}
-                        title="Excluir célula"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                      {canManageAllCells && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditCell(cell)}
+                            title="Editar célula"
+                          >
+                            <Edit className="h-4 w-4 text-orange-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(cell.id, cell.name)}
+                            disabled={deletingId === cell.id}
+                            title="Excluir célula"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -187,7 +237,7 @@ export const CellsList = () => {
             ))}
           </div>
 
-          {editingCell && (
+          {editingCell && canManageAllCells && (
             <EditCellDialog
               cell={editingCell}
               isOpen={editDialogOpen}

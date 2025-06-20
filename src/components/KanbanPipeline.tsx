@@ -7,13 +7,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { User, Phone, MapPin, Search, Filter } from 'lucide-react';
 import { usePipelineStages } from '@/hooks/usePipelineStages';
+import { useLeaderContacts } from '@/hooks/useLeaderContacts';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
 import { EditContactDialog } from './EditContactDialog';
+import { useLeaderPermissions } from '@/hooks/useLeaderPermissions';
 
 export const KanbanPipeline = () => {
   const { stages, loading: stagesLoading } = usePipelineStages();
-  const { contacts, loading: contactsLoading, updateContact } = useContacts();
+  const { isAdmin } = useLeaderPermissions();
+  
+  // Usar hook apropriado baseado nas permissões
+  const { contacts: allContacts, loading: allContactsLoading, updateContact } = isAdmin ? useContacts() : { contacts: [], loading: false, updateContact: () => {} };
+  const { contacts: leaderContacts, loading: leaderContactsLoading } = useLeaderContacts();
+  
+  const contacts = isAdmin ? allContacts : leaderContacts;
+  const contactsLoading = isAdmin ? allContactsLoading : leaderContactsLoading;
+  
   const { cells } = useCells();
   
   const [selectedContact, setSelectedContact] = useState<any>(null);
@@ -33,6 +43,8 @@ export const KanbanPipeline = () => {
   });
 
   const handleMoveContact = async (contactId: string, newStageId: string) => {
+    if (!isAdmin) return; // Líderes não podem mover contatos entre estágios
+    
     try {
       await updateContact(contactId, { pipeline_stage_id: newStageId });
     } catch (error) {
@@ -65,7 +77,7 @@ export const KanbanPipeline = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-blue-600" />
-            Filtros do Pipeline
+            {isAdmin ? 'Filtros do Pipeline' : 'Meus Discípulos - Filtros'}
           </CardTitle>
         </CardHeader>
         <CardContent>

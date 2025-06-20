@@ -2,9 +2,12 @@
 import { CellsList } from './CellsList';
 import { AddCellDialog } from './AddCellDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Plus } from 'lucide-react';
+import { Users } from 'lucide-react';
+import { useLeaderPermissions } from '@/hooks/useLeaderPermissions';
 
 export const CellsManager = () => {
+  const { canManageAllCells } = useLeaderPermissions();
+
   console.log('CellsManager: Renderizando componente');
 
   return (
@@ -15,14 +18,17 @@ export const CellsManager = () => {
             <div>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <Users className="h-6 w-6 text-blue-600" />
-                Gerenciamento de Células
+                {canManageAllCells ? 'Gerenciamento de Células' : 'Minhas Células'}
               </CardTitle>
               <CardDescription className="text-base mt-2">
-                Gerencie todas as células da igreja, controle presenças e acompanhe estatísticas
+                {canManageAllCells 
+                  ? 'Gerencie todas as células da igreja, controle presenças e acompanhe estatísticas'
+                  : 'Gerencie suas células, controle presenças e acompanhe estatísticas'
+                }
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <AddCellDialog />
+              {canManageAllCells && <AddCellDialog />}
             </div>
           </div>
         </CardHeader>
