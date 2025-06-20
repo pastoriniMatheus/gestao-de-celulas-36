@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -338,17 +337,7 @@ export const Dashboard = () => {
       {/* Métricas do Pipeline e Gráfico Unificado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardPipelineMetrics />
-        <DashboardCharts stats={{
-          totalMembers,
-          totalEncounter,
-          totalBaptized,
-          totalCells: cells.length,
-          activeCells,
-          neighborhoodsWithMembers: neighborhoodStats.filter(n => n.count > 0).length,
-          totalNeighborhoods: neighborhoods.length,
-          totalCities: cities.length,
-          totalLeaders,
-        }} />
+        <DashboardCharts />
       </div>
 
       {/* Footer com Informações Adicionais */}
