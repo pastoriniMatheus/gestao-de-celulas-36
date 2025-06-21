@@ -49,45 +49,53 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
     setLoading(true);
     try {
-      // Verificar se já existe um perfil
+      console.log('Salvando perfil para usuário:', user.id);
+      
+      // Primeiro verificar se já existe perfil
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Erro ao buscar perfil existente:', fetchError);
         throw fetchError;
       }
+
+      const profileData = {
+        name: formData.name.trim(),
+        photo_url: formData.photo_url || null
+      };
 
       let result;
       if (existingProfile) {
         // Atualizar perfil existente
+        console.log('Atualizando perfil existente:', existingProfile.id);
         result = await supabase
           .from('profiles')
-          .update({
-            name: formData.name.trim(),
-            photo_url: formData.photo_url
-          })
+          .update(profileData)
           .eq('user_id', user.id);
       } else {
         // Criar novo perfil
+        console.log('Criando novo perfil');
         result = await supabase
           .from('profiles')
           .insert({
             user_id: user.id,
-            name: formData.name.trim(),
             email: user.email || '',
-            photo_url: formData.photo_url,
             role: 'user',
-            active: true
+            active: true,
+            ...profileData
           });
       }
 
       if (result.error) {
+        console.error('Erro ao salvar perfil:', result.error);
         throw result.error;
       }
 
+      console.log('Perfil salvo com sucesso');
       toast({
         title: "Sucesso",
         description: "Perfil atualizado com sucesso!",
@@ -95,16 +103,16 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
       onOpenChange(false);
       
-      // Recarregar para mostrar as mudanças
+      // Recarregar após um pequeno delay
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 500);
       
     } catch (error: any) {
-      console.error('Erro ao atualizar perfil:', error);
+      console.error('Erro ao salvar perfil:', error);
       toast({
         title: "Erro",
-        description: `Erro ao atualizar perfil: ${error.message}`,
+        description: `Erro ao salvar perfil: ${error.message}`,
         variant: "destructive",
       });
     } finally {
