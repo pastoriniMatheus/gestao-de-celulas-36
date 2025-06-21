@@ -1,12 +1,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings as SettingsIcon, Palette, MapPin, FileText, Webhook, MessageSquare } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, MapPin, FileText, Webhook, MessageSquare, Database } from 'lucide-react';
 import { AppearanceSettings } from './AppearanceSettings';
 import { LocationManager } from './LocationManager';
 import { FormSettings } from './FormSettings';
 import { WebhookManager } from './WebhookManager';
 import { MessageTemplateManager } from './MessageTemplateManager';
+import { DatabaseSettings } from './DatabaseSettings';
 import { useSystemConfig } from '@/hooks/useSystemConfig';
 
 export const Settings = () => {
@@ -20,7 +21,8 @@ export const Settings = () => {
   const logoAlt = config?.site_logo?.alt || 'Logo';
   const churchName = config?.church_name?.text || config?.form_title?.text || 'Sistema de Células';
 
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-2xl">
@@ -28,13 +30,13 @@ export const Settings = () => {
             Configurações do Sistema
           </CardTitle>
           <CardDescription className="text-base">
-            Configure as preferências e funcionalidades do sistema
+            Configure as preferências e funcionalidades do sistema - Sistema Matheus Pastorini
           </CardDescription>
         </CardHeader>
       </Card>
 
       <Tabs defaultValue="appearance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="appearance" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             Aparência
@@ -54,6 +56,10 @@ export const Settings = () => {
           <TabsTrigger value="messages" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Mensagens
+          </TabsTrigger>
+          <TabsTrigger value="database" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Banco de Dados
           </TabsTrigger>
         </TabsList>
 
@@ -76,6 +82,11 @@ export const Settings = () => {
         <TabsContent value="messages">
           <MessageTemplateManager />
         </TabsContent>
+
+        <TabsContent value="database">
+          <DatabaseSettings />
+        </TabsContent>
       </Tabs>
-    </div>;
+    </div>
+  );
 };
