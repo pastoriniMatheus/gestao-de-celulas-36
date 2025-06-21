@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { QrCode, Calendar, Eye, Download, ToggleLeft, ToggleRight, Trash2, Edit, Users } from 'lucide-react';
+import { QrCode, Calendar, Eye, Download, ToggleLeft, ToggleRight, Trash2, Edit, Users, Plus } from 'lucide-react';
 import { useQRCodes } from '@/hooks/useQRCodes';
 import { useEvents } from '@/hooks/useEvents';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +17,7 @@ export const QREventManager = () => {
   const { toast } = useToast();
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleDownloadQR = (qrCode: any) => {
     try {
@@ -231,7 +231,10 @@ export const QREventManager = () => {
 
         <TabsContent value="events" className="space-y-4">
           <div className="flex justify-end">
-            <AddEventDialog />
+            <Button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Evento
+            </Button>
           </div>
           
           {events.length === 0 ? (
@@ -309,10 +312,15 @@ export const QREventManager = () => {
         </TabsContent>
       </Tabs>
 
+      <AddEventDialog 
+        open={isAddDialogOpen} 
+        onOpenChange={setIsAddDialogOpen} 
+      />
+      
       {editingEvent && (
         <EditEventDialog
           event={editingEvent}
-          isOpen={isEditDialogOpen}
+          open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
         />
       )}
