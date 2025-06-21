@@ -59,6 +59,46 @@ export const useEvents = () => {
     }
   };
 
+  // Função para incrementar scan count
+  const incrementScanCount = async (eventId: string) => {
+    try {
+      console.log('Incrementando scan count para evento:', eventId);
+      
+      const { error } = await supabase.rpc('increment_event_scan_count', {
+        event_uuid: eventId
+      });
+
+      if (error) {
+        console.error('Erro ao incrementar scan count:', error);
+      } else {
+        console.log('Scan count incrementado com sucesso');
+        await fetchEvents(); // Recarregar eventos para atualizar contadores
+      }
+    } catch (error) {
+      console.error('Erro ao incrementar scan count:', error);
+    }
+  };
+
+  // Função para incrementar registration count
+  const incrementRegistrationCount = async (eventId: string) => {
+    try {
+      console.log('Incrementando registration count para evento:', eventId);
+      
+      const { error } = await supabase.rpc('increment_event_registration', {
+        event_uuid: eventId
+      });
+
+      if (error) {
+        console.error('Erro ao incrementar registration count:', error);
+      } else {
+        console.log('Registration count incrementado com sucesso');
+        await fetchEvents(); // Recarregar eventos para atualizar contadores
+      }
+    } catch (error) {
+      console.error('Erro ao incrementar registration count:', error);
+    }
+  };
+
   const addEvent = async (eventData: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'scan_count' | 'registration_count' | 'qr_code' | 'qr_url'>) => {
     try {
       console.log('Criando evento:', eventData);
@@ -337,6 +377,8 @@ export const useEvents = () => {
     updateEvent,
     toggleEventStatus,
     deleteEvent,
-    fetchEvents
+    fetchEvents,
+    incrementScanCount,
+    incrementRegistrationCount
   };
 };

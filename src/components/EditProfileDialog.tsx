@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -44,23 +43,32 @@ export const EditProfileDialog = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      console.log('Atualizando perfil com dados:', formData);
+      
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           name: formData.name.trim(),
           photo_url: formData.photo_url
         })
-        .eq('user_id', userProfile?.user_id);
+        .eq('user_id', userProfile?.user_id)
+        .select()
+        .single();
 
       if (error) {
+        console.error('Erro ao atualizar perfil:', error);
         throw error;
       }
+
+      console.log('Perfil atualizado com sucesso:', data);
 
       toast({
         title: "Sucesso",
         description: "Perfil atualizado com sucesso!",
       });
 
+      setIsOpen(false);
+      
       // Recarregar para mostrar as mudanças
       setTimeout(() => {
         window.location.reload();
@@ -183,9 +191,12 @@ export const EditProfileDialog = () => {
 
     setUploading(true);
     try {
+      console.log('Carregando imagem:', file.name);
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string;
+        console.log('Imagem convertida para base64');
         setFormData(prev => ({ ...prev, photo_url: imageUrl }));
       };
       reader.readAsDataURL(file);

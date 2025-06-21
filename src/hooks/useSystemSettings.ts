@@ -26,13 +26,14 @@ export const useSystemSettings = () => {
           // Handle Json type properly by extracting string values
           const value = setting.value;
           if (typeof value === 'object' && value !== null) {
-            // If it's an object, try to get the text property or convert to string
-            settingsMap[setting.key as keyof SystemSettings] = (value as any).text || (value as any).url || String(value);
+            // Se é um objeto, tentar pegar a propriedade 'url' primeiro (para imagens)
+            settingsMap[setting.key as keyof SystemSettings] = (value as any).url || (value as any).text || String(value);
           } else {
             settingsMap[setting.key as keyof SystemSettings] = String(value);
           }
         });
 
+        console.log('Configurações carregadas:', settingsMap);
         setSettings(settingsMap);
       } catch (error) {
         console.error('Erro ao carregar configurações:', error);
