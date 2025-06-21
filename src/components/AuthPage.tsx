@@ -124,9 +124,9 @@ export const AuthPage = () => {
   return <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/50 via-black to-gray-900/50"></div>
-      <div className="absolute inset-0" style={{
+      <div style={{
       backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%)'
-    }}></div>
+    }} className="absolute inset-0 bg-gray-900"></div>
       
       <div className="w-full max-w-md relative z-10">
         {/* Logo e Título no Topo */}
