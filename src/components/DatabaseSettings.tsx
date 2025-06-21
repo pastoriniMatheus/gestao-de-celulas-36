@@ -19,6 +19,15 @@ interface DatabaseConfig {
   database_url: string;
 }
 
+// Define table names as a const array for type safety
+const BACKUP_TABLES = [
+  'contacts', 'cells', 'profiles', 'cities', 'neighborhoods', 
+  'pipeline_stages', 'events', 'qr_codes', 'message_templates',
+  'webhook_configs', 'system_settings'
+] as const;
+
+type BackupTableName = typeof BACKUP_TABLES[number];
+
 export const DatabaseSettings = () => {
   const { config, updateConfig } = useSystemConfig();
   const [dbConfig, setDbConfig] = useState<DatabaseConfig>({
@@ -36,24 +45,10 @@ export const DatabaseSettings = () => {
 
   useEffect(() => {
     // Carregar configurações salvas do sistema
-    const loadDatabaseConfig = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('system_settings')
-          .select('key, value')
-          .in('key', ['database_config']);
-
-        if (!error && data && data.length > 0) {
-          const savedConfig = data[0].value as DatabaseConfig;
-          setDbConfig(prev => ({ ...prev, ...savedConfig }));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar configurações do banco:', error);
-      }
-    };
-
-    loadDatabaseConfig();
-  }, []);
+    if (config.database_config) {
+      setDbConfig(prev => ({ ...prev, ...config.database_config }));
+    }
+  }, [config]);
 
   const testConnection = async () => {
     setConnectionStatus('testing');
@@ -110,13 +105,6 @@ export const DatabaseSettings = () => {
   const downloadDatabase = async () => {
     setDownloading(true);
     try {
-      // Listar todas as tabelas principais
-      const tables = [
-        'contacts', 'cells', 'profiles', 'cities', 'neighborhoods', 
-        'pipeline_stages', 'events', 'qr_codes', 'message_templates',
-        'webhook_configs', 'system_settings'
-      ];
-
       const backup: any = {
         timestamp: new Date().toISOString(),
         version: '1.0',
@@ -124,19 +112,19 @@ export const DatabaseSettings = () => {
         data: {}
       };
 
-      // Exportar dados de cada tabela
-      for (const table of tables) {
+      // Exportar dados de cada tabela usando type-safe approach
+      for (const tableName of BACKUP_TABLES) {
         try {
           const { data, error } = await supabase
-            .from(table)
+            .from(tableName as BackupTableName)
             .select('*');
 
           if (!error && data) {
-            backup.data[table] = data;
-            console.log(`Exportados ${data.length} registros da tabela ${table}`);
+            backup.data[tableName] = data;
+            console.log(`Exportados ${data.length} registros da tabela ${tableName}`);
           }
         } catch (error) {
-          console.warn(`Erro ao exportar tabela ${table}:`, error);
+          console.warn(`Erro ao exportar tabela ${tableName}:`, error);
         }
       }
 
@@ -185,34 +173,35 @@ export const DatabaseSettings = () => {
       let restoredTables = 0;
       let totalRecords = 0;
 
-      // Restaurar dados para cada tabela
-      for (const [table, records] of Object.entries(backup.data)) {
+      // Restaurar dados para cada tabela usando type-safe approach
+      for (const tableName of BACKUP_TABLES) {
+        const records = backup.data[tableName];
         if (Array.isArray(records) && records.length > 0) {
           try {
             // Primeiro, limpar dados existentes (cuidado!)
             const { error: deleteError } = await supabase
-              .from(table)
+              .from(tableName as BackupTableName)
               .delete()
               .neq('id', '00000000-0000-0000-0000-000000000000');
 
             if (deleteError) {
-              console.warn(`Aviso ao limpar tabela ${table}:`, deleteError);
+              console.warn(`Aviso ao limpar tabela ${tableName}:`, deleteError);
             }
 
             // Inserir novos dados
             const { error: insertError } = await supabase
-              .from(table)
+              .from(tableName as BackupTableName)
               .insert(records);
 
             if (!insertError) {
               restoredTables++;
               totalRecords += records.length;
-              console.log(`Restaurados ${records.length} registros na tabela ${table}`);
+              console.log(`Restaurados ${records.length} registros na tabela ${tableName}`);
             } else {
-              console.error(`Erro ao restaurar tabela ${table}:`, insertError);
+              console.error(`Erro ao restaurar tabela ${tableName}:`, insertError);
             }
           } catch (error) {
-            console.warn(`Erro ao processar tabela ${table}:`, error);
+            console.warn(`Erro ao processar tabela ${tableName}:`, error);
           }
         }
       }

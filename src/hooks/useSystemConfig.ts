@@ -2,11 +2,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface DatabaseConfig {
+  project_url: string;
+  anon_key: string;
+  service_role_key: string;
+  project_id: string;
+  database_url: string;
+}
+
 interface SystemConfig {
   site_logo: { url: string; alt: string };
   form_title: { text: string };
   form_description: { text: string };
   church_name: { text: string };
+  database_config?: DatabaseConfig;
 }
 
 export const useSystemConfig = () => {
@@ -26,7 +35,7 @@ export const useSystemConfig = () => {
         const { data, error } = await supabase
           .from('system_settings')
           .select('key, value')
-          .in('key', ['site_logo', 'form_title', 'form_description', 'church_name']);
+          .in('key', ['site_logo', 'form_title', 'form_description', 'church_name', 'database_config']);
 
         if (error) {
           console.error('Erro ao carregar configurações:', error);
