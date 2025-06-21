@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { UserCheck, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserCheck, Users, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -13,6 +13,8 @@ interface Cell {
   id: string;
   name: string;
   address: string;
+  meeting_day: number;
+  meeting_time: string;
 }
 
 export default function MemberAttendancePage() {
@@ -33,7 +35,7 @@ export default function MemberAttendancePage() {
     try {
       const { data: cellData, error: cellError } = await supabase
         .from('cells')
-        .select('id, name, address')
+        .select('id, name, address, meeting_day, meeting_time')
         .eq('id', cellId)
         .single();
 
@@ -49,11 +51,32 @@ export default function MemberAttendancePage() {
     }
   };
 
+  const getDayName = (dayNumber: number) => {
+    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    return days[dayNumber] || 'Não definido';
+  };
+
+  const isCellMeetingDay = () => {
+    if (!cell) return false;
+    const today = new Date().getDay();
+    return today === cell.meeting_day;
+  };
+
   const markAttendance = async () => {
     if (!attendanceCode.trim() || !cellId) {
       toast({
         title: "Erro",
         description: "Digite seu código de presença",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar se é o dia da célula
+    if (!isCellMeetingDay()) {
+      toast({
+        title: "Erro",
+        description: `A presença só pode ser marcada no dia da reunião da célula (${getDayName(cell?.meeting_day || 0)})`,
         variant: "destructive"
       });
       return;
@@ -180,6 +203,12 @@ export default function MemberAttendancePage() {
               <span className="font-semibold">{cell.name}</span>
             </div>
             <p className="text-sm text-gray-500 mt-1">{cell.address}</p>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              <span className="text-sm">
+                Reunião: {getDayName(cell.meeting_day)} às {cell.meeting_time}
+              </span>
+            </div>
           </CardDescription>
         </CardHeader>
         
@@ -214,6 +243,19 @@ export default function MemberAttendancePage() {
             </div>
           ) : (
             <div className="space-y-4">
+              {!isCellMeetingDay() && (
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div className="text-sm text-yellow-800">
+                      <p className="font-semibold mb-1">Atenção:</p>
+                      <p>A presença só pode ser marcada no dia da reunião da célula ({getDayName(cell.meeting_day)}).</p>
+                      <p className="mt-1">Hoje é {getDayName(new Date().getDay())}.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -241,7 +283,7 @@ export default function MemberAttendancePage() {
 
               <Button 
                 onClick={markAttendance}
-                disabled={loading || attendanceCode.length !== 6}
+                disabled={loading || attendanceCode.length !== 6 || !isCellMeetingDay()}
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 size="lg"
               >

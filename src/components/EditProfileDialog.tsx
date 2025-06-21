@@ -55,23 +55,28 @@ export const EditProfileDialog = () => {
       console.log('Atualizando perfil com dados:', formData);
       console.log('User ID:', user.id);
       
-      // Primeiro verificar se existe perfil para este user_id
-      const { data: existingProfile } = await supabase
+      // Buscar o perfil existente usando user_id
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, user_id, email')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      if (fetchError) {
+        console.error('Erro ao buscar perfil:', fetchError);
+        throw fetchError;
+      }
+
       let result;
       if (existingProfile) {
-        // Atualizar perfil existente usando o ID do perfil
+        // Atualizar perfil existente - apenas nome e foto, não email
         result = await supabase
           .from('profiles')
           .update({
             name: formData.name.trim(),
             photo_url: formData.photo_url
           })
-          .eq('id', existingProfile.id)
+          .eq('user_id', user.id)
           .select()
           .maybeSingle();
       } else {
