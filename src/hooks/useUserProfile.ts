@@ -24,23 +24,42 @@ export const useUserProfile = (user: User | null) => {
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('useUserProfile - Erro ao buscar perfil:', error);
         
-        // Se não encontrar perfil, vamos verificar se é admin baseado no email
+        // Se não encontrar perfil, criar um perfil básico
         if (error.code === 'PGRST116') {
-          console.log('useUserProfile - Perfil não encontrado, verificando se é admin pelo email');
-          // Criar perfil temporário para admin
-          const tempProfile = {
-            user_id: userId,
-            name: 'Administrador',
-            role: 'admin',
-            email: user?.email
-          };
-          console.log('useUserProfile - Criando perfil temporário para admin:', tempProfile);
-          setUserProfile(tempProfile);
+          console.log('useUserProfile - Perfil não encontrado, criando perfil básico');
+          
+          // Tentar criar perfil se não existir
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: userId,
+              name: 'Usuário',
+              email: user?.email || '',
+              role: 'user',
+              active: true
+            })
+            .select()
+            .maybeSingle();
+
+          if (createError) {
+            console.error('Erro ao criar perfil:', createError);
+            // Se falhar ao criar, usar perfil temporário
+            const tempProfile = {
+              user_id: userId,
+              name: 'Usuário',
+              role: 'user',
+              email: user?.email
+            };
+            setUserProfile(tempProfile);
+          } else {
+            console.log('Perfil criado com sucesso:', newProfile);
+            setUserProfile(newProfile);
+          }
         }
         return;
       }
