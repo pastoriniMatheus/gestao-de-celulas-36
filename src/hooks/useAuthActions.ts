@@ -75,24 +75,10 @@ export const useAuthActions = () => {
     }
   };
 
-  const resetPassword = async (email: string) => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      return { error };
-    } catch (error) {
-      console.error('Erro no resetPassword:', error);
-      return { error: { message: 'Erro inesperado' } };
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     signIn,
     signUp,
     signOut,
-    resetPassword,
     loading,
   };
 };

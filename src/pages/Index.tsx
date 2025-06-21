@@ -8,6 +8,7 @@ import { CellsManager } from '@/components/CellsManager';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
 import { UsersManager } from '@/components/UsersManager';
+import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -34,11 +35,11 @@ const Index = () => {
   useEffect(() => {
     const section = pathToSection[location.pathname] || 'dashboard';
     setActiveSection(section);
-    console.log('Index: Seção ativa:', section, 'URL atual:', location.pathname);
+    console.log('Seção ativa:', section, 'URL atual:', location.pathname);
   }, [location.pathname]);
 
   const renderContent = () => {
-    console.log('Index: Renderizando conteúdo para seção:', activeSection);
+    console.log('Renderizando conteúdo para seção:', activeSection);
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard />;
@@ -47,7 +48,6 @@ const Index = () => {
       case 'contacts':
         return <ContactsManager />;
       case 'cells':
-        console.log('Index: Renderizando CellsManager');
         return <CellsManager />;
       case 'pipeline':
         return <Pipeline />;
@@ -56,27 +56,29 @@ const Index = () => {
       case 'users':
         return <UsersManager />;
       default:
-        console.log('Index: Seção não encontrada, retornando Dashboard');
+        console.log('Seção não encontrada, retornando Dashboard');
         return <Dashboard />;
     }
   };
 
   return (
-    <ProtectedRoute>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <SidebarInset className="flex flex-1 flex-col">
-            <Header />
-            <main className="flex-1 p-6 overflow-auto">
-              <div className="max-w-7xl mx-auto">
-                {renderContent()}
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    </ProtectedRoute>
+    <AuthProvider>
+      <ProtectedRoute>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full">
+            <AppSidebar />
+            <SidebarInset className="flex flex-1 flex-col">
+              <Header />
+              <main className="flex-1 p-6 overflow-auto">
+                <div className="max-w-7xl mx-auto">
+                  {renderContent()}
+                </div>
+              </main>
+            </SidebarInset>
+          </div>
+        </SidebarProvider>
+      </ProtectedRoute>
+    </AuthProvider>
   );
 };
 

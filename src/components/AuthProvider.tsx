@@ -12,8 +12,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<{ error: any }>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
-  refreshProfile: () => Promise<{ error: any }>;
   loading: boolean;
 }
 
@@ -29,21 +27,19 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, session, loading: sessionLoading } = useAuthSession();
-  const { userProfile, loading: profileLoading, refreshProfile } = useUserProfile(user);
-  const { signIn, signUp, signOut, resetPassword, loading: actionLoading } = useAuthActions();
+  const { userProfile } = useUserProfile(user);
+  const { signIn, signUp, signOut, loading: actionLoading } = useAuthActions();
 
-  const loading = sessionLoading || actionLoading || profileLoading;
+  const loading = sessionLoading || actionLoading;
 
   const value = {
     user,
     session,
     userProfile,
-    loading,
     signIn,
     signUp,
     signOut,
-    resetPassword,
-    refreshProfile
+    loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

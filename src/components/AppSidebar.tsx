@@ -11,73 +11,79 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useLeaderPermissions } from '@/hooks/useLeaderPermissions';
 
-const allItems = [
+const adminItems = [
   {
     title: "Dashboard",
     url: "/",
     icon: Home,
-    permission: 'canAccessDashboard'
   },
   {
     title: "Contatos",
     url: "/contacts",
     icon: Users,
-    permission: 'canAccessContacts'
   },
   {
     title: "Estágio dos Discípulos",
     url: "/pipeline",
     icon: UserCheck,
-    permission: 'canAccessPipeline'
   },
   {
     title: "Células",
     url: "/cells",
     icon: Building2,
-    permission: 'canAccessCells'
   },
   {
     title: "Mensagens",
     url: "/messages",
     icon: MessageSquare,
-    permission: 'canAccessMessaging'
   },
   {
     title: "Eventos",
     url: "/events",
     icon: Calendar,
-    permission: 'canAccessEvents'
   },
   {
     title: "Usuários",
     url: "/users",
     icon: Users,
-    permission: 'canAccessUserManagement'
   },
   {
     title: "Configurações",
     url: "/settings",
     icon: Settings,
-    permission: 'canAccessSettings'
+  },
+];
+
+const leaderItems = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: Home,
+  },
+  {
+    title: "Meus Contatos",
+    url: "/contacts",
+    icon: Users,
+  },
+  {
+    title: "Estágio dos Discípulos",
+    url: "/pipeline",
+    icon: UserCheck,
+  },
+  {
+    title: "Minha Célula",
+    url: "/cells",
+    icon: Building2,
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
-  const permissions = useUserPermissions();
+  const { isAdmin, isLeader } = useLeaderPermissions();
   
-  console.log('AppSidebar - permissions:', permissions);
-  
-  // Filtrar itens baseado nas permissões
-  const items = allItems.filter(item => {
-    const hasPermission = permissions[item.permission as keyof typeof permissions];
-    console.log(`AppSidebar - ${item.title}: permission ${item.permission} = ${hasPermission}`);
-    return hasPermission;
-  });
-
-  console.log('AppSidebar - items to show:', items.length, items.map(i => i.title));
+  const items = isAdmin ? adminItems : (isLeader ? leaderItems : []);
 
   return (
     <Sidebar>
