@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -46,7 +45,7 @@ export const useEvents = () => {
 
       console.log('Eventos encontrados:', data);
       
-      // Atualizar URLs dinamicamente com domínio atual - URL correta para scan direto
+      // Atualizar URLs dinamicamente com domínio atual
       const updatedData = (data || []).map(event => ({
         ...event,
         qr_url: `${window.location.origin}/form?evento=${event.id}&cod=${event.keyword}`
@@ -83,14 +82,30 @@ export const useEvents = () => {
         throw new Error('Keyword já existe');
       }
 
-      // Inserir evento primeiro para obter o ID
+      // Gerar URL correta para o formulário
+      const baseUrl = window.location.origin;
+      const redirectUrl = `${baseUrl}/form?evento=TEMP_ID&cod=${normalizedKeyword}`;
+      
+      // Gerar QR code temporário
+      const { default: QRCode } = await import('qrcode');
+      const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
+        width: 400,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      });
+
+      // Inserir evento
       const { data: newEvent, error: insertError } = await supabase
         .from('events')
         .insert([{ 
           ...eventData, 
           keyword: normalizedKeyword,
-          qr_url: '', // Temporário
-          qr_code: '', // Temporário
+          qr_url: '', // Será atualizado após ter o ID
+          qr_code: qrCodeDataUrl,
           scan_count: 0,
           registration_count: 0
         }])
@@ -107,14 +122,11 @@ export const useEvents = () => {
         throw insertError;
       }
 
-      // Gerar URL correta para scan direto do QR code
-      const baseUrl = window.location.origin;
-      const redirectUrl = `${baseUrl}/form?evento=${newEvent.id}&cod=${normalizedKeyword}`;
+      // Atualizar URL correta com o ID real
+      const finalUrl = `${baseUrl}/form?evento=${newEvent.id}&cod=${normalizedKeyword}`;
       
-      console.log('useEvents: Gerando QR code para URL correta:', redirectUrl);
-      
-      // Gerar QR code data com a URL correta
-      const qrCodeDataUrl = await QRCode.toDataURL(redirectUrl, {
+      // Regenerar QR code com URL correta
+      const finalQrCode = await QRCode.toDataURL(finalUrl, {
         width: 400,
         margin: 2,
         color: {
@@ -124,30 +136,29 @@ export const useEvents = () => {
         errorCorrectionLevel: 'M'
       });
 
-      // Atualizar evento com QR code e URL corretos
+      // Atualizar evento com dados finais
       const { data: updatedEvent, error: updateError } = await supabase
         .from('events')
         .update({
-          qr_url: redirectUrl,
-          qr_code: qrCodeDataUrl
+          qr_url: finalUrl,
+          qr_code: finalQrCode
         })
         .eq('id', newEvent.id)
         .select()
         .single();
 
       if (updateError) {
-        console.error('Erro ao atualizar evento com QR:', updateError);
+        console.error('Erro ao atualizar evento:', updateError);
         throw updateError;
       }
 
-      console.log('Evento criado com sucesso - URL correta:', updatedEvent);
+      console.log('Evento criado com sucesso:', updatedEvent);
       
       toast({
         title: "Sucesso",
         description: "Evento criado com sucesso!"
       });
 
-      // Recarregar a lista completa para garantir atualização
       await fetchEvents();
       return updatedEvent;
     } catch (error) {
@@ -270,11 +281,9 @@ export const useEvents = () => {
     }
   };
 
-  // Configurar atualização em tempo real
   useEffect(() => {
     fetchEvents();
 
-    // Clean up existing channel before creating new one
     if (channelRef.current) {
       console.log('Removing existing events channel...');
       supabase.removeChannel(channelRef.current);
@@ -282,7 +291,6 @@ export const useEvents = () => {
       isSubscribedRef.current = false;
     }
 
-    // Only create new subscription if not already subscribed
     if (!isSubscribedRef.current) {
       const channelName = `events_changes_${Date.now()}_${Math.random()}`;
       console.log('Creating new events channel:', channelName);

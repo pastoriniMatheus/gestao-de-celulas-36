@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Users, Calendar, MapPin, Clock, UserPlus, QrCode, BarChart3, Edit, UserCheck } from 'lucide-react';
+import { Users, Calendar, MapPin, Clock, UserPlus, QrCode, BarChart3, Edit, UserCheck, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Cell } from '@/hooks/useCells';
 import { EditContactDialog } from './EditContactDialog';
+import { ContactNotesDialog } from './ContactNotesDialog';
 import QRCode from 'qrcode.react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -49,6 +50,8 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
   const [weeklyStats, setWeeklyStats] = useState<any[]>([]);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [selectedContactForNotes, setSelectedContactForNotes] = useState<Contact | null>(null);
   const mountedRef = useRef(true);
 
   const generateAttendanceCode = () => {
@@ -226,6 +229,11 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     setEditingContact(null);
   };
 
+  const handleOpenNotes = (contact: Contact) => {
+    setSelectedContactForNotes(contact);
+    setNotesDialogOpen(true);
+  };
+
   useEffect(() => {
     if (cell && isOpen) {
       mountedRef.current = true;
@@ -379,8 +387,18 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handleOpenNotes(contact)}
+                                className="p-1"
+                                title="Anotações"
+                              >
+                                <MessageSquare className="h-4 w-4 text-blue-500" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleEditContact(contact)}
                                 className="p-1"
+                                title="Editar"
                               >
                                 <Edit className="h-4 w-4 text-gray-500" />
                               </Button>
@@ -433,8 +451,18 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handleOpenNotes(visitor)}
+                                className="p-1"
+                                title="Anotações"
+                              >
+                                <MessageSquare className="h-4 w-4 text-blue-500" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleEditContact(visitor)}
                                 className="p-1"
+                                title="Editar"
                               >
                                 <Edit className="h-4 w-4 text-gray-500" />
                               </Button>
@@ -530,6 +558,16 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
           contact={editingContact}
           context="cell"
           onContactUpdated={handleContactUpdated}
+        />
+      )}
+
+      {selectedContactForNotes && (
+        <ContactNotesDialog
+          isOpen={notesDialogOpen}
+          onOpenChange={setNotesDialogOpen}
+          contactId={selectedContactForNotes.id}
+          contactName={selectedContactForNotes.name}
+          cellId={cell.id}
         />
       )}
     </>

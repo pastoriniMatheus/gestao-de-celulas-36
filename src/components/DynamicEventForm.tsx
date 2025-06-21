@@ -125,18 +125,36 @@ export const DynamicEventForm = () => {
 
       if (error) throw error;
 
+      // Incrementar registration_count para eventos usando a função do banco
       if (eventId && eventInfo) {
-        await supabase
+        console.log('Incrementando registration_count para evento:', eventId);
+        const { error: incrementError } = await supabase
+          .rpc('increment_event_registration', { event_uuid: eventId });
+
+        if (incrementError) {
+          console.error('Erro ao incrementar registration_count:', incrementError);
+        }
+
+        // Também incrementar scan_count
+        const { error: scanError } = await supabase
           .from('events')
           .update({ scan_count: (eventInfo.scan_count || 0) + 1 })
           .eq('id', eventId);
+
+        if (scanError) {
+          console.error('Erro ao incrementar scan_count:', scanError);
+        }
       }
 
       if (qrInfo) {
-        await supabase
+        const { error: qrError } = await supabase
           .from('qr_codes')
           .update({ scan_count: (qrInfo.scan_count || 0) + 1 })
           .eq('id', qrInfo.id);
+
+        if (qrError) {
+          console.error('Erro ao incrementar scan QR:', qrError);
+        }
       }
 
       toast({
@@ -303,7 +321,6 @@ export const DynamicEventForm = () => {
                settings.church_name || 'Cadastro'}
             </CardTitle>
             
-            {/* Progress indicator */}
             <div className="flex justify-center space-x-2 mt-4">
               {steps.map((_, index) => (
                 <div
