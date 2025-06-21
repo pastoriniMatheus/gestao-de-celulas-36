@@ -23,11 +23,11 @@ interface Event {
 
 interface EditEventDialogProps {
   event: Event;
-  isOpen: boolean;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const EditEventDialog = ({ event, isOpen, onOpenChange }: EditEventDialogProps) => {
+export const EditEventDialog = ({ event, open, onOpenChange }: EditEventDialogProps) => {
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [keyword, setKeyword] = useState('');
@@ -102,7 +102,7 @@ export const EditEventDialog = ({ event, isOpen, onOpenChange }: EditEventDialog
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Editar Evento</DialogTitle>

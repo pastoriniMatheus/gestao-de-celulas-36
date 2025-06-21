@@ -1,16 +1,19 @@
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { useToast } from '@/hooks/use-toast';
 
-export const AddEventDialog = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface AddEventDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const AddEventDialog = ({ open, onOpenChange }: AddEventDialogProps) => {
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [keyword, setKeyword] = useState('');
@@ -46,7 +49,7 @@ export const AddEventDialog = () => {
       setDate('');
       setKeyword('');
       setActive(true);
-      setIsOpen(false);
+      onOpenChange(false);
     } catch (error) {
       // Erro já tratado no hook
     } finally {
@@ -55,13 +58,7 @@ export const AddEventDialog = () => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Evento
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Criar Novo Evento</DialogTitle>
@@ -116,7 +113,7 @@ export const AddEventDialog = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsOpen(false)}
+              onClick={() => onOpenChange(false)}
               disabled={loading}
             >
               Cancelar
