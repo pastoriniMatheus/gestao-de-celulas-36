@@ -65,14 +65,17 @@ export const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:bg-gray-100">
           <Avatar className="h-10 w-10 border-2 border-gray-200">
-            <AvatarImage 
-              src={userProfile?.photo_url || ''} 
-              alt={userProfile?.name || 'User'} 
-              onError={(e) => {
-                console.error('Erro ao carregar imagem do avatar:', userProfile?.photo_url);
-                e.currentTarget.style.display = 'none';
-              }}
-            />
+            {userProfile?.photo_url ? (
+              <AvatarImage 
+                src={userProfile.photo_url} 
+                alt={userProfile?.name || 'User'} 
+                className="object-cover"
+                onError={(e) => {
+                  console.error('Erro ao carregar imagem do avatar:', userProfile?.photo_url);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : null}
             <AvatarFallback className="text-sm font-semibold bg-blue-100 text-blue-700">
               {getUserInitials()}
             </AvatarFallback>

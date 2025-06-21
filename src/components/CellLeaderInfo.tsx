@@ -84,14 +84,18 @@ export const CellLeaderInfo = ({ leader_id, className = "" }: CellLeaderInfoProp
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <Avatar className="h-6 w-6 border">
-        <AvatarImage 
-          src={leader.photo_url || ''} 
-          alt={leader.name}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
+      <Avatar className="h-8 w-8 border">
+        {leader.photo_url ? (
+          <AvatarImage 
+            src={leader.photo_url} 
+            alt={leader.name}
+            className="object-cover"
+            onError={(e) => {
+              console.error('Erro ao carregar foto do líder:', leader.photo_url);
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : null}
         <AvatarFallback className="text-xs font-semibold bg-blue-100 text-blue-700">
           {getInitials(leader.name)}
         </AvatarFallback>

@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -84,7 +85,7 @@ export const EditProfileDialog = () => {
           .select()
           .single();
       } else {
-        // Atualizar perfil existente usando user_id
+        // Atualizar perfil existente usando user_id - NÃO atualizar email para evitar duplicação
         console.log('Atualizando perfil existente...');
         result = await supabase
           .from('profiles')
