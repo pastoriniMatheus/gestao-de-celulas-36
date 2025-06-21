@@ -33,7 +33,7 @@ export const AddNeighborhoodDialog = ({ cities, onNeighborhoodAdded }: AddNeighb
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.city_id) {
+    if (!formData.name || !formData.city_id || formData.city_id === "none") {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos.",
@@ -89,13 +89,14 @@ export const AddNeighborhoodDialog = ({ cities, onNeighborhoodAdded }: AddNeighb
           <div>
             <Label htmlFor="city">Cidade *</Label>
             <Select 
-              value={formData.city_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value }))}
+              value={formData.city_id || "none"} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value === "none" ? "" : value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">Selecione a cidade</SelectItem>
                 {cities.map((city) => (
                   <SelectItem key={city.id} value={city.id}>
                     {city.name} - {city.state}

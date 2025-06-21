@@ -34,14 +34,14 @@ export const LocationFields = ({
       <div>
         <Label htmlFor="city">Cidade</Label>
         <Select 
-          value={formData.city_id || "placeholder-city"} 
-          onValueChange={(value) => onUpdateFormData({ city_id: value === "placeholder-city" ? "" : value, neighborhood: '' })}
+          value={formData.city_id || "none"} 
+          onValueChange={(value) => onUpdateFormData({ city_id: value === "none" ? "" : value, neighborhood: '' })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione a cidade" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="placeholder-city">Selecione uma cidade</SelectItem>
+            <SelectItem value="none">Selecione uma cidade</SelectItem>
             {cities.map((city) => (
               <SelectItem key={city.id} value={city.id}>
                 {city.name} - {city.state}
@@ -52,16 +52,16 @@ export const LocationFields = ({
       </div>
       <div>
         <Label htmlFor="neighborhood">Bairro *</Label>
-        {formData.city_id && formData.city_id !== "placeholder-city" ? (
+        {formData.city_id && formData.city_id !== "none" ? (
           <Select 
-            value={formData.neighborhood || "placeholder-neighborhood"} 
-            onValueChange={(value) => onUpdateFormData({ neighborhood: value === "placeholder-neighborhood" ? "" : value })}
+            value={formData.neighborhood || "none"} 
+            onValueChange={(value) => onUpdateFormData({ neighborhood: value === "none" ? "" : value })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione o bairro" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="placeholder-neighborhood">Selecione um bairro</SelectItem>
+              <SelectItem value="none">Selecione um bairro</SelectItem>
               {getFilteredNeighborhoods(formData.city_id).map((neighborhood) => (
                 <SelectItem key={neighborhood.id} value={neighborhood.name}>
                   {neighborhood.name}

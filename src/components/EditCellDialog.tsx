@@ -1,4 +1,3 @@
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -113,12 +112,47 @@ export const EditCellDialog = ({
   };
 
   const handleCityChange = (cityId: string) => {
-    setSelectedCityId(cityId);
-    // Limpar bairro quando cidade muda
-    setFormData(prev => ({
-      ...prev,
-      neighborhood_id: ''
-    }));
+    if (cityId === "none") {
+      setSelectedCityId('');
+      setFormData(prev => ({
+        ...prev,
+        neighborhood_id: ''
+      }));
+    } else {
+      setSelectedCityId(cityId);
+      setFormData(prev => ({
+        ...prev,
+        neighborhood_id: ''
+      }));
+    }
+  };
+
+  const handleNeighborhoodChange = (neighborhoodId: string) => {
+    if (neighborhoodId === "none") {
+      setFormData(prev => ({
+        ...prev,
+        neighborhood_id: ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        neighborhood_id: neighborhoodId
+      }));
+    }
+  };
+
+  const handleLeaderChange = (leaderId: string) => {
+    if (leaderId === "none") {
+      setFormData(prev => ({
+        ...prev,
+        leader_id: ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        leader_id: leaderId
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -278,14 +312,14 @@ export const EditCellDialog = ({
           <div className="grid gap-2">
             <Label>Cidade</Label>
             <Select 
-              value={selectedCityId} 
+              value={selectedCityId || "none"} 
               onValueChange={handleCityChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhuma cidade</SelectItem>
+                <SelectItem value="none">Nenhuma cidade</SelectItem>
                 {cities.map((city) => (
                   <SelectItem key={city.id} value={city.id}>
                     {city.name} - {city.state}
@@ -298,15 +332,15 @@ export const EditCellDialog = ({
           <div className="grid gap-2">
             <Label>Bairro</Label>
             <Select 
-              value={formData.neighborhood_id} 
-              onValueChange={(value) => handleInputChange('neighborhood_id', value)}
+              value={formData.neighborhood_id || "none"} 
+              onValueChange={handleNeighborhoodChange}
               disabled={!selectedCityId}
             >
               <SelectTrigger>
                 <SelectValue placeholder={selectedCityId ? "Selecione o bairro" : "Primeiro selecione uma cidade"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum bairro</SelectItem>
+                <SelectItem value="none">Nenhum bairro</SelectItem>
                 {neighborhoods.map((neighborhood) => (
                   <SelectItem key={neighborhood.id} value={neighborhood.id}>
                     {neighborhood.name}
@@ -319,14 +353,14 @@ export const EditCellDialog = ({
           <div className="grid gap-2">
             <Label>Líder da Célula</Label>
             <Select 
-              value={formData.leader_id} 
-              onValueChange={(value) => handleInputChange('leader_id', value)}
+              value={formData.leader_id || "none"} 
+              onValueChange={handleLeaderChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um líder" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum líder</SelectItem>
+                <SelectItem value="none">Nenhum líder</SelectItem>
                 {leaders.map((leader) => (
                   <SelectItem key={leader.id} value={leader.id}>
                     {leader.name}
