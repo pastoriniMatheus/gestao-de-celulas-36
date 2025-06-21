@@ -14,14 +14,14 @@ import { useLeaderPermissions } from '@/hooks/useLeaderPermissions';
 export const CellsList = () => {
   const { canManageAllCells } = useLeaderPermissions();
   
-  // Usar o hook apropriado baseado nas permissões
+  // Sempre chamar ambos os hooks - nunca condicionalmente
   const { 
     cells: allCells, 
     loading: allLoading, 
     deleteCell, 
     fetchCells,
     applyFilters 
-  } = canManageAllCells ? useCells() : { cells: [], loading: false, deleteCell: null, fetchCells: () => {}, applyFilters: () => {} };
+  } = useCells();
   
   const { 
     cells: leaderCells, 
