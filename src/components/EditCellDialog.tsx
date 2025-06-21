@@ -51,62 +51,81 @@ export const EditCellDialog = ({
     if (isOpen && cell) {
       console.log('EditCellDialog: Inicializando form com célula:', cell);
       setFormState({
-        name: cell.name,
-        address: cell.address,
-        leader_id: cell.leader_id,
-        neighborhood_id: cell.neighborhood_id,
-        active: cell.active,
-        meeting_day: cell.meeting_day,
-        meeting_time: cell.meeting_time,
+        name: cell.name || '',
+        address: cell.address || '',
+        leader_id: cell.leader_id || '',
+        neighborhood_id: cell.neighborhood_id || '',
+        active: cell.active !== undefined ? cell.active : true,
+        meeting_day: cell.meeting_day !== undefined ? cell.meeting_day : null,
+        meeting_time: cell.meeting_time || '',
       });
+      
+      // Se a célula tem um bairro, buscar a cidade correspondente
+      if (cell.neighborhood_id) {
+        fetchNeighborhoodCity(cell.neighborhood_id);
+      } else {
+        setSelectedCityId('');
+      }
     }
   }, [isOpen, cell]);
 
-  useEffect(() => {
-    const fetchLeaders = async () => {
-      if (!isOpen) return;
-      
-      console.log('EditCellDialog: Buscando líderes...');
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("role", ["admin", "leader"])
-        .eq("active", true);
-
-      if (error) {
-        console.error('EditCellDialog: Erro ao buscar líderes:', error);
-        toast({
-          title: "Erro ao buscar líderes.",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        console.log('EditCellDialog: Líderes encontrados:', data);
-        setLeaders(data || []);
-      }
-    };
-
-    const fetchCellNeighborhoodCity = async () => {
-      if (!isOpen || !cell?.neighborhood_id) return;
-      
-      console.log('EditCellDialog: Buscando cidade do bairro...');
+  const fetchNeighborhoodCity = async (neighborhoodId: string) => {
+    try {
+      console.log('EditCellDialog: Buscando cidade do bairro:', neighborhoodId);
       const { data, error } = await supabase
         .from('neighborhoods')
         .select('city_id')
-        .eq('id', cell.neighborhood_id)
+        .eq('id', neighborhoodId)
         .single();
       
       if (!error && data) {
         console.log('EditCellDialog: Cidade encontrada:', data.city_id);
         setSelectedCityId(data.city_id);
+      } else {
+        console.error('EditCellDialog: Erro ao buscar cidade do bairro:', error);
+        setSelectedCityId('');
+      }
+    } catch (error) {
+      console.error('EditCellDialog: Erro inesperado ao buscar cidade:', error);
+      setSelectedCityId('');
+    }
+  };
+
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      if (!isOpen) return;
+      
+      try {
+        console.log('EditCellDialog: Buscando líderes...');
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .in("role", ["admin", "leader"])
+          .eq("active", true)
+          .order("name");
+
+        if (error) {
+          console.error('EditCellDialog: Erro ao buscar líderes:', error);
+          toast({
+            title: "Erro ao buscar líderes.",
+            description: error.message,
+            variant: "destructive",
+          });
+          setLeaders([]);
+        } else {
+          console.log('EditCellDialog: Líderes encontrados:', data);
+          setLeaders(data || []);
+        }
+      } catch (error) {
+        console.error('EditCellDialog: Erro inesperado ao buscar líderes:', error);
+        setLeaders([]);
       }
     };
 
     if (isOpen) {
       fetchLeaders();
-      fetchCellNeighborhoodCity();
     }
-  }, [isOpen, cell?.neighborhood_id]);
+  }, [isOpen]);
 
   const handleChange = (field: string, value: any) => {
     console.log('EditCellDialog: Alterando campo:', field, 'para:', value);
@@ -116,11 +135,19 @@ export const EditCellDialog = ({
     }));
   };
 
+  const handleCityChange = (cityId: string) => {
+    const newCityId = cityId === "none" ? "" : cityId;
+    console.log('EditCellDialog: Alterando cidade para:', newCityId);
+    setSelectedCityId(newCityId);
+    handleChange('neighborhood_id', ''); // Limpar bairro quando cidade muda
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log('EditCellDialog: Iniciando submissão com dados:', formState);
     
+    // Validações
     if (!formState.name?.trim()) {
       toast({ 
         title: "Erro",
@@ -148,7 +175,7 @@ export const EditCellDialog = ({
       return;
     }
     
-    if (!formState.meeting_time) {
+    if (!formState.meeting_time?.trim()) {
       toast({ 
         title: "Erro",
         description: "Informe o horário da reunião.",
@@ -193,7 +220,7 @@ export const EditCellDialog = ({
       
       toast({
         title: "Sucesso",
-        description: "Célula atualizada com sucesso!",
+        description: "Célula atualizada com sucesso! - Sistema desenvolvido por Matheus Pastorini",
       });
       
       // Chamar callback para atualizar a lista
@@ -235,6 +262,7 @@ export const EditCellDialog = ({
               required
             />
           </div>
+          
           <div className="grid gap-2">
             <Label htmlFor="address">Endereço *</Label>
             <Input
@@ -251,11 +279,7 @@ export const EditCellDialog = ({
             <Label>Cidade</Label>
             <Select 
               value={selectedCityId || "none"} 
-              onValueChange={(value) => {
-                const cityId = value === "none" ? "" : value;
-                setSelectedCityId(cityId);
-                handleChange('neighborhood_id', '');
-              }}
+              onValueChange={handleCityChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a cidade" />

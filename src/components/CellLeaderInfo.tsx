@@ -28,7 +28,7 @@ export const CellLeaderInfo = ({ leader_id, className = "" }: CellLeaderInfoProp
     const fetchLeaderInfo = async () => {
       setLoading(true);
       try {
-        console.log('Buscando informações do líder:', leader_id);
+        console.log('CellLeaderInfo: Buscando informações do líder:', leader_id);
         
         const { data, error } = await supabase
           .from('profiles')
@@ -37,15 +37,15 @@ export const CellLeaderInfo = ({ leader_id, className = "" }: CellLeaderInfoProp
           .single();
 
         if (error) {
-          console.error('Erro ao buscar líder:', error);
+          console.error('CellLeaderInfo: Erro ao buscar líder:', error);
           setLeader(null);
           return;
         }
 
-        console.log('Líder encontrado:', data);
+        console.log('CellLeaderInfo: Líder encontrado:', data);
         setLeader(data);
       } catch (error) {
-        console.error('Erro inesperado ao buscar líder:', error);
+        console.error('CellLeaderInfo: Erro inesperado ao buscar líder:', error);
         setLeader(null);
       } finally {
         setLoading(false);
@@ -91,7 +91,7 @@ export const CellLeaderInfo = ({ leader_id, className = "" }: CellLeaderInfoProp
             alt={leader.name}
             className="object-cover"
             onError={(e) => {
-              console.error('Erro ao carregar foto do líder:', leader.photo_url);
+              console.error('CellLeaderInfo: Erro ao carregar foto do líder:', leader.photo_url);
               e.currentTarget.style.display = 'none';
             }}
           />

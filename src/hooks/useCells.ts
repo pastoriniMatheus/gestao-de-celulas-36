@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -118,7 +119,7 @@ export const useCells = () => {
       
       toast({
         title: "Sucesso",
-        description: "Célula criada com sucesso!"
+        description: "Célula criada com sucesso! - Sistema Matheus Pastorini"
       });
       
       return data;
@@ -153,7 +154,7 @@ export const useCells = () => {
       
       toast({
         title: "Sucesso",
-        description: "Célula atualizada com sucesso!"
+        description: "Célula atualizada com sucesso! - Sistema Matheus Pastorini"
       });
       
       return data;
@@ -186,7 +187,7 @@ export const useCells = () => {
       
       toast({
         title: "Sucesso",
-        description: "Célula deletada com sucesso!"
+        description: "Célula deletada com sucesso! - Sistema Matheus Pastorini"
       });
     } catch (error) {
       console.error('useCells: Erro ao deletar célula:', error);

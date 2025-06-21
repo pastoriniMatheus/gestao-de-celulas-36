@@ -95,6 +95,12 @@ export const CellDetails = () => {
     }
   };
 
+  const handleCellUpdated = (updatedCell: CellDetails) => {
+    console.log('CellDetails: Célula atualizada:', updatedCell);
+    setCell(updatedCell);
+    setEditDialogOpen(false);
+  };
+
   const handleAttendanceClick = () => {
     navigate(`/cells/${id}/attendance`);
   };
@@ -102,12 +108,12 @@ export const CellDetails = () => {
   useEffect(() => {
     if (!id) return;
 
-    console.log('CellDetails: Initializing for cell ID:', id);
+    console.log('CellDetails: Inicializando para célula ID:', id);
     mountedRef.current = true;
     fetchCellDetails();
 
     return () => {
-      console.log('CellDetails: Cleaning up...');
+      console.log('CellDetails: Limpando...');
       mountedRef.current = false;
     };
   }, [id]);
@@ -116,7 +122,7 @@ export const CellDetails = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">Carregando detalhes da célula...</span>
+        <span className="ml-2">Carregando detalhes da célula - Sistema Matheus Pastorini...</span>
       </div>
     );
   }
@@ -151,7 +157,7 @@ export const CellDetails = () => {
             {cell.name}
           </CardTitle>
           <CardDescription>
-            Detalhes e gestão da célula
+            Detalhes e gestão da célula - Sistema Matheus Pastorini
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -183,12 +189,10 @@ export const CellDetails = () => {
               Controle de Presença
             </Button>
             <CellQrCode cellId={cell.id} />
-            <EditCellDialog 
-              cell={cell} 
-              onCellUpdated={fetchCellDetails}
-              isOpen={editDialogOpen}
-              onClose={() => setEditDialogOpen(false)}
-            />
+            <Button onClick={() => setEditDialogOpen(true)} variant="outline">
+              <Edit className="w-4 h-4 mr-2" />
+              Editar
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -231,6 +235,15 @@ export const CellDetails = () => {
           )}
         </CardContent>
       </Card>
+
+      {cell && (
+        <EditCellDialog
+          cell={cell}
+          isOpen={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          onCellUpdated={handleCellUpdated}
+        />
+      )}
     </div>
   );
 };
