@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,10 +53,10 @@ export const DatabaseSettings = () => {
   const testConnection = async () => {
     setConnectionStatus('testing');
     try {
-      // Testar conexão básica com o Supabase
+      // Testar conexão básica com o Supabase usando uma consulta simples
       const { data, error } = await supabase
         .from('system_settings')
-        .select('count(*)')
+        .select('*')
         .limit(1);
 
       if (error) {

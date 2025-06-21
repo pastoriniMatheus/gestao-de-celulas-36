@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContactsList } from './ContactsList';
 import { PendingContactsManager } from './PendingContactsManager';
+import { AddContactDialog } from './AddContactDialog';
 
 export const ContactsManager = () => {
   return (
@@ -13,6 +14,9 @@ export const ContactsManager = () => {
           <TabsTrigger value="pending">Contatos Pendentes</TabsTrigger>
         </TabsList>
         <TabsContent value="contacts" className="space-y-6">
+          <div className="flex justify-end">
+            <AddContactDialog />
+          </div>
           <ContactsList />
         </TabsContent>
         <TabsContent value="pending" className="space-y-6">
