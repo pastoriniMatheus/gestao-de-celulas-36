@@ -83,7 +83,11 @@ export function AppSidebar() {
   const location = useLocation();
   const { isAdmin, isLeader } = useLeaderPermissions();
   
+  console.log('AppSidebar - isAdmin:', isAdmin, 'isLeader:', isLeader);
+  
   const items = isAdmin ? adminItems : (isLeader ? leaderItems : []);
+
+  console.log('AppSidebar - items to show:', items.length);
 
   return (
     <Sidebar>

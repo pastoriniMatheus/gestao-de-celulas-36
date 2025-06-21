@@ -1,38 +1,36 @@
 
-import { useUserPermissions } from './useUserPermissions';
+import { useAuth } from '@/components/AuthProvider';
 
 export const useLeaderPermissions = () => {
-  const { isLeader, isAdmin, userProfile } = useUserPermissions();
+  const { userProfile } = useAuth();
 
-  const filterCellsForLeader = (cells: any[]) => {
-    if (isAdmin) return cells;
-    if (isLeader && userProfile?.id) {
-      return cells.filter(cell => cell.leader_id === userProfile.id);
-    }
-    return [];
-  };
+  console.log('useLeaderPermissions - userProfile:', userProfile);
+  console.log('useLeaderPermissions - role:', userProfile?.role);
 
-  const filterContactsForLeader = (contacts: any[]) => {
-    if (isAdmin) return contacts;
-    if (isLeader && userProfile?.id) {
-      // Aqui assumimos que os contatos já vêm filtrados pelo hook useLeaderContacts
-      return contacts;
-    }
-    return [];
-  };
+  // Admin tem acesso a tudo
+  const isAdmin = userProfile?.role === 'admin';
+  const isLeader = userProfile?.role === 'leader' || isAdmin;
 
-  const canAccessSettings = isAdmin;
+  console.log('useLeaderPermissions - isAdmin:', isAdmin);
+  console.log('useLeaderPermissions - isLeader:', isLeader);
+
+  // Permissões específicas para células
   const canManageAllCells = isAdmin;
-  const canManageAllContacts = isAdmin;
+  const canEditCells = isAdmin;
+  const canDeleteCells = isAdmin;
+  const canCreateCells = isAdmin;
 
-  return {
-    filterCellsForLeader,
-    filterContactsForLeader,
-    canAccessSettings,
+  const permissions = {
     canManageAllCells,
-    canManageAllContacts,
+    canEditCells,
+    canDeleteCells,
+    canCreateCells,
     isLeader,
     isAdmin,
     userProfile
   };
+
+  console.log('useLeaderPermissions - todas as permissões:', permissions);
+
+  return permissions;
 };

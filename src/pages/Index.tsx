@@ -35,11 +35,11 @@ const Index = () => {
   useEffect(() => {
     const section = pathToSection[location.pathname] || 'dashboard';
     setActiveSection(section);
-    console.log('Seção ativa:', section, 'URL atual:', location.pathname);
+    console.log('Index: Seção ativa:', section, 'URL atual:', location.pathname);
   }, [location.pathname]);
 
   const renderContent = () => {
-    console.log('Renderizando conteúdo para seção:', activeSection);
+    console.log('Index: Renderizando conteúdo para seção:', activeSection);
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard />;
@@ -48,6 +48,7 @@ const Index = () => {
       case 'contacts':
         return <ContactsManager />;
       case 'cells':
+        console.log('Index: Renderizando CellsManager');
         return <CellsManager />;
       case 'pipeline':
         return <Pipeline />;
@@ -56,7 +57,7 @@ const Index = () => {
       case 'users':
         return <UsersManager />;
       default:
-        console.log('Seção não encontrada, retornando Dashboard');
+        console.log('Index: Seção não encontrada, retornando Dashboard');
         return <Dashboard />;
     }
   };

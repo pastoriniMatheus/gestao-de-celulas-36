@@ -9,6 +9,7 @@ export const CellsManager = () => {
   const { canManageAllCells } = useLeaderPermissions();
 
   console.log('CellsManager: Renderizando componente');
+  console.log('CellsManager: canManageAllCells:', canManageAllCells);
 
   return (
     <div className="space-y-6">
