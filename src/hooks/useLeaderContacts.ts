@@ -84,7 +84,7 @@ export const useLeaderContacts = () => {
     } else {
       setLoading(false);
     }
-  }, [userProfile?.id, isLeader, isAdmin]); // Fixed: Ensure all dependencies are defined
+  }, [userProfile?.id, isLeader, isAdmin]); // Keep the original dependencies but ensure they're defined
 
   return {
     contacts,
