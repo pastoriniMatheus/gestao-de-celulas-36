@@ -1,3 +1,4 @@
+
 import { createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useAuthSession } from '@/hooks/useAuthSession';
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = {
     user,
+    session,
     userProfile,
     loading: loading || profileLoading,
     signIn,
