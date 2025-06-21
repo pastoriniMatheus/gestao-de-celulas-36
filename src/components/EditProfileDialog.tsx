@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ export const EditProfileDialog = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const { userProfile, user } = useAuth();
+  const { userProfile, user, refreshProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
@@ -80,10 +79,10 @@ export const EditProfileDialog = () => {
 
       setIsOpen(false);
       
-      // Recarregar para mostrar as mudanças
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Atualizar o perfil no contexto
+      if (refreshProfile) {
+        refreshProfile();
+      }
       
     } catch (error: any) {
       console.error('Erro ao atualizar perfil:', error);
@@ -239,6 +238,16 @@ export const EditProfileDialog = () => {
     }
     return 'U';
   };
+
+  // Atualizar formData quando userProfile mudar
+  useState(() => {
+    if (userProfile) {
+      setFormData({
+        name: userProfile.name || '',
+        photo_url: userProfile.photo_url || ''
+      });
+    }
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

@@ -1,4 +1,3 @@
-
 import { createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useAuthSession } from '@/hooks/useAuthSession';
@@ -12,6 +11,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any; data?: any }>;
   signOut: () => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  refreshProfile: () => Promise<{ error: any }>;
   loading: boolean;
 }
 
@@ -27,19 +28,20 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, session, loading: sessionLoading } = useAuthSession();
-  const { userProfile } = useUserProfile(user);
-  const { signIn, signUp, signOut, loading: actionLoading } = useAuthActions();
+  const { userProfile, loading: profileLoading, refreshProfile } = useUserProfile(user);
+  const { signIn, signUp, signOut, resetPassword, loading: actionLoading } = useAuthActions();
 
-  const loading = sessionLoading || actionLoading;
+  const loading = sessionLoading || actionLoading || profileLoading;
 
   const value = {
     user,
-    session,
     userProfile,
+    loading: loading || profileLoading,
     signIn,
     signUp,
     signOut,
-    loading,
+    resetPassword,
+    refreshProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

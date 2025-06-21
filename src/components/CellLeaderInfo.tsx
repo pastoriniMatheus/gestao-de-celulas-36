@@ -1,17 +1,25 @@
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
+import { useCellLeader } from '@/hooks/useCellLeader';
 
 interface CellLeaderInfoProps {
-  leader: {
-    id: string;
-    name: string;
-    photo_url?: string | null;
-  } | null;
+  leaderId: string | null;
   className?: string;
 }
 
-export const CellLeaderInfo = ({ leader, className = "" }: CellLeaderInfoProps) => {
+export const CellLeaderInfo = ({ leaderId, className = "" }: CellLeaderInfoProps) => {
+  const { leader, loading } = useCellLeader(leaderId);
+
+  if (loading) {
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        <div className="w-6 h-6 bg-gray-200 rounded-full animate-pulse"></div>
+        <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+    );
+  }
+
   if (!leader) {
     return (
       <div className={`flex items-center gap-2 text-gray-500 ${className}`}>
@@ -37,6 +45,7 @@ export const CellLeaderInfo = ({ leader, className = "" }: CellLeaderInfoProps) 
           src={leader.photo_url || ''} 
           alt={leader.name}
           onError={(e) => {
+            console.error('Erro ao carregar foto do líder:', leader.photo_url);
             e.currentTarget.style.display = 'none';
           }}
         />

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EditCellDialog } from './EditCellDialog';
 import { CellQrCode } from './CellQrCode';
+import { CellLeaderInfo } from './CellLeaderInfo';
 
 interface CellDetails {
   id: string;
@@ -170,15 +170,10 @@ export const CellDetails = () => {
                 ({['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][cell.meeting_day]})
               </div>
             </div>
-            {cell.leader_id && (
-              <div>
-                <div className="text-sm font-medium text-gray-700">Líder</div>
-                <div className="text-gray-500 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {cell.leader_id}
-                </div>
-              </div>
-            )}
+            <div>
+              <div className="text-sm font-medium text-gray-700">Líder da Célula</div>
+              <CellLeaderInfo leaderId={cell.leader_id} />
+            </div>
           </div>
           
           <div className="flex justify-end gap-2">
