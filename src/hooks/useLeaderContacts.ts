@@ -78,13 +78,13 @@ export const useLeaderContacts = () => {
   };
 
   useEffect(() => {
-    // Only fetch if we have the necessary data and permissions are defined
-    if (userProfile !== null && typeof isLeader === 'boolean' && typeof isAdmin === 'boolean') {
+    // Aguardar até que as permissões sejam definidas (não undefined)
+    if (typeof isLeader === 'boolean' && typeof isAdmin === 'boolean') {
       fetchContacts();
     } else {
       setLoading(false);
     }
-  }, [userProfile?.id, isLeader, isAdmin]); // Keep the original dependencies but ensure they're defined
+  }, [userProfile?.id, isLeader, isAdmin].filter(dep => dep !== undefined)); // Filtrar undefined das dependências
 
   return {
     contacts,
