@@ -1,4 +1,3 @@
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,46 +49,61 @@ export const EditCellDialog = ({
   useEffect(() => {
     if (isOpen && cell) {
       console.log('EditCellDialog: Inicializando form com célula:', cell);
-      setFormState({
-        name: cell.name || '',
-        address: cell.address || '',
-        leader_id: cell.leader_id || '',
-        neighborhood_id: cell.neighborhood_id || '',
-        active: cell.active !== undefined ? cell.active : true,
-        meeting_day: cell.meeting_day !== undefined ? cell.meeting_day : null,
-        meeting_time: cell.meeting_time || '',
-      });
       
-      // Se a célula tem um bairro, buscar a cidade correspondente
-      if (cell.neighborhood_id) {
-        fetchNeighborhoodCity(cell.neighborhood_id);
-      } else {
-        setSelectedCityId('');
-      }
+      // Buscar dados completos da célula com joins
+      const fetchCellData = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('cells')
+            .select(`
+              *,
+              neighborhoods!cells_neighborhood_id_fkey (
+                id,
+                name,
+                city_id,
+                cities!neighborhoods_city_id_fkey (
+                  id,
+                  name,
+                  state
+                )
+              ),
+              profiles!cells_leader_id_fkey (
+                id,
+                name
+              )
+            `)
+            .eq('id', cell.id)
+            .single();
+
+          if (error) {
+            console.error('EditCellDialog: Erro ao buscar dados da célula:', error);
+            return;
+          }
+
+          console.log('EditCellDialog: Dados completos da célula:', data);
+
+          const cityId = data.neighborhoods?.cities?.id || '';
+          
+          setFormState({
+            name: data.name || '',
+            address: data.address || '',
+            leader_id: data.leader_id || '',
+            neighborhood_id: data.neighborhood_id || '',
+            active: data.active !== undefined ? data.active : true,
+            meeting_day: data.meeting_day !== undefined ? data.meeting_day : null,
+            meeting_time: data.meeting_time || '',
+          });
+          
+          setSelectedCityId(cityId);
+          
+        } catch (error) {
+          console.error('EditCellDialog: Erro ao buscar dados:', error);
+        }
+      };
+
+      fetchCellData();
     }
   }, [isOpen, cell]);
-
-  const fetchNeighborhoodCity = async (neighborhoodId: string) => {
-    try {
-      console.log('EditCellDialog: Buscando cidade do bairro:', neighborhoodId);
-      const { data, error } = await supabase
-        .from('neighborhoods')
-        .select('city_id')
-        .eq('id', neighborhoodId)
-        .single();
-      
-      if (!error && data) {
-        console.log('EditCellDialog: Cidade encontrada:', data.city_id);
-        setSelectedCityId(data.city_id);
-      } else {
-        console.error('EditCellDialog: Erro ao buscar cidade do bairro:', error);
-        setSelectedCityId('');
-      }
-    } catch (error) {
-      console.error('EditCellDialog: Erro inesperado ao buscar cidade:', error);
-      setSelectedCityId('');
-    }
-  };
 
   useEffect(() => {
     const fetchLeaders = async () => {
@@ -194,7 +208,6 @@ export const EditCellDialog = ({
         active: formState.active !== undefined ? formState.active : true,
         meeting_day: Number(formState.meeting_day),
         meeting_time: formState.meeting_time,
-        updated_at: new Date().toISOString()
       };
 
       console.log('EditCellDialog: Enviando dados para atualização:', updateData);
@@ -203,7 +216,23 @@ export const EditCellDialog = ({
         .from("cells")
         .update(updateData)
         .eq("id", cell.id)
-        .select()
+        .select(`
+          *,
+          neighborhoods!cells_neighborhood_id_fkey (
+            id,
+            name,
+            city_id,
+            cities!neighborhoods_city_id_fkey (
+              id,
+              name,
+              state
+            )
+          ),
+          profiles!cells_leader_id_fkey (
+            id,
+            name
+          )
+        `)
         .single();
 
       if (error) {
@@ -218,13 +247,22 @@ export const EditCellDialog = ({
 
       console.log('EditCellDialog: Célula atualizada com sucesso:', data);
       
+      // Transformar dados para o formato esperado
+      const transformedData = {
+        ...data,
+        leader_name: data.profiles?.name || null,
+        neighborhood_name: data.neighborhoods?.name || null,
+        city_id: data.neighborhoods?.cities?.id || null,
+        city_name: data.neighborhoods?.cities?.name || null
+      };
+      
       toast({
         title: "Sucesso",
         description: "Célula atualizada com sucesso! - Sistema desenvolvido por Matheus Pastorini",
       });
       
       // Chamar callback para atualizar a lista
-      onCellUpdated(data);
+      onCellUpdated(transformedData);
       onClose();
       
     } catch (error: any) {
