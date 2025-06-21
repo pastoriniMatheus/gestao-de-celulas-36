@@ -754,6 +754,10 @@ export type Database = {
         Args: { event_uuid: string }
         Returns: undefined
       }
+      increment_event_scan_count: {
+        Args: { event_uuid: string }
+        Returns: undefined
+      }
       increment_qr_scan_count: {
         Args: { qr_id: string; user_ip?: unknown; user_agent_string?: string }
         Returns: undefined
