@@ -17,6 +17,7 @@ interface DatabaseConfig {
   service_role_key: string;
   project_id: string;
   database_url: string;
+  [key: string]: string; // Add index signature to make it compatible with Json type
 }
 
 // Define table names as a const array for type safety
