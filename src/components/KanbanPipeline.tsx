@@ -78,8 +78,9 @@ export const KanbanPipeline = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="h-full flex flex-col">
+      {/* Filtros fixos */}
+      <Card className="mb-4 flex-shrink-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-blue-600" />
@@ -122,116 +123,123 @@ export const KanbanPipeline = () => {
         </CardContent>
       </Card>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-6 overflow-x-auto pb-4">
-          {stages.map((stage) => {
-            const stageContacts = filteredContacts.filter(
-              contact => contact.pipeline_stage_id === stage.id
-            );
+      {/* Pipeline com scroll horizontal */}
+      <div className="flex-1 overflow-hidden">
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="h-full overflow-x-auto">
+            <div className="flex gap-4 h-full min-w-max p-2">
+              {stages.map((stage) => {
+                const stageContacts = filteredContacts.filter(
+                  contact => contact.pipeline_stage_id === stage.id
+                );
 
-            return (
-              <Card key={stage.id} className="min-w-[300px] flex-shrink-0">
-                <CardHeader 
-                  className="pb-3"
-                  style={{ backgroundColor: `${stage.color}15`, borderBottom: `2px solid ${stage.color}` }}
-                >
-                  <CardTitle className="flex items-center justify-between">
-                    <span style={{ color: stage.color }}>{stage.name}</span>
-                    <Badge variant="secondary">{stageContacts.length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <Droppable droppableId={stage.id} isDropDisabled={!isAdmin}>
-                  {(provided, snapshot) => (
-                    <CardContent 
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className={`p-4 space-y-3 max-h-[600px] overflow-y-auto ${
-                        snapshot.isDraggingOver ? 'bg-blue-50' : ''
-                      }`}
+                return (
+                  <Card key={stage.id} className="w-80 flex-shrink-0 flex flex-col h-full">
+                    <CardHeader 
+                      className="pb-3 flex-shrink-0"
+                      style={{ backgroundColor: `${stage.color}15`, borderBottom: `2px solid ${stage.color}` }}
                     >
-                      {stageContacts.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Nenhum discípulo</p>
-                        </div>
-                      ) : (
-                        stageContacts.map((contact, index) => (
-                          <Draggable
-                            key={contact.id}
-                            draggableId={contact.id}
-                            index={index}
-                            isDragDisabled={!isAdmin}
-                          >
-                            {(provided, snapshot) => (
-                              <Card 
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`border-l-4 transition-shadow ${
-                                  snapshot.isDragging ? 'shadow-lg rotate-2' : 'hover:shadow-md'
-                                } ${!isAdmin ? 'cursor-pointer' : 'cursor-grab'}`}
-                                style={{ 
-                                  borderLeftColor: stage.color,
-                                  ...provided.draggableProps.style
-                                }}
-                                onDoubleClick={() => handleContactDoubleClick(contact)}
-                              >
-                                <CardContent className="p-3">
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="font-semibold text-sm">{contact.name}</h4>
-                                      <Badge 
-                                        variant={contact.status === 'member' ? 'default' : 
-                                               contact.status === 'visitor' ? 'secondary' : 'outline'}
-                                        className="text-xs"
-                                      >
-                                        {contact.status === 'member' ? 'Membro' :
-                                         contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
-                                      </Badge>
-                                    </div>
-                                    
-                                    {contact.whatsapp && (
-                                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                                        <Phone className="h-3 w-3" />
-                                        <span>{contact.whatsapp}</span>
-                                      </div>
-                                    )}
-                                    
-                                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                                      <MapPin className="h-3 w-3" />
-                                      <span>{contact.neighborhood}</span>
-                                    </div>
+                      <CardTitle className="flex items-center justify-between">
+                        <span style={{ color: stage.color }}>{stage.name}</span>
+                        <Badge variant="secondary">{stageContacts.length}</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <Droppable droppableId={stage.id} isDropDisabled={!isAdmin}>
+                      {(provided, snapshot) => (
+                        <CardContent 
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className={`flex-1 p-4 overflow-y-auto ${
+                            snapshot.isDraggingOver ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="space-y-3">
+                            {stageContacts.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Nenhum discípulo</p>
+                              </div>
+                            ) : (
+                              stageContacts.map((contact, index) => (
+                                <Draggable
+                                  key={contact.id}
+                                  draggableId={contact.id}
+                                  index={index}
+                                  isDragDisabled={!isAdmin}
+                                >
+                                  {(provided, snapshot) => (
+                                    <Card 
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className={`border-l-4 transition-shadow ${
+                                        snapshot.isDragging ? 'shadow-lg rotate-2' : 'hover:shadow-md'
+                                      } ${!isAdmin ? 'cursor-pointer' : 'cursor-grab'}`}
+                                      style={{ 
+                                        borderLeftColor: stage.color,
+                                        ...provided.draggableProps.style
+                                      }}
+                                      onDoubleClick={() => handleContactDoubleClick(contact)}
+                                    >
+                                      <CardContent className="p-3">
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between">
+                                            <h4 className="font-semibold text-sm">{contact.name}</h4>
+                                            <Badge 
+                                              variant={contact.status === 'member' ? 'default' : 
+                                                     contact.status === 'visitor' ? 'secondary' : 'outline'}
+                                              className="text-xs"
+                                            >
+                                              {contact.status === 'member' ? 'Membro' :
+                                               contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
+                                            </Badge>
+                                          </div>
+                                          
+                                          {contact.whatsapp && (
+                                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                                              <Phone className="h-3 w-3" />
+                                              <span>{contact.whatsapp}</span>
+                                            </div>
+                                          )}
+                                          
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <MapPin className="h-3 w-3" />
+                                            <span>{contact.neighborhood}</span>
+                                          </div>
 
-                                    {contact.cell_id && (
-                                      <div className="text-xs text-blue-600 font-medium">
-                                        {getCellName(contact.cell_id)}
-                                      </div>
-                                    )}
-                                    
-                                    <div className="flex gap-1 mt-2">
-                                      {contact.encounter_with_god && (
-                                        <Badge variant="outline" className="text-xs">EcD</Badge>
-                                      )}
-                                      {contact.baptized && (
-                                        <Badge variant="outline" className="text-xs">Batizado</Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
+                                          {contact.cell_id && (
+                                            <div className="text-xs text-blue-600 font-medium">
+                                              {getCellName(contact.cell_id)}
+                                            </div>
+                                          )}
+                                          
+                                          <div className="flex gap-1 mt-2">
+                                            {contact.encounter_with_god && (
+                                              <Badge variant="outline" className="text-xs">EcD</Badge>
+                                            )}
+                                            {contact.baptized && (
+                                              <Badge variant="outline" className="text-xs">Batizado</Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                </Draggable>
+                              ))
                             )}
-                          </Draggable>
-                        ))
+                          </div>
+                          {provided.placeholder}
+                        </CardContent>
                       )}
-                      {provided.placeholder}
-                    </CardContent>
-                  )}
-                </Droppable>
-              </Card>
-            );
-          })}
-        </div>
-      </DragDropContext>
+                    </Droppable>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </DragDropContext>
+      </div>
 
       {selectedContact && (
         <EditContactDialog

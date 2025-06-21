@@ -6,7 +6,7 @@ export const Pipeline = () => {
   const { isAdmin } = useLeaderPermissions();
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header fixo */}
       <div className="flex-shrink-0 p-6 border-b bg-white">
         <div>
@@ -17,8 +17,8 @@ export const Pipeline = () => {
         </div>
       </div>
 
-      {/* Conteúdo com scroll */}
-      <div className="flex-1 overflow-hidden">
+      {/* Conteúdo com scroll interno */}
+      <div className="flex-1 overflow-hidden p-6">
         <KanbanPipeline />
       </div>
     </div>
