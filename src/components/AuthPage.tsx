@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -193,10 +192,3 @@ export const AuthPage = () => {
     </div>
   );
 };
-"""
-
-file_path = "/mnt/data/AuthPage.tsx"
-with open(file_path, "w", encoding="utf-8") as f:
-    f.write(code)
-
-file_path
