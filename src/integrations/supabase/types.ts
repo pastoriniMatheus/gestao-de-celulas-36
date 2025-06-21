@@ -204,6 +204,58 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_notes: {
+        Row: {
+          cell_id: string
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          cell_id: string
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note: string
+          updated_at?: string
+        }
+        Update: {
+          cell_id?: string
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_notes_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_notes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           address: string | null
@@ -296,6 +348,7 @@ export type Database = {
           name: string
           qr_code: string
           qr_url: string
+          registration_count: number
           scan_count: number
           updated_at: string
         }
@@ -308,6 +361,7 @@ export type Database = {
           name: string
           qr_code: string
           qr_url: string
+          registration_count?: number
           scan_count?: number
           updated_at?: string
         }
@@ -320,6 +374,7 @@ export type Database = {
           name?: string
           qr_code?: string
           qr_url?: string
+          registration_count?: number
           scan_count?: number
           updated_at?: string
         }
@@ -681,6 +736,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      generate_attendance_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_today_birthdays: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -690,6 +749,10 @@ export type Database = {
           whatsapp: string
           age: number
         }[]
+      }
+      increment_event_registration: {
+        Args: { event_uuid: string }
+        Returns: undefined
       }
       increment_qr_scan_count: {
         Args: { qr_id: string; user_ip?: unknown; user_agent_string?: string }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -11,6 +12,7 @@ interface Event {
   qr_code: string;
   qr_url: string;
   scan_count: number;
+  registration_count: number;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -58,7 +60,7 @@ export const useEvents = () => {
     }
   };
 
-  const addEvent = async (eventData: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'scan_count' | 'qr_code' | 'qr_url'>) => {
+  const addEvent = async (eventData: Omit<Event, 'id' | 'created_at' | 'updated_at' | 'scan_count' | 'registration_count' | 'qr_code' | 'qr_url'>) => {
     try {
       console.log('Criando evento:', eventData);
       
@@ -89,7 +91,8 @@ export const useEvents = () => {
           keyword: normalizedKeyword,
           qr_url: '', // Temporário
           qr_code: '', // Temporário
-          scan_count: 0 
+          scan_count: 0,
+          registration_count: 0
         }])
         .select()
         .single();

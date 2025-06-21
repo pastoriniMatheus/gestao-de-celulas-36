@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { QrCode, Calendar, Eye, Download, ToggleLeft, ToggleRight, Trash2, Edit } from 'lucide-react';
+import { QrCode, Calendar, Eye, Download, ToggleLeft, ToggleRight, Trash2, Edit, Users } from 'lucide-react';
 import { useQRCodes } from '@/hooks/useQRCodes';
 import { useEvents } from '@/hooks/useEvents';
 import { useToast } from '@/hooks/use-toast';
@@ -82,6 +82,7 @@ export const QREventManager = () => {
   const totalQRScans = qrCodes.reduce((sum, qr) => sum + qr.scan_count, 0);
   const activeEvents = events.filter(event => event.active).length;
   const totalEventScans = events.reduce((sum, event) => sum + event.scan_count, 0);
+  const totalEventRegistrations = events.reduce((sum, event) => sum + (event.registration_count || 0), 0);
 
   const loading = qrLoading || eventsLoading;
 
@@ -107,7 +108,7 @@ export const QREventManager = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-semibold text-blue-800">QR Codes Ativos</h3>
               <p className="text-2xl font-bold text-blue-600">{activeQRCodes}</p>
@@ -123,6 +124,10 @@ export const QREventManager = () => {
             <div className="bg-orange-50 p-4 rounded-lg">
               <h3 className="font-semibold text-orange-800">Scans Eventos</h3>
               <p className="text-2xl font-bold text-orange-600">{totalEventScans}</p>
+            </div>
+            <div className="bg-teal-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-teal-800">Cadastros Eventos</h3>
+              <p className="text-2xl font-bold text-teal-600">{totalEventRegistrations}</p>
             </div>
           </div>
         </CardContent>
@@ -266,11 +271,15 @@ export const QREventManager = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        {event.scan_count} scans
-                      </span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3 w-3 text-gray-500" />
+                        <span className="text-gray-600">{event.scan_count} scans</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="h-3 w-3 text-gray-500" />
+                        <span className="text-gray-600">{event.registration_count || 0} cadastros</span>
+                      </div>
                     </div>
 
                     <div className="flex justify-end gap-2 pt-2">

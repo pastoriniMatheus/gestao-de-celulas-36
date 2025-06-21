@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -20,8 +21,18 @@ interface Contact {
   updated_at: string;
 }
 
-const generateAttendanceCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+const generateAttendanceCode = async () => {
+  try {
+    const { data, error } = await supabase.rpc('generate_attendance_code');
+    if (error) {
+      console.error('Erro ao gerar código:', error);
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+    return data;
+  } catch (error) {
+    console.error('Erro ao gerar código:', error);
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
 };
 
 export const useContacts = () => {
@@ -71,9 +82,11 @@ export const useContacts = () => {
   const addContact = async (contactData: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       // Gerar código de presença se não fornecido
+      const attendanceCode = contactData.attendance_code || await generateAttendanceCode();
+      
       const dataWithCode = {
         ...contactData,
-        attendance_code: contactData.attendance_code || generateAttendanceCode()
+        attendance_code: attendanceCode
       };
 
       const { data, error } = await supabase
@@ -127,7 +140,7 @@ export const useContacts = () => {
       if (!updates.attendance_code) {
         const contact = contacts.find(c => c.id === id);
         if (contact && !contact.attendance_code) {
-          updates.attendance_code = generateAttendanceCode();
+          updates.attendance_code = await generateAttendanceCode();
         }
       }
 
