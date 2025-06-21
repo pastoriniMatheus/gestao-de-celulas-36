@@ -14,9 +14,9 @@ export const useLeaderPermissions = () => {
   console.log('useLeaderPermissions - isAdmin:', isAdmin);
   console.log('useLeaderPermissions - isLeader:', isLeader);
 
-  // Permissões específicas para células
+  // Permissões específicas para células - ajustando para permitir acesso aos líderes
   const canManageAllCells = isAdmin;
-  const canEditCells = isAdmin;
+  const canEditCells = isAdmin || isLeader;
   const canDeleteCells = isAdmin;
   const canCreateCells = isAdmin;
 
