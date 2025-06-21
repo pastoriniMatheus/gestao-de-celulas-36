@@ -12,6 +12,7 @@ import { QRRedirect } from "./pages/QRRedirect";
 import CellAttendancePage from "./pages/CellAttendancePage";
 import MemberAttendancePage from "./pages/MemberAttendancePage";
 import NotFound from "./pages/NotFound";
+import { AuthCallback } from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/events" element={<Index />} />
             <Route path="/settings" element={<Index />} />
             <Route path="/users" element={<Index />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/qr/:keyword" element={<QRRedirect />} />
             <Route path="/cells/:cellId/attendance" element={<CellAttendancePage />} />
             <Route path="/attendance/:cellId" element={<MemberAttendancePage />} />
