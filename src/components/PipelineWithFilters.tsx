@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -111,7 +110,7 @@ export const PipelineWithFilters = () => {
 
   if (loading) {
     return (
-      <Card className="h-fit max-h-[80vh]">
+      <Card>
         <CardHeader>
           <CardTitle>Pipeline de Discípulos</CardTitle>
         </CardHeader>
@@ -123,8 +122,8 @@ export const PipelineWithFilters = () => {
   }
 
   return (
-    <Card className="h-fit max-h-[80vh] flex flex-col">
-      <CardHeader className="flex-shrink-0">
+    <Card>
+      <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5 text-blue-600" />
           Pipeline de Discípulos
@@ -152,66 +151,68 @@ export const PipelineWithFilters = () => {
           </Select>
         </div>
       </CardHeader>
-      
-      <CardContent className="flex-1 overflow-hidden">
-        {/* Pipeline horizontal com scroll */}
-        <div className="overflow-x-auto">
-          <div className="flex gap-4 pb-4" style={{ minWidth: `${stages.length * 300}px` }}>
-            {stages.map((stage, index) => {
-              const filteredContacts = getFilteredContacts(stage.contacts);
-              
-              return (
-                <div key={stage.id} className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-72 border rounded-lg p-4 bg-white shadow-sm">
-                    <div className="flex items-center gap-3 mb-3">
+      <CardContent>
+        <div className="space-y-4">
+          {stages.map((stage, index) => {
+            const filteredContacts = getFilteredContacts(stage.contacts);
+            
+            return (
+              <div key={stage.id} className="relative">
+                <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
                       <div 
-                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        className="w-4 h-4 rounded-full"
                         style={{ backgroundColor: stage.color }}
                       />
-                      <h3 className="font-medium text-sm truncate">{stage.name}</h3>
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        {filteredContacts.length}
+                      <h3 className="font-medium">{stage.name}</h3>
+                      <Badge variant="secondary">
+                        {filteredContacts.length} discípulos
                       </Badge>
                     </div>
-                    
-                    {/* ScrollArea para os contatos */}
-                    <ScrollArea className="h-64 w-full">
-                      <div className="space-y-2">
-                        {filteredContacts.length === 0 ? (
-                          <p className="text-xs text-gray-500 text-center py-4">
-                            {selectedCell === 'all' 
-                              ? 'Nenhum discípulo neste estágio' 
-                              : 'Nenhum discípulo neste estágio para o filtro selecionado'
-                            }
-                          </p>
-                        ) : (
-                          filteredContacts.map((contact) => (
-                            <div key={contact.id} className="p-2 bg-gray-50 rounded text-xs">
-                              <p className="font-medium truncate">{contact.name}</p>
-                              <p className="text-gray-600 truncate">{contact.neighborhood}</p>
-                              {contact.cell_name && (
-                                <p className="text-blue-600 text-xs truncate">{contact.cell_name}</p>
-                              )}
-                              {contact.whatsapp && (
-                                <p className="text-green-600 text-xs truncate">{contact.whatsapp}</p>
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </ScrollArea>
                   </div>
                   
-                  {/* Seta para próximo estágio */}
-                  {index < stages.length - 1 && (
-                    <div className="flex items-center pt-20">
-                      <ArrowRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                  {/* ScrollArea para os contatos */}
+                  <ScrollArea className="h-48 w-full">
+                    <div className="space-y-2">
+                      {filteredContacts.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          {selectedCell === 'all' 
+                            ? 'Nenhum discípulo neste estágio' 
+                            : 'Nenhum discípulo neste estágio para o filtro selecionado'
+                          }
+                        </p>
+                      ) : (
+                        filteredContacts.map((contact) => (
+                          <div key={contact.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                            <div>
+                              <p className="font-medium">{contact.name}</p>
+                              <p className="text-gray-600">{contact.neighborhood}</p>
+                              {contact.cell_name && (
+                                <p className="text-blue-600 text-xs">{contact.cell_name}</p>
+                              )}
+                            </div>
+                            {contact.whatsapp && (
+                              <Badge variant="outline" className="text-xs">
+                                {contact.whatsapp}
+                              </Badge>
+                            )}
+                          </div>
+                        ))
+                      )}
                     </div>
-                  )}
+                  </ScrollArea>
                 </div>
-              );
-            })}
-          </div>
+                
+                {/* Seta para próximo estágio */}
+                {index < stages.length - 1 && (
+                  <div className="flex justify-center mt-2 mb-2">
+                    <ArrowRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {stages.length === 0 && (
