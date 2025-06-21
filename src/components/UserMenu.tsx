@@ -17,8 +17,8 @@ import { EditProfileDialog } from './EditProfileDialog';
 export const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
 
-  console.log('UserMenu - Renderizando com user:', user);
-  console.log('UserMenu - Renderizando com userProfile:', userProfile);
+  console.log('UserMenu - user:', user?.id);
+  console.log('UserMenu - userProfile:', userProfile?.name);
 
   const handleSignOut = async () => {
     try {
@@ -56,10 +56,15 @@ export const UserMenu = () => {
     }
   };
 
+  // Não renderizar se não tiver usuário
   if (!user) {
     console.log('UserMenu - Usuário não encontrado');
     return null;
   }
+
+  // Usar dados do usuário como fallback se profile não estiver carregado
+  const displayName = userProfile?.name || 'Usuário';
+  const displayRole = userProfile?.role || 'user';
 
   return (
     <DropdownMenu>
@@ -69,10 +74,10 @@ export const UserMenu = () => {
             {userProfile?.photo_url ? (
               <AvatarImage 
                 src={userProfile.photo_url} 
-                alt={userProfile?.name || 'User'} 
+                alt={displayName} 
                 className="object-cover"
                 onError={(e) => {
-                  console.error('Erro ao carregar imagem do avatar:', userProfile?.photo_url);
+                  console.error('Erro ao carregar imagem do avatar');
                   e.currentTarget.style.display = 'none';
                 }}
               />
@@ -87,15 +92,15 @@ export const UserMenu = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {userProfile?.name || 'Usuário'}
+              {displayName}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
+              {user.email}
             </p>
             <div className="flex items-center gap-1 pt-1">
               <Shield className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">
-                {getRoleLabel(userProfile?.role || 'user')}
+                {getRoleLabel(displayRole)}
               </span>
             </div>
           </div>

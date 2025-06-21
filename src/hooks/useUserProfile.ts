@@ -7,16 +7,15 @@ export const useUserProfile = (user: User | null) => {
   const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
-    console.log('useUserProfile - user changed:', user);
+    console.log('useUserProfile - user changed:', user?.id);
     if (user) {
-      console.log('useUserProfile - user.email:', user.email);
-      fetchUserProfile(user.id);
+      fetchUserProfile(user.id, user.email);
     } else {
       setUserProfile(null);
     }
   }, [user]);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string, userEmail: string | undefined) => {
     try {
       console.log('useUserProfile - Buscando perfil para usuário:', userId);
       
@@ -34,32 +33,32 @@ export const useUserProfile = (user: User | null) => {
       if (!data) {
         console.log('useUserProfile - Perfil não encontrado, criando perfil básico');
         
-        // Tentar criar perfil se não existir
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: userId,
-            name: 'Usuário',
-            email: user?.email || '',
-            role: 'user',
-            active: true
-          })
-          .select()
-          .maybeSingle();
+        // Criar perfil básico
+        const basicProfile = {
+          user_id: userId,
+          name: 'Usuário',
+          role: 'user',
+          email: userEmail || ''
+        };
 
-        if (createError) {
-          console.error('Erro ao criar perfil:', createError);
-          // Se falhar ao criar, usar perfil temporário
-          const tempProfile = {
-            user_id: userId,
-            name: 'Usuário',
-            role: 'user',
-            email: user?.email
-          };
-          setUserProfile(tempProfile);
-        } else {
-          console.log('Perfil criado com sucesso:', newProfile);
-          setUserProfile(newProfile);
+        try {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert(basicProfile)
+            .select()
+            .maybeSingle();
+
+          if (createError) {
+            console.error('Erro ao criar perfil:', createError);
+            // Usar perfil temporário se falhar ao criar
+            setUserProfile(basicProfile);
+          } else {
+            console.log('Perfil criado com sucesso:', newProfile);
+            setUserProfile(newProfile);
+          }
+        } catch (createErr) {
+          console.error('Exceção ao criar perfil:', createErr);
+          setUserProfile(basicProfile);
         }
       } else {
         console.log('useUserProfile - Perfil encontrado:', data);
@@ -67,6 +66,13 @@ export const useUserProfile = (user: User | null) => {
       }
     } catch (error) {
       console.error('useUserProfile - Erro ao buscar perfil do usuário:', error);
+      // Definir perfil básico em caso de erro
+      setUserProfile({
+        user_id: userId,
+        name: 'Usuário',
+        role: 'user',
+        email: userEmail || ''
+      });
     }
   };
 
