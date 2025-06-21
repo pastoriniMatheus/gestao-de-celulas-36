@@ -13,7 +13,7 @@ import { useWebhookConfigs } from '@/hooks/useWebhookConfigs';
 import { toast } from '@/hooks/use-toast';
 
 export const WebhookManager = () => {
-  const { webhooks, loading: webhooksLoading, addWebhook, toggleWebhook, deleteWebhook } = useBirthdayWebhooks();
+  const { webhooks: birthdayWebhooks, loading: birthdayLoading, addWebhook: addBirthdayWebhook, toggleWebhook: toggleBirthdayWebhook, deleteWebhook: deleteBirthdayWebhook } = useBirthdayWebhooks();
   const { webhooks: configs, loading: configsLoading, addWebhook: addConfig, updateWebhook: updateConfig, deleteWebhook: deleteConfig } = useWebhookConfigs();
   
   const [newWebhookUrl, setNewWebhookUrl] = useState('');
@@ -25,7 +25,7 @@ export const WebhookManager = () => {
     headers: {}
   });
 
-  const handleAddWebhook = async () => {
+  const handleAddBirthdayWebhook = async () => {
     if (!newWebhookUrl.trim()) {
       toast({
         title: "Erro",
@@ -36,7 +36,7 @@ export const WebhookManager = () => {
     }
     
     try {
-      await addWebhook(newWebhookUrl);
+      await addBirthdayWebhook(newWebhookUrl);
       setNewWebhookUrl('');
     } catch (error) {
       console.error('Erro ao adicionar webhook:', error);
@@ -122,7 +122,6 @@ export const WebhookManager = () => {
 
   const getEventTypeLabel = (eventType: string) => {
     const labels: { [key: string]: string } = {
-      'birthday': 'Aniversário',
       'new_contact': 'Novo Contato',
       'pipeline_change': 'Mudança de Pipeline',
       'custom': 'Personalizado'
@@ -132,13 +131,15 @@ export const WebhookManager = () => {
 
   const getEventTypeDescription = (eventType: string) => {
     const descriptions: { [key: string]: string } = {
-      'birthday': 'Disparado automaticamente quando é aniversário de um contato',
       'new_contact': 'Disparado quando um novo contato é cadastrado',
       'pipeline_change': 'Disparado quando um contato muda de estágio no pipeline',
       'custom': 'Webhook personalizado para eventos específicos'
     };
     return descriptions[eventType] || 'Evento personalizado';
   };
+
+  // Filtrar webhooks que não são de aniversário
+  const nonBirthdayConfigs = configs.filter(c => c.event_type !== 'birthday');
 
   return (
     <div className="space-y-6">
@@ -157,7 +158,7 @@ export const WebhookManager = () => {
           <Tabs defaultValue="birthday" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="birthday">Aniversários</TabsTrigger>
-              <TabsTrigger value="general">Configurações Gerais</TabsTrigger>
+              <TabsTrigger value="general">Outros Eventos</TabsTrigger>
             </TabsList>
             
             <TabsContent value="birthday" className="space-y-4">
@@ -177,22 +178,22 @@ export const WebhookManager = () => {
                     onChange={(e) => setNewWebhookUrl(e.target.value)}
                     className="flex-1"
                   />
-                  <Button onClick={handleAddWebhook} disabled={!newWebhookUrl.trim()}>
+                  <Button onClick={handleAddBirthdayWebhook} disabled={!newWebhookUrl.trim()}>
                     <Plus className="h-4 w-4 mr-2" />
                     Adicionar
                   </Button>
                 </div>
                 
-                {webhooksLoading ? (
+                {birthdayLoading ? (
                   <div className="text-center py-4">Carregando...</div>
-                ) : webhooks.length === 0 ? (
+                ) : birthdayWebhooks.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Webhook className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                     <p>Nenhum webhook de aniversário configurado</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {webhooks.map((webhook) => (
+                    {birthdayWebhooks.map((webhook) => (
                       <div key={webhook.id} className="flex items-center justify-between p-4 border rounded-lg bg-white">
                         <div className="flex-1">
                           <p className="text-sm font-medium break-all">{webhook.webhook_url}</p>
@@ -220,12 +221,12 @@ export const WebhookManager = () => {
                           </Button>
                           <Switch
                             checked={webhook.active}
-                            onCheckedChange={(checked) => toggleWebhook(webhook.id, checked)}
+                            onCheckedChange={(checked) => toggleBirthdayWebhook(webhook.id, checked)}
                           />
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => deleteWebhook(webhook.id)}
+                            onClick={() => deleteBirthdayWebhook(webhook.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -239,7 +240,7 @@ export const WebhookManager = () => {
             
             <TabsContent value="general" className="space-y-4">
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-900 mb-2">Webhooks Configuráveis</h4>
+                <h4 className="font-medium text-green-900 mb-2">Outros Webhooks</h4>
                 <p className="text-sm text-green-700">
                   Configure webhooks para diferentes tipos de eventos no sistema.
                   Cada tipo de evento enviará dados específicos relacionados ao evento.
@@ -269,7 +270,6 @@ export const WebhookManager = () => {
                       <SelectContent>
                         <SelectItem value="new_contact">Novo Contato</SelectItem>
                         <SelectItem value="pipeline_change">Mudança de Pipeline</SelectItem>
-                        <SelectItem value="birthday">Aniversário</SelectItem>
                         <SelectItem value="custom">Personalizado</SelectItem>
                       </SelectContent>
                     </Select>
@@ -304,7 +304,7 @@ export const WebhookManager = () => {
               
               {configsLoading ? (
                 <div className="text-center py-4">Carregando...</div>
-              ) : configs.length === 0 ? (
+              ) : nonBirthdayConfigs.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Webhook className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                   <p>Nenhuma configuração de webhook encontrada</p>
@@ -312,7 +312,7 @@ export const WebhookManager = () => {
               ) : (
                 <div className="space-y-3">
                   <h4 className="font-medium text-gray-900">Webhooks Configurados:</h4>
-                  {configs.map((config) => (
+                  {nonBirthdayConfigs.map((config) => (
                     <div key={config.id} className="flex items-center justify-between p-4 border rounded-lg bg-white">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -370,24 +370,35 @@ export const WebhookManager = () => {
       {/* Informações sobre Webhooks */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Como Funcionam os Webhooks</CardTitle>
+          <CardTitle className="text-sm">Entenda Como Funcionam os Webhooks</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-gray-600 space-y-2">
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-            <p><strong>Aniversários:</strong> Disparados automaticamente quando é aniversário de alguém</p>
+        <CardContent className="text-sm text-gray-600 space-y-3">
+          <div className="space-y-2">
+            <h5 className="font-medium text-gray-800">🎂 Webhooks de Aniversário:</h5>
+            <p className="pl-4">• Disparados automaticamente todo dia às 09:00 para contatos que fazem aniversário</p>
+            <p className="pl-4">• Enviados dados: nome, telefone, idade, data de nascimento</p>
+            <p className="pl-4">• Usado para: enviar mensagens automáticas de parabéns</p>
           </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-            <p><strong>Novos Contatos:</strong> Disparados quando um novo contato é cadastrado</p>
+          
+          <div className="space-y-2">
+            <h5 className="font-medium text-gray-800">👤 Webhook Novo Contato:</h5>
+            <p className="pl-4">• Disparado quando alguém se cadastra no formulário</p>
+            <p className="pl-4">• Enviados dados: todos os dados do contato cadastrado</p>
+            <p className="pl-4">• Usado para: notificar sistemas externos, enviar boas-vindas</p>
           </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-            <p><strong>Pipeline:</strong> Disparados quando um contato muda de estágio</p>
+          
+          <div className="space-y-2">
+            <h5 className="font-medium text-gray-800">🔄 Webhook Mudança de Pipeline:</h5>
+            <p className="pl-4">• Disparado quando um contato muda de estágio</p>
+            <p className="pl-4">• Enviados dados: dados do contato + estágio anterior e novo</p>
+            <p className="pl-4">• Usado para: acompanhar progresso, acionar ações específicas</p>
           </div>
-          <div className="flex items-start gap-2">
-            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-            <p><strong>Teste:</strong> Use o botão de teste para verificar se seu webhook está funcionando</p>
+          
+          <div className="space-y-2">
+            <h5 className="font-medium text-gray-800">⚙️ Webhook Personalizado:</h5>
+            <p className="pl-4">• Para eventos específicos que você definir</p>
+            <p className="pl-4">• Usado na Central de Mensagens para envio em massa</p>
+            <p className="pl-4">• Permite integração com sistemas de mensageria externos</p>
           </div>
         </CardContent>
       </Card>

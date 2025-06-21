@@ -26,7 +26,7 @@ export const Header = () => {
               {settings.logo_url ? (
                 <img 
                   src={settings.logo_url} 
-                  alt="Logo"
+                  alt="Logo da Igreja"
                   className="w-8 h-8 object-contain rounded border border-gray-200"
                   onError={(e) => {
                     console.error('Erro ao carregar logo no header:', settings.logo_url);

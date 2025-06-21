@@ -26,8 +26,18 @@ export const useSystemSettings = () => {
           // Handle Json type properly by extracting string values
           const value = setting.value;
           if (typeof value === 'object' && value !== null) {
-            // Se é um objeto, tentar pegar a propriedade 'url' primeiro (para imagens)
-            settingsMap[setting.key as keyof SystemSettings] = (value as any).url || (value as any).text || String(value);
+            // Para o site_logo, pegar a URL
+            if (setting.key === 'site_logo') {
+              settingsMap.logo_url = (value as any).url;
+            }
+            // Para church_name, pegar o texto
+            else if (setting.key === 'church_name') {
+              settingsMap.church_name = (value as any).text;
+            }
+            // Para outros campos, tentar pegar url, text ou converter para string
+            else {
+              settingsMap[setting.key as keyof SystemSettings] = (value as any).url || (value as any).text || String(value);
+            }
           } else {
             settingsMap[setting.key as keyof SystemSettings] = String(value);
           }

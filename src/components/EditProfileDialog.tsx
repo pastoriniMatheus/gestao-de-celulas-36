@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -41,9 +42,19 @@ export const EditProfileDialog = () => {
       return;
     }
 
+    if (!userProfile?.id) {
+      toast({
+        title: "Erro",
+        description: "Perfil de usuário não encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('Atualizando perfil com dados:', formData);
+      console.log('ID do perfil:', userProfile.id);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -51,7 +62,7 @@ export const EditProfileDialog = () => {
           name: formData.name.trim(),
           photo_url: formData.photo_url
         })
-        .eq('user_id', userProfile?.user_id)
+        .eq('id', userProfile.id)
         .select()
         .single();
 
@@ -78,7 +89,7 @@ export const EditProfileDialog = () => {
       console.error('Erro ao atualizar perfil:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar perfil. Tente novamente.",
+        description: `Erro ao atualizar perfil: ${error.message}`,
         variant: "destructive",
       });
     } finally {
