@@ -78,9 +78,17 @@ export const useUserProfile = (user: User | null) => {
     }
   };
 
-  const refreshProfile = () => {
-    if (user) {
-      fetchUserProfile(user.id);
+  const refreshProfile = async () => {
+    if (!user) {
+      return { error: { message: 'Usuário não encontrado' } };
+    }
+    
+    try {
+      await fetchUserProfile(user.id);
+      return { error: null };
+    } catch (error) {
+      console.error('useUserProfile - Erro ao atualizar perfil:', error);
+      return { error };
     }
   };
 
