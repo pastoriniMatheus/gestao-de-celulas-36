@@ -46,26 +46,20 @@ export const QRRedirect = () => {
             return;
           }
 
-          // Registrar o scan do evento
+          // Incrementar scan_count imediatamente
+          console.log('QRRedirect: Incrementando scan_count para evento:', evento);
           try {
-            const response = await fetch('/api/track-qr-scan', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                eventId: evento,
-                keyword: cod || eventData.keyword
-              }),
+            const { error: incrementError } = await supabase.rpc('increment_event_scan_count', {
+              event_uuid: evento
             });
 
-            if (!response.ok) {
-              console.warn('Erro ao registrar scan do evento:', response.statusText);
+            if (incrementError) {
+              console.error('Erro ao incrementar scan_count:', incrementError);
             } else {
-              console.log('Scan do evento registrado com sucesso');
+              console.log('Scan count incrementado com sucesso no QRRedirect');
             }
           } catch (trackError) {
-            console.warn('Erro ao chamar função de tracking:', trackError);
+            console.warn('Erro ao incrementar scan count:', trackError);
           }
 
           // Evento válido, redirecionar com parâmetros corretos
@@ -97,25 +91,19 @@ export const QRRedirect = () => {
             return;
           }
 
-          // Registrar o scan do QR code
+          // Incrementar scan_count do QR code
           try {
-            const response = await fetch('/api/track-qr-scan', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                keyword: keyword
-              }),
+            const { error: qrError } = await supabase.rpc('increment_qr_scan_count', {
+              qr_id: qrData.id
             });
 
-            if (!response.ok) {
-              console.warn('Erro ao registrar scan do QR code:', response.statusText);
+            if (qrError) {
+              console.error('Erro ao incrementar scan QR:', qrError);
             } else {
-              console.log('Scan do QR code registrado com sucesso');
+              console.log('Scan do QR code incrementado com sucesso');
             }
           } catch (trackError) {
-            console.warn('Erro ao chamar função de tracking:', trackError);
+            console.warn('Erro ao incrementar scan QR:', trackError);
           }
 
           // QR code válido

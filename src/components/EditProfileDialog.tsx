@@ -64,14 +64,14 @@ export const EditProfileDialog = () => {
 
       let result;
       if (existingProfile) {
-        // Atualizar perfil existente usando o ID do perfil
+        // Atualizar perfil existente usando apenas nome e foto
         result = await supabase
           .from('profiles')
           .update({
             name: formData.name.trim(),
             photo_url: formData.photo_url
           })
-          .eq('id', existingProfile.id)
+          .eq('user_id', user.id)
           .select()
           .maybeSingle();
       } else {
