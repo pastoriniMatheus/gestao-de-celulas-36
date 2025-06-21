@@ -258,20 +258,20 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Users className="h-6 w-6 text-blue-600" />
-              {cell.name}
-            </DialogTitle>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">{cell.address}</p>
-              {/* Informações do líder */}
+            <DialogTitle className="flex items-center justify-between text-xl">
+              <div className="flex items-center gap-2">
+                <Users className="h-6 w-6 text-blue-600" />
+                {cell.name}
+              </div>
+              {/* Informações do líder na mesma linha */}
               {cell.leader_id && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Líder da Célula:</span>
+                  <span className="text-sm font-medium text-gray-700">Líder:</span>
                   <CellLeaderInfo leader_id={cell.leader_id} />
                 </div>
               )}
-            </div>
+            </DialogTitle>
+            <p className="text-sm text-gray-600">{cell.address}</p>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 pr-2">

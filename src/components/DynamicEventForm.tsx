@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +57,18 @@ export const DynamicEventForm = () => {
 
           if (!error && event) {
             setEventInfo(event);
+            
+            // Incrementar scan_count quando o formulário é carregado
+            console.log('Incrementando scan_count para evento:', eventId);
+            const { error: scanError } = await supabase.rpc('increment_event_scan_count', {
+              event_uuid: eventId
+            });
+
+            if (scanError) {
+              console.error('Erro ao incrementar scan_count:', scanError);
+            } else {
+              console.log('Scan count incrementado com sucesso');
+            }
           }
         }
         
@@ -70,6 +81,15 @@ export const DynamicEventForm = () => {
 
           if (!error && qr) {
             setQrInfo(qr);
+            
+            // Incrementar scan_count do QR code
+            const { error: qrError } = await supabase.rpc('increment_qr_scan_count', {
+              qr_id: qr.id
+            });
+
+            if (qrError) {
+              console.error('Erro ao incrementar scan QR:', qrError);
+            }
           }
         }
 
@@ -125,28 +145,22 @@ export const DynamicEventForm = () => {
 
       if (error) throw error;
 
-      // Incrementar registration_count para eventos usando a função do banco
+      // Incrementar registration_count para eventos
       if (eventId && eventInfo) {
         console.log('Incrementando registration_count para evento:', eventId);
-        const { error: incrementError } = await supabase
-          .rpc('increment_event_registration', { event_uuid: eventId });
+        const { error: incrementError } = await supabase.rpc('increment_event_registration', { 
+          event_uuid: eventId 
+        });
 
         if (incrementError) {
           console.error('Erro ao incrementar registration_count:', incrementError);
-        }
-
-        // Também incrementar scan_count
-        const { error: scanError } = await supabase
-          .from('events')
-          .update({ scan_count: (eventInfo.scan_count || 0) + 1 })
-          .eq('id', eventId);
-
-        if (scanError) {
-          console.error('Erro ao incrementar scan_count:', scanError);
+        } else {
+          console.log('Registration count incrementado com sucesso');
         }
       }
 
-      if (qrInfo) {
+      // Incrementar scan_count para QR codes se não for evento
+      if (qrInfo && !eventId) {
         const { error: qrError } = await supabase
           .from('qr_codes')
           .update({ scan_count: (qrInfo.scan_count || 0) + 1 })

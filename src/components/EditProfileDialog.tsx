@@ -55,16 +55,42 @@ export const EditProfileDialog = () => {
       console.log('Atualizando perfil com dados:', formData);
       console.log('User ID:', user.id);
       
-      // Atualizar perfil usando user_id - NÃO incluir email para evitar duplicação
-      const { data, error } = await supabase
+      // Primeiro verificar se existe perfil para este user_id
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          name: formData.name.trim(),
-          photo_url: formData.photo_url
-        })
+        .select('id')
         .eq('user_id', user.id)
-        .select()
-        .single();
+        .maybeSingle();
+
+      let result;
+      if (existingProfile) {
+        // Atualizar perfil existente usando o ID do perfil
+        result = await supabase
+          .from('profiles')
+          .update({
+            name: formData.name.trim(),
+            photo_url: formData.photo_url
+          })
+          .eq('id', existingProfile.id)
+          .select()
+          .maybeSingle();
+      } else {
+        // Criar novo perfil se não existir
+        result = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            name: formData.name.trim(),
+            email: user.email || '',
+            photo_url: formData.photo_url,
+            role: 'user',
+            active: true
+          })
+          .select()
+          .maybeSingle();
+      }
+
+      const { data, error } = result;
 
       if (error) {
         console.error('Erro ao salvar perfil:', error);
