@@ -1,17 +1,51 @@
 
 import { BirthdayNotifications } from './BirthdayNotifications';
+import { UserMenu } from './UserMenu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 export const Header = () => {
+  const { settings, loading } = useSystemSettings();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <SidebarTrigger />
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              {settings.logo_url ? (
+                <img 
+                  src={settings.logo_url} 
+                  alt="Logo"
+                  className="w-8 h-8 object-contain rounded border border-gray-200"
+                  onError={(e) => {
+                    console.error('Erro ao carregar logo no header:', settings.logo_url);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">
+                    {(settings.church_name || 'Sistema').charAt(0)}
+                  </span>
+                </div>
+              )}
+              <h1 className="text-lg font-semibold text-gray-800">
+                {settings.church_name || 'Sistema de Gestão'}
+              </h1>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
           <BirthdayNotifications />
+          <UserMenu />
         </div>
       </div>
     </header>

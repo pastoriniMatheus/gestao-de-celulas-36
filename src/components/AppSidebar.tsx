@@ -1,5 +1,5 @@
 
-import { Home, Users, Building2, MessageSquare, Settings, QrCode, Calendar, BarChart3, MapPin, UserCheck } from "lucide-react";
+import { Home, Users, Building2, MessageSquare, Settings, Calendar, UserCheck } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -40,24 +40,9 @@ const adminItems = [
     icon: MessageSquare,
   },
   {
-    title: "QR Codes",
-    url: "/qr-codes",
-    icon: QrCode,
-  },
-  {
     title: "Eventos",
     url: "/events",
     icon: Calendar,
-  },
-  {
-    title: "Relatórios",
-    url: "/reports",
-    icon: BarChart3,
-  },
-  {
-    title: "Localização",
-    url: "/location",
-    icon: MapPin,
   },
   {
     title: "Usuários",
@@ -91,11 +76,6 @@ const leaderItems = [
     title: "Minha Célula",
     url: "/cells",
     icon: Building2,
-  },
-  {
-    title: "Relatórios",
-    url: "/reports",
-    icon: BarChart3,
   },
 ];
 
