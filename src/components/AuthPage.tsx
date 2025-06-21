@@ -132,7 +132,7 @@ export const AuthPage = () => {
         {/* Logo e Título no Topo */}
         <div className="text-center mb-10">
           
-          <div className="w-32 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto"></div>
+          
         </div>
 
         {/* Card de Login */}
