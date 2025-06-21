@@ -1,18 +1,70 @@
 
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Leader {
+  id: string;
+  name: string;
+  photo_url?: string | null;
+}
 
 interface CellLeaderInfoProps {
-  leader: {
-    id: string;
-    name: string;
-    photo_url?: string | null;
-  } | null;
+  leader_id: string | null;
   className?: string;
 }
 
-export const CellLeaderInfo = ({ leader, className = "" }: CellLeaderInfoProps) => {
-  if (!leader) {
+export const CellLeaderInfo = ({ leader_id, className = "" }: CellLeaderInfoProps) => {
+  const [leader, setLeader] = useState<Leader | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!leader_id) {
+      setLeader(null);
+      return;
+    }
+
+    const fetchLeaderInfo = async () => {
+      setLoading(true);
+      try {
+        console.log('Buscando informações do líder:', leader_id);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, photo_url')
+          .eq('id', leader_id)
+          .single();
+
+        if (error) {
+          console.error('Erro ao buscar líder:', error);
+          setLeader(null);
+          return;
+        }
+
+        console.log('Líder encontrado:', data);
+        setLeader(data);
+      } catch (error) {
+        console.error('Erro inesperado ao buscar líder:', error);
+        setLeader(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderInfo();
+  }, [leader_id]);
+
+  if (loading) {
+    return (
+      <div className={`flex items-center gap-2 text-gray-500 ${className}`}>
+        <User className="h-4 w-4" />
+        <span className="text-sm">Carregando líder...</span>
+      </div>
+    );
+  }
+
+  if (!leader_id || !leader) {
     return (
       <div className={`flex items-center gap-2 text-gray-500 ${className}`}>
         <User className="h-4 w-4" />

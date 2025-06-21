@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -42,10 +41,10 @@ export const EditProfileDialog = () => {
       return;
     }
 
-    if (!userProfile?.id) {
+    if (!user?.id) {
       toast({
         title: "Erro",
-        description: "Perfil de usuário não encontrado.",
+        description: "Usuário não encontrado.",
         variant: "destructive",
       });
       return;
@@ -54,24 +53,58 @@ export const EditProfileDialog = () => {
     setLoading(true);
     try {
       console.log('Atualizando perfil com dados:', formData);
-      console.log('ID do perfil:', userProfile.id);
+      console.log('User ID:', user.id);
       
-      const { data, error } = await supabase
+      // Primeiro, vamos verificar se o perfil existe
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .update({
-          name: formData.name.trim(),
-          photo_url: formData.photo_url
-        })
-        .eq('id', userProfile.id)
-        .select()
+        .select('*')
+        .eq('user_id', user.id)
         .single();
 
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Erro ao verificar perfil:', checkError);
+        throw checkError;
+      }
+
+      let result;
+      if (!existingProfile) {
+        // Criar novo perfil se não existir
+        console.log('Criando novo perfil...');
+        result = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            name: formData.name.trim(),
+            email: user.email || '',
+            photo_url: formData.photo_url,
+            role: 'user',
+            active: true
+          })
+          .select()
+          .single();
+      } else {
+        // Atualizar perfil existente usando user_id
+        console.log('Atualizando perfil existente...');
+        result = await supabase
+          .from('profiles')
+          .update({
+            name: formData.name.trim(),
+            photo_url: formData.photo_url
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+      }
+
+      const { data, error } = result;
+
       if (error) {
-        console.error('Erro ao atualizar perfil:', error);
+        console.error('Erro ao salvar perfil:', error);
         throw error;
       }
 
-      console.log('Perfil atualizado com sucesso:', data);
+      console.log('Perfil salvo com sucesso:', data);
 
       toast({
         title: "Sucesso",

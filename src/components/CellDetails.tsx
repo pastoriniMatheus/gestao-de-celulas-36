@@ -4,11 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, MapPin, Calendar, Clock, User, Edit, QrCode, UserCheck } from 'lucide-react';
+import { ArrowLeft, Users, MapPin, Calendar, Clock, Edit, QrCode, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EditCellDialog } from './EditCellDialog';
 import { CellQrCode } from './CellQrCode';
+import { CellLeaderInfo } from './CellLeaderInfo';
 
 interface CellDetails {
   id: string;
@@ -170,15 +171,10 @@ export const CellDetails = () => {
                 ({['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][cell.meeting_day]})
               </div>
             </div>
-            {cell.leader_id && (
-              <div>
-                <div className="text-sm font-medium text-gray-700">Líder</div>
-                <div className="text-gray-500 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {cell.leader_id}
-                </div>
-              </div>
-            )}
+            <div>
+              <div className="text-sm font-medium text-gray-700">Líder</div>
+              <CellLeaderInfo leader_id={cell.leader_id} />
+            </div>
           </div>
           
           <div className="flex justify-end gap-2">
