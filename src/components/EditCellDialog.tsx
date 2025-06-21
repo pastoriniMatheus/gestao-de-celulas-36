@@ -54,6 +54,8 @@ export const EditCellDialog = ({
       // Buscar dados completos da célula com joins
       const fetchCellData = async () => {
         try {
+          console.log('EditCellDialog: Buscando dados completos da célula:', cell.id);
+          
           const { data, error } = await supabase
             .from('cells')
             .select(`
@@ -81,7 +83,7 @@ export const EditCellDialog = ({
             return;
           }
 
-          console.log('EditCellDialog: Dados completos da célula:', data);
+          console.log('EditCellDialog: Dados completos da célula carregados:', data);
 
           const cityId = data.neighborhoods?.cities?.id || '';
           
@@ -95,10 +97,18 @@ export const EditCellDialog = ({
             meeting_time: data.meeting_time || '',
           });
           
+          console.log('EditCellDialog: FormState inicializado:', {
+            name: data.name,
+            address: data.address,
+            leader_id: data.leader_id,
+            neighborhood_id: data.neighborhood_id,
+            cityId: cityId
+          });
+          
           setSelectedCityId(cityId);
           
         } catch (error) {
-          console.error('EditCellDialog: Erro ao buscar dados:', error);
+          console.error('EditCellDialog: Erro inesperado ao buscar dados:', error);
         }
       };
 
@@ -144,10 +154,14 @@ export const EditCellDialog = ({
 
   const handleChange = (field: string, value: any) => {
     console.log('EditCellDialog: Alterando campo:', field, 'para:', value);
-    setFormState((prevState) => ({
-      ...prevState,
-      [field]: value,
-    }));
+    setFormState((prevState) => {
+      const newState = {
+        ...prevState,
+        [field]: value,
+      };
+      console.log('EditCellDialog: Novo estado do form:', newState);
+      return newState;
+    });
   };
 
   const handleCityChange = (cityId: string) => {
@@ -161,6 +175,7 @@ export const EditCellDialog = ({
     e.preventDefault();
     
     console.log('EditCellDialog: Iniciando submissão com dados:', formState);
+    console.log('EditCellDialog: ID da célula:', cell.id);
     
     // Validações
     if (!formState.name?.trim()) {
@@ -212,9 +227,11 @@ export const EditCellDialog = ({
         updated_at: new Date().toISOString()
       };
 
-      console.log('EditCellDialog: Enviando dados para atualização:', updateData);
+      console.log('EditCellDialog: Dados para atualização preparados:', updateData);
+      console.log('EditCellDialog: Atualizando célula com ID:', cell.id);
 
-      const { data, error } = await supabase
+      // Primeira tentativa: atualização direta
+      const { data: updateResult, error: updateError } = await supabase
         .from("cells")
         .update(updateData)
         .eq("id", cell.id)
@@ -237,26 +254,99 @@ export const EditCellDialog = ({
         `)
         .single();
 
-      if (error) {
-        console.error('EditCellDialog: Erro ao atualizar célula:', error);
+      console.log('EditCellDialog: Resultado da atualização:', { updateResult, updateError });
+
+      if (updateError) {
+        console.error('EditCellDialog: Erro na primeira tentativa de atualização:', updateError);
+        
+        // Segunda tentativa: verificar se a célula existe
+        const { data: cellExists, error: checkError } = await supabase
+          .from("cells")
+          .select("id, name")
+          .eq("id", cell.id)
+          .single();
+          
+        console.log('EditCellDialog: Verificação de existência:', { cellExists, checkError });
+        
+        if (checkError || !cellExists) {
+          throw new Error(`Célula não encontrada: ${checkError?.message || 'ID inválido'}`);
+        }
+        
+        // Terceira tentativa: atualização simples sem joins
+        const { error: simpleUpdateError } = await supabase
+          .from("cells")
+          .update(updateData)
+          .eq("id", cell.id);
+          
+        if (simpleUpdateError) {
+          console.error('EditCellDialog: Erro na atualização simples:', simpleUpdateError);
+          throw simpleUpdateError;
+        }
+        
+        console.log('EditCellDialog: Atualização simples bem-sucedida, buscando dados atualizados...');
+        
+        // Buscar dados atualizados
+        const { data: updatedData, error: fetchError } = await supabase
+          .from("cells")
+          .select(`
+            *,
+            neighborhoods!cells_neighborhood_id_fkey (
+              id,
+              name,
+              city_id,
+              cities!neighborhoods_city_id_fkey (
+                id,
+                name,
+                state
+              )
+            ),
+            profiles!cells_leader_id_fkey (
+              id,
+              name
+            )
+          `)
+          .eq("id", cell.id)
+          .single();
+          
+        if (fetchError) {
+          console.error('EditCellDialog: Erro ao buscar dados atualizados:', fetchError);
+          throw fetchError;
+        }
+        
+        console.log('EditCellDialog: Dados atualizados obtidos:', updatedData);
+        
+        // Transformar dados para o formato esperado
+        const transformedData = {
+          ...updatedData,
+          leader_name: updatedData.profiles?.name || null,
+          neighborhood_name: updatedData.neighborhoods?.name || null,
+          city_id: updatedData.neighborhoods?.cities?.id || null,
+          city_name: updatedData.neighborhoods?.cities?.name || null
+        };
+        
         toast({
-          title: "Erro",
-          description: `Erro ao atualizar célula: ${error.message}`,
-          variant: "destructive",
+          title: "Sucesso",
+          description: "Célula atualizada com sucesso! - Sistema desenvolvido por Matheus Pastorini",
         });
+        
+        // Chamar callback para atualizar a lista
+        onCellUpdated(transformedData);
+        onClose();
         return;
       }
 
-      console.log('EditCellDialog: Célula atualizada com sucesso:', data);
+      console.log('EditCellDialog: Atualização bem-sucedida na primeira tentativa:', updateResult);
       
       // Transformar dados para o formato esperado
       const transformedData = {
-        ...data,
-        leader_name: data.profiles?.name || null,
-        neighborhood_name: data.neighborhoods?.name || null,
-        city_id: data.neighborhoods?.cities?.id || null,
-        city_name: data.neighborhoods?.cities?.name || null
+        ...updateResult,
+        leader_name: updateResult.profiles?.name || null,
+        neighborhood_name: updateResult.neighborhoods?.name || null,
+        city_id: updateResult.neighborhoods?.cities?.id || null,
+        city_name: updateResult.neighborhoods?.cities?.name || null
       };
+      
+      console.log('EditCellDialog: Dados transformados:', transformedData);
       
       toast({
         title: "Sucesso",
@@ -271,7 +361,7 @@ export const EditCellDialog = ({
       console.error('EditCellDialog: Erro inesperado:', error);
       toast({
         title: "Erro inesperado",
-        description: error?.message || "Tente novamente",
+        description: `Erro ao salvar: ${error?.message || "Tente novamente"}`,
         variant: "destructive",
       });
     } finally {

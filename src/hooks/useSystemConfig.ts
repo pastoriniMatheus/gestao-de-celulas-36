@@ -8,11 +8,12 @@ interface DatabaseConfig {
   service_role_key: string;
   project_id: string;
   database_url: string;
-  [key: string]: string; // Add index signature to make it compatible with Json type
+  [key: string]: string;
 }
 
 interface SystemConfig {
   site_logo: { url: string; alt: string };
+  site_favicon?: { url: string };
   form_title: { text: string };
   form_description: { text: string };
   church_name: { text: string };
@@ -22,6 +23,7 @@ interface SystemConfig {
 export const useSystemConfig = () => {
   const [config, setConfig] = useState<SystemConfig>({
     site_logo: { url: '', alt: 'Logo da Igreja' },
+    site_favicon: { url: '' },
     form_title: { text: 'Sistema de Células' },
     form_description: { text: 'Preencha seus dados para nos conectarmos com você' },
     church_name: { text: '' }
@@ -36,7 +38,7 @@ export const useSystemConfig = () => {
         const { data, error } = await supabase
           .from('system_settings')
           .select('key, value')
-          .in('key', ['site_logo', 'form_title', 'form_description', 'church_name', 'database_config']);
+          .in('key', ['site_logo', 'site_favicon', 'form_title', 'form_description', 'church_name', 'database_config']);
 
         if (error) {
           console.error('Erro ao carregar configurações:', error);
@@ -51,8 +53,11 @@ export const useSystemConfig = () => {
           });
           setConfig(prev => ({ ...prev, ...settings }));
 
-          // Atualizar favicon se houver logo configurado
-          if (settings.site_logo?.url) {
+          // Atualizar favicon se houver configurado
+          if (settings.site_favicon?.url) {
+            updateFavicon(settings.site_favicon.url);
+          } else if (settings.site_logo?.url) {
+            // Usar logo como favicon se não houver favicon específico
             updateFavicon(settings.site_logo.url);
           }
         }
@@ -69,7 +74,6 @@ export const useSystemConfig = () => {
     const channelName = `system-config-${Date.now()}`;
     console.log('Creating system config channel:', channelName);
 
-    // Configurar real-time updates para configurações
     const channel = supabase
       .channel(channelName)
       .on(
@@ -81,7 +85,7 @@ export const useSystemConfig = () => {
         },
         (payload) => {
           console.log('Configuração alterada em tempo real:', payload);
-          loadConfig(); // Recarregar configurações
+          loadConfig();
         }
       )
       .subscribe((status) => {
@@ -94,7 +98,7 @@ export const useSystemConfig = () => {
     };
   }, []);
 
-  const updateFavicon = (logoUrl: string) => {
+  const updateFavicon = (faviconUrl: string) => {
     try {
       // Remover favicons existentes
       const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
@@ -103,18 +107,18 @@ export const useSystemConfig = () => {
       // Adicionar novo favicon
       const link = document.createElement('link');
       link.rel = 'icon';
-      link.href = logoUrl;
+      link.href = faviconUrl;
       link.type = 'image/png';
       document.head.appendChild(link);
       
       // Adicionar também como shortcut icon para melhor compatibilidade
       const shortcutLink = document.createElement('link');
       shortcutLink.rel = 'shortcut icon';
-      shortcutLink.href = logoUrl;
+      shortcutLink.href = faviconUrl;
       shortcutLink.type = 'image/png';
       document.head.appendChild(shortcutLink);
       
-      console.log('Favicon atualizado para:', logoUrl);
+      console.log('Favicon atualizado para:', faviconUrl);
     } catch (error) {
       console.error('Erro ao atualizar favicon:', error);
     }
@@ -130,7 +134,7 @@ export const useSystemConfig = () => {
           .from('system_settings')
           .upsert({ 
             key, 
-            value: value as any // Type assertion to handle Json compatibility
+            value: value as any
           }, { 
             onConflict: 'key' 
           });
@@ -144,8 +148,10 @@ export const useSystemConfig = () => {
       // Atualizar estado local
       setConfig(prev => ({ ...prev, ...newConfig }));
 
-      // Atualizar favicon se o logo foi alterado
-      if (newConfig.site_logo?.url) {
+      // Atualizar favicon se foi alterado
+      if (newConfig.site_favicon?.url) {
+        updateFavicon(newConfig.site_favicon.url);
+      } else if (newConfig.site_logo?.url && !config.site_favicon?.url) {
         updateFavicon(newConfig.site_logo.url);
       }
       

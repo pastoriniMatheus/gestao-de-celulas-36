@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,10 +17,9 @@ interface DatabaseConfig {
   service_role_key: string;
   project_id: string;
   database_url: string;
-  [key: string]: string; // Add index signature to make it compatible with Json type
+  [key: string]: string;
 }
 
-// Define table names as a const array for type safety
 const BACKUP_TABLES = [
   'contacts', 'cells', 'profiles', 'cities', 'neighborhoods', 
   'pipeline_stages', 'events', 'qr_codes', 'message_templates',
@@ -42,25 +42,38 @@ export const DatabaseSettings = () => {
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // Carregar configurações salvas do sistema
     if (config.database_config) {
+      console.log('DatabaseSettings: Carregando configurações do banco:', config.database_config);
       setDbConfig(prev => ({ ...prev, ...config.database_config }));
     }
   }, [config]);
 
   const testConnection = async () => {
+    console.log('DatabaseSettings: Testando conexão com dados:', dbConfig);
     setConnectionStatus('testing');
+    setErrorMessage('');
+    
     try {
+      // Verificar se os campos obrigatórios estão preenchidos
+      if (!dbConfig.project_url || !dbConfig.anon_key) {
+        throw new Error('URL do projeto e chave anônima são obrigatórios');
+      }
+
       // Testar conexão básica com o Supabase usando uma consulta simples
       const { data, error } = await supabase
         .from('system_settings')
-        .select('*')
+        .select('key')
         .limit(1);
 
+      console.log('DatabaseSettings: Resultado do teste de conexão:', { data, error });
+
       if (error) {
-        throw error;
+        console.error('DatabaseSettings: Erro na conexão:', error);
+        throw new Error(`Erro de conexão: ${error.message}`);
       }
 
       setConnectionStatus('success');
@@ -68,12 +81,13 @@ export const DatabaseSettings = () => {
         title: "Sucesso",
         description: "Conexão com o banco de dados testada com sucesso! - Sistema Matheus Pastorini"
       });
-    } catch (error) {
-      console.error('Erro ao testar conexão:', error);
+    } catch (error: any) {
+      console.error('DatabaseSettings: Erro ao testar conexão:', error);
       setConnectionStatus('error');
+      setErrorMessage(error.message);
       toast({
         title: "Erro",
-        description: "Falha ao conectar com o banco de dados",
+        description: `Falha ao conectar: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -82,6 +96,8 @@ export const DatabaseSettings = () => {
   const saveConfiguration = async () => {
     setSaving(true);
     try {
+      console.log('DatabaseSettings: Salvando configurações do banco:', dbConfig);
+      
       await updateConfig({
         database_config: dbConfig
       });
@@ -91,7 +107,7 @@ export const DatabaseSettings = () => {
         description: "Configurações do banco salvas com sucesso! - Sistema Matheus Pastorini"
       });
     } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
+      console.error('DatabaseSettings: Erro ao salvar configurações:', error);
       toast({
         title: "Erro",
         description: "Erro ao salvar configurações do banco",
@@ -105,6 +121,8 @@ export const DatabaseSettings = () => {
   const downloadDatabase = async () => {
     setDownloading(true);
     try {
+      console.log('DatabaseSettings: Iniciando backup do banco...');
+      
       const backup: any = {
         timestamp: new Date().toISOString(),
         version: '1.0',
@@ -115,16 +133,18 @@ export const DatabaseSettings = () => {
       // Exportar dados de cada tabela usando type-safe approach
       for (const tableName of BACKUP_TABLES) {
         try {
+          console.log(`DatabaseSettings: Exportando tabela ${tableName}...`);
+          
           const { data, error } = await supabase
             .from(tableName as BackupTableName)
             .select('*');
 
           if (!error && data) {
             backup.data[tableName] = data;
-            console.log(`Exportados ${data.length} registros da tabela ${tableName}`);
+            console.log(`DatabaseSettings: Exportados ${data.length} registros da tabela ${tableName}`);
           }
         } catch (error) {
-          console.warn(`Erro ao exportar tabela ${tableName}:`, error);
+          console.warn(`DatabaseSettings: Erro ao exportar tabela ${tableName}:`, error);
         }
       }
 
@@ -146,7 +166,7 @@ export const DatabaseSettings = () => {
         description: "Backup do banco de dados baixado com sucesso! - Sistema Matheus Pastorini"
       });
     } catch (error) {
-      console.error('Erro ao fazer backup:', error);
+      console.error('DatabaseSettings: Erro ao fazer backup:', error);
       toast({
         title: "Erro",
         description: "Erro ao fazer backup do banco de dados",
@@ -163,6 +183,8 @@ export const DatabaseSettings = () => {
 
     setUploading(true);
     try {
+      console.log('DatabaseSettings: Iniciando restauração do backup...');
+      
       const text = await file.text();
       const backup = JSON.parse(text);
 
@@ -178,6 +200,8 @@ export const DatabaseSettings = () => {
         const records = backup.data[tableName];
         if (Array.isArray(records) && records.length > 0) {
           try {
+            console.log(`DatabaseSettings: Restaurando tabela ${tableName} com ${records.length} registros...`);
+            
             // Primeiro, limpar dados existentes (cuidado!)
             const { error: deleteError } = await supabase
               .from(tableName as BackupTableName)
@@ -185,7 +209,7 @@ export const DatabaseSettings = () => {
               .neq('id', '00000000-0000-0000-0000-000000000000');
 
             if (deleteError) {
-              console.warn(`Aviso ao limpar tabela ${tableName}:`, deleteError);
+              console.warn(`DatabaseSettings: Aviso ao limpar tabela ${tableName}:`, deleteError);
             }
 
             // Inserir novos dados
@@ -196,12 +220,12 @@ export const DatabaseSettings = () => {
             if (!insertError) {
               restoredTables++;
               totalRecords += records.length;
-              console.log(`Restaurados ${records.length} registros na tabela ${tableName}`);
+              console.log(`DatabaseSettings: Restaurados ${records.length} registros na tabela ${tableName}`);
             } else {
-              console.error(`Erro ao restaurar tabela ${tableName}:`, insertError);
+              console.error(`DatabaseSettings: Erro ao restaurar tabela ${tableName}:`, insertError);
             }
           } catch (error) {
-            console.warn(`Erro ao processar tabela ${tableName}:`, error);
+            console.warn(`DatabaseSettings: Erro ao processar tabela ${tableName}:`, error);
           }
         }
       }
@@ -211,7 +235,7 @@ export const DatabaseSettings = () => {
         description: `Banco restaurado! ${restoredTables} tabelas e ${totalRecords} registros - Sistema Matheus Pastorini`
       });
     } catch (error) {
-      console.error('Erro ao restaurar backup:', error);
+      console.error('DatabaseSettings: Erro ao restaurar backup:', error);
       toast({
         title: "Erro",
         description: "Erro ao restaurar backup do banco de dados",
@@ -282,18 +306,27 @@ export const DatabaseSettings = () => {
           </Button>
         </div>
 
+        {/* Mensagem de Erro */}
+        {errorMessage && (
+          <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+            <AlertCircle className="h-4 w-4" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         {/* Configurações de Conexão */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Configurações de Conexão</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="project-url">URL do Projeto</Label>
+              <Label htmlFor="project-url">URL do Projeto *</Label>
               <Input
                 id="project-url"
                 value={dbConfig.project_url}
                 onChange={(e) => setDbConfig(prev => ({ ...prev, project_url: e.target.value }))}
                 placeholder="https://xxx.supabase.co"
+                required
               />
             </div>
 
@@ -308,13 +341,14 @@ export const DatabaseSettings = () => {
             </div>
 
             <div>
-              <Label htmlFor="anon-key">Chave Anônima</Label>
+              <Label htmlFor="anon-key">Chave Anônima *</Label>
               <Input
                 id="anon-key"
                 type="password"
                 value={dbConfig.anon_key}
                 onChange={(e) => setDbConfig(prev => ({ ...prev, anon_key: e.target.value }))}
                 placeholder="eyJ..."
+                required
               />
             </div>
 

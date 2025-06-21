@@ -12,22 +12,21 @@ export const AppearanceSettings = () => {
   const { config, updateConfig, loading } = useSystemConfig();
   const [logoUrl, setLogoUrl] = useState('');
   const [logoAlt, setLogoAlt] = useState('');
-  const [primaryColor, setPrimaryColor] = useState('#3b82f6');
-  const [secondaryColor, setSecondaryColor] = useState('#6b7280');
-  const [accentColor, setAccentColor] = useState('#10b981');
+  const [faviconUrl, setFaviconUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (config) {
       setLogoUrl(config.site_logo?.url || '');
       setLogoAlt(config.site_logo?.alt || 'Logo da Igreja');
-      // Cores podem ser expandidas no futuro
+      setFaviconUrl(config.site_favicon?.url || '');
     }
   }, [config]);
 
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
     if (!file) return;
 
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml'];
@@ -54,10 +53,14 @@ export const AppearanceSettings = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        setLogoUrl(result);
+        if (type === 'logo') {
+          setLogoUrl(result);
+        } else {
+          setFaviconUrl(result);
+        }
         toast({
           title: "Sucesso",
-          description: "Logo carregado! Não esqueça de salvar as configurações.",
+          description: `${type === 'logo' ? 'Logo' : 'Favicon'} carregado! Não esqueça de salvar as configurações.`,
         });
       };
       reader.readAsDataURL(file);
@@ -73,15 +76,55 @@ export const AppearanceSettings = () => {
     }
   };
 
+  const updateFavicon = (faviconUrl: string) => {
+    try {
+      // Remover favicons existentes
+      const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+      existingFavicons.forEach(favicon => favicon.remove());
+
+      // Adicionar novo favicon
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = faviconUrl;
+      link.type = 'image/png';
+      document.head.appendChild(link);
+      
+      // Adicionar também como shortcut icon para melhor compatibilidade
+      const shortcutLink = document.createElement('link');
+      shortcutLink.rel = 'shortcut icon';
+      shortcutLink.href = faviconUrl;
+      shortcutLink.type = 'image/png';
+      document.head.appendChild(shortcutLink);
+      
+      console.log('Favicon atualizado para:', faviconUrl);
+    } catch (error) {
+      console.error('Erro ao atualizar favicon:', error);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateConfig({
+      const configUpdate: any = {
         site_logo: {
           url: logoUrl,
           alt: logoAlt
         }
-      });
+      };
+
+      // Adicionar favicon se foi definido
+      if (faviconUrl) {
+        configUpdate.site_favicon = {
+          url: faviconUrl
+        };
+      }
+
+      await updateConfig(configUpdate);
+
+      // Atualizar favicon no navegador
+      if (faviconUrl) {
+        updateFavicon(faviconUrl);
+      }
 
       toast({
         title: "Sucesso",
@@ -120,7 +163,7 @@ export const AppearanceSettings = () => {
           Aparência do Sistema
         </CardTitle>
         <CardDescription>
-          Configure o logo e visual da sua igreja
+          Configure o logo, favicon e visual da sua igreja
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -157,7 +200,7 @@ export const AppearanceSettings = () => {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file);
+                  if (file) handleFileUpload(file, 'logo');
                 }}
               />
             </div>
@@ -188,6 +231,59 @@ export const AppearanceSettings = () => {
           <p className="text-sm text-gray-500">
             Texto que aparece quando a imagem não carrega
           </p>
+        </div>
+
+        {/* Favicon */}
+        <div className="space-y-2">
+          <Label>Favicon (Ícone do Navegador)</Label>
+          <div className="flex gap-4 items-start">
+            <div className="flex-1">
+              <Input
+                type="url"
+                value={faviconUrl}
+                onChange={(e) => setFaviconUrl(e.target.value)}
+                placeholder="https://exemplo.com/favicon.png ou carregue um arquivo"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Ícone que aparece na aba do navegador (recomendado: 32x32 pixels)
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => faviconInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {uploading ? 'Carregando...' : 'Carregar'}
+              </Button>
+              <input
+                ref={faviconInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file, 'favicon');
+                }}
+              />
+            </div>
+          </div>
+          {faviconUrl && (
+            <div className="mt-2 flex items-center gap-2">
+              <img 
+                src={faviconUrl} 
+                alt="Preview do favicon"
+                className="h-8 w-8 border rounded"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <span className="text-sm text-gray-600">Preview do favicon</span>
+            </div>
+          )}
         </div>
 
         <Button 
