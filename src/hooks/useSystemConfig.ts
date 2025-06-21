@@ -8,6 +8,7 @@ interface DatabaseConfig {
   service_role_key: string;
   project_id: string;
   database_url: string;
+  [key: string]: string; // Add index signature to make it compatible with Json type
 }
 
 interface SystemConfig {
@@ -123,13 +124,13 @@ export const useSystemConfig = () => {
     try {
       console.log('Atualizando configurações:', newConfig);
       
-      // Salvar cada configuração
+      // Salvar cada configuração individualmente
       for (const [key, value] of Object.entries(newConfig)) {
         const { error } = await supabase
           .from('system_settings')
           .upsert({ 
             key, 
-            value 
+            value: value as any // Type assertion to handle Json compatibility
           }, { 
             onConflict: 'key' 
           });
