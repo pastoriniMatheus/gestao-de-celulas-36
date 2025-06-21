@@ -25,6 +25,7 @@ interface UserProfile {
 export const UsersManager = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const { userProfile } = useAuth();
   const { toast } = useToast();
 
@@ -100,6 +101,68 @@ export const UsersManager = () => {
         description: "Não foi possível alterar o status do usuário",
         variant: "destructive"
       });
+    }
+  };
+
+  const deleteUser = async (userId: string, userName: string) => {
+    // Confirmação de exclusão
+    if (!confirm(`Tem certeza que deseja excluir permanentemente o usuário "${userName}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setDeletingUserId(userId);
+    
+    try {
+      console.log('Excluindo usuário:', { userId, userName });
+      
+      // Buscar o user_id para excluir também do auth
+      const user = users.find(u => u.id === userId);
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      // Primeiro excluir do profiles
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) {
+        console.error('Erro ao excluir perfil:', profileError);
+        throw profileError;
+      }
+
+      // Tentar excluir do auth (se tiver user_id)
+      if (user.user_id) {
+        try {
+          const { error: authError } = await supabase.auth.admin.deleteUser(user.user_id);
+          if (authError) {
+            console.warn('Erro ao excluir usuário do auth (continuando):', authError);
+            // Não throw aqui pois o perfil já foi excluído
+          }
+        } catch (authDeleteError) {
+          console.warn('Erro na exclusão do auth (continuando):', authDeleteError);
+          // Não interromper o processo
+        }
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Usuário excluído com sucesso!"
+      });
+
+      // Atualizar lista
+      fetchUsers();
+      
+    } catch (error: any) {
+      console.error('Erro ao excluir usuário:', error);
+      toast({
+        title: "Erro",
+        description: `Erro ao excluir usuário: ${error?.message || "Erro desconhecido"}`,
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -262,6 +325,19 @@ export const UsersManager = () => {
                           disabled={user.user_id === userProfile?.user_id}
                         >
                           {user.active ? 'Desativar' : 'Ativar'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deleteUser(user.id, user.name)}
+                          disabled={user.user_id === userProfile?.user_id || deletingUserId === user.id}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          {deletingUserId === user.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
