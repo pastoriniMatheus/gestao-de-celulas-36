@@ -1,6 +1,4 @@
-# Vamos gerar o arquivo completo com o código atualizado.
 
-code = """
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
