@@ -25,7 +25,6 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     photo_url: ''
   });
 
-  // Inicializar formData quando o dialog abrir
   useEffect(() => {
     if (open && userProfile) {
       console.log('EditProfileDialog: Inicializando com perfil:', userProfile);
@@ -60,7 +59,6 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     setLoading(true);
     try {
       console.log('EditProfileDialog: Salvando perfil para usuário:', user.id);
-      console.log('EditProfileDialog: Dados do formulário:', formData);
       
       const updateData = {
         name: formData.name.trim(),
@@ -70,57 +68,57 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
       console.log('EditProfileDialog: Dados a serem atualizados:', updateData);
 
-      // Primeiro, tentar atualizar o perfil existente
-      const { data: updateResult, error: updateError } = await supabase
+      // Verificar se perfil existe
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update(updateData)
+        .select('id')
         .eq('user_id', user.id)
-        .select()
         .single();
 
-      if (updateError) {
-        console.error('EditProfileDialog: Erro ao atualizar perfil:', updateError);
-        
-        // Se o erro for porque o perfil não existe, criar um novo
-        if (updateError.code === 'PGRST116') {
-          console.log('EditProfileDialog: Perfil não existe, criando novo...');
-          
-          const profileData = {
-            user_id: user.id,
-            name: formData.name.trim(),
-            email: user.email || '',
-            photo_url: formData.photo_url || null,
-            role: userProfile?.role || 'user',
-            active: true
-          };
+      if (existingProfile) {
+        // Atualizar perfil existente
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('user_id', user.id);
 
-          const { data: insertResult, error: insertError } = await supabase
-            .from('profiles')
-            .insert([profileData])
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error('EditProfileDialog: Erro ao criar perfil:', insertError);
-            throw insertError;
-          }
-          
-          console.log('EditProfileDialog: Perfil criado com sucesso:', insertResult);
-        } else {
+        if (updateError) {
+          console.error('EditProfileDialog: Erro ao atualizar perfil:', updateError);
           throw updateError;
         }
+        
+        console.log('EditProfileDialog: Perfil atualizado com sucesso');
       } else {
-        console.log('EditProfileDialog: Perfil atualizado com sucesso:', updateResult);
+        // Criar novo perfil
+        const profileData = {
+          user_id: user.id,
+          name: formData.name.trim(),
+          email: user.email || '',
+          photo_url: formData.photo_url || null,
+          role: 'user',
+          active: true
+        };
+
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([profileData]);
+
+        if (insertError) {
+          console.error('EditProfileDialog: Erro ao criar perfil:', insertError);
+          throw insertError;
+        }
+        
+        console.log('EditProfileDialog: Perfil criado com sucesso');
       }
 
       toast({
         title: "Sucesso",
-        description: "Perfil atualizado com sucesso! Sistema desenvolvido por Matheus Pastorini.",
+        description: "Perfil atualizado com sucesso!",
       });
 
       onOpenChange(false);
       
-      // Recarregar página após um pequeno delay para mostrar as alterações
+      // Recarregar página após um pequeno delay
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -141,7 +139,6 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de arquivo
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Erro",
@@ -151,7 +148,6 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       return;
     }
 
-    // Validar tamanho (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "Erro",
@@ -217,7 +213,6 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Foto do Perfil */}
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <Avatar className="h-24 w-24">
@@ -248,7 +243,6 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
             </p>
           </div>
 
-          {/* Nome */}
           <div>
             <Label htmlFor="name">Nome Completo *</Label>
             <Input

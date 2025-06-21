@@ -1,3 +1,4 @@
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,9 +69,27 @@ export const EditCellDialog = ({
         meeting_time: cell.meeting_time || '',
       });
       
-      // Definir cidade selecionada
+      // Definir cidade selecionada baseado no bairro da célula
       if (cell.city_id) {
         setSelectedCityId(cell.city_id);
+      } else if (cell.neighborhood_id) {
+        // Buscar cidade do bairro
+        const findCityForNeighborhood = async () => {
+          try {
+            const { data: neighborhood } = await supabase
+              .from('neighborhoods')
+              .select('city_id')
+              .eq('id', cell.neighborhood_id)
+              .single();
+            
+            if (neighborhood?.city_id) {
+              setSelectedCityId(neighborhood.city_id);
+            }
+          } catch (error) {
+            console.error('Erro ao buscar cidade do bairro:', error);
+          }
+        };
+        findCityForNeighborhood();
       }
     }
   }, [isOpen, cell]);
@@ -181,7 +200,7 @@ export const EditCellDialog = ({
 
     setSaving(true);
     try {
-      // Preparar dados para atualização
+      // Preparar dados para atualização - apenas campos que existem na tabela cells
       const updateData = {
         name: formData.name.trim(),
         address: formData.address.trim(),
@@ -196,22 +215,11 @@ export const EditCellDialog = ({
       console.log('EditCellDialog: Atualizando célula ID:', cell.id);
       console.log('EditCellDialog: Dados de atualização:', updateData);
 
-      // Realizar atualização
-      const { error: updateError } = await supabase
+      // Realizar atualização diretamente
+      const { data: updatedData, error: updateError } = await supabase
         .from("cells")
         .update(updateData)
-        .eq("id", cell.id);
-
-      if (updateError) {
-        console.error('EditCellDialog: Erro na atualização:', updateError);
-        throw updateError;
-      }
-
-      console.log('EditCellDialog: Atualização realizada com sucesso');
-
-      // Buscar dados atualizados com joins
-      const { data: updatedCell, error: fetchError } = await supabase
-        .from("cells")
+        .eq("id", cell.id)
         .select(`
           *,
           neighborhoods!cells_neighborhood_id_fkey (
@@ -229,30 +237,29 @@ export const EditCellDialog = ({
             name
           )
         `)
-        .eq("id", cell.id)
         .single();
 
-      if (fetchError) {
-        console.error('EditCellDialog: Erro ao buscar dados atualizados:', fetchError);
-        // Mesmo com erro na busca, a atualização foi feita
-        toast({
-          title: "Sucesso",
-          description: "Célula atualizada com sucesso!",
-        });
-        onClose();
-        return;
+      if (updateError) {
+        console.error('EditCellDialog: Erro na atualização:', updateError);
+        throw new Error(`Erro ao atualizar célula: ${updateError.message}`);
       }
 
-      console.log('EditCellDialog: Dados atualizados obtidos:', updatedCell);
+      if (!updatedData) {
+        throw new Error('Nenhum dado foi retornado após a atualização');
+      }
+
+      console.log('EditCellDialog: Atualização realizada com sucesso:', updatedData);
 
       // Transformar dados para o formato esperado
       const transformedData = {
-        ...updatedCell,
-        leader_name: updatedCell.profiles?.name || null,
-        neighborhood_name: updatedCell.neighborhoods?.name || null,
-        city_id: updatedCell.neighborhoods?.cities?.id || null,
-        city_name: updatedCell.neighborhoods?.cities?.name || null
+        ...updatedData,
+        leader_name: updatedData.profiles?.name || null,
+        neighborhood_name: updatedData.neighborhoods?.name || null,
+        city_id: updatedData.neighborhoods?.cities?.id || null,
+        city_name: updatedData.neighborhoods?.cities?.name || null
       };
+
+      console.log('EditCellDialog: Dados transformados:', transformedData);
 
       toast({
         title: "Sucesso",
@@ -267,7 +274,7 @@ export const EditCellDialog = ({
       console.error('EditCellDialog: Erro inesperado:', error);
       toast({
         title: "Erro",
-        description: `Erro ao salvar célula: ${error?.message || "Erro desconhecido"}`,
+        description: error?.message || "Erro desconhecido ao salvar célula",
         variant: "destructive",
       });
     } finally {
