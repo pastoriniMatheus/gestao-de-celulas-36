@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -56,49 +55,16 @@ export const EditProfileDialog = () => {
       console.log('Atualizando perfil com dados:', formData);
       console.log('User ID:', user.id);
       
-      // Primeiro, vamos verificar se o perfil existe
-      const { data: existingProfile, error: checkError } = await supabase
+      // Atualizar perfil usando user_id - NÃO incluir email para evitar duplicação
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .update({
+          name: formData.name.trim(),
+          photo_url: formData.photo_url
+        })
         .eq('user_id', user.id)
+        .select()
         .single();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Erro ao verificar perfil:', checkError);
-        throw checkError;
-      }
-
-      let result;
-      if (!existingProfile) {
-        // Criar novo perfil se não existir
-        console.log('Criando novo perfil...');
-        result = await supabase
-          .from('profiles')
-          .insert({
-            user_id: user.id,
-            name: formData.name.trim(),
-            email: user.email || '',
-            photo_url: formData.photo_url,
-            role: 'user',
-            active: true
-          })
-          .select()
-          .single();
-      } else {
-        // Atualizar perfil existente usando user_id - NÃO atualizar email para evitar duplicação
-        console.log('Atualizando perfil existente...');
-        result = await supabase
-          .from('profiles')
-          .update({
-            name: formData.name.trim(),
-            photo_url: formData.photo_url
-          })
-          .eq('user_id', user.id)
-          .select()
-          .single();
-      }
-
-      const { data, error } = result;
 
       if (error) {
         console.error('Erro ao salvar perfil:', error);

@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { Cell } from '@/hooks/useCells';
 import { EditContactDialog } from './EditContactDialog';
 import { ContactNotesDialog } from './ContactNotesDialog';
+import { CellLeaderInfo } from './CellLeaderInfo';
 import QRCode from 'qrcode.react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -261,7 +262,16 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
               <Users className="h-6 w-6 text-blue-600" />
               {cell.name}
             </DialogTitle>
-            <p className="text-sm text-gray-600">{cell.address}</p>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">{cell.address}</p>
+              {/* Informações do líder */}
+              {cell.leader_id && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Líder da Célula:</span>
+                  <CellLeaderInfo leader_id={cell.leader_id} />
+                </div>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 pr-2">
