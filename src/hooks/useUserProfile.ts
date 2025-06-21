@@ -26,46 +26,45 @@ export const useUserProfile = (user: User | null) => {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('useUserProfile - Erro ao buscar perfil:', error);
-        
-        // Se não encontrar perfil, criar um perfil básico
-        if (error.code === 'PGRST116') {
-          console.log('useUserProfile - Perfil não encontrado, criando perfil básico');
-          
-          // Tentar criar perfil se não existir
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: userId,
-              name: 'Usuário',
-              email: user?.email || '',
-              role: 'user',
-              active: true
-            })
-            .select()
-            .maybeSingle();
-
-          if (createError) {
-            console.error('Erro ao criar perfil:', createError);
-            // Se falhar ao criar, usar perfil temporário
-            const tempProfile = {
-              user_id: userId,
-              name: 'Usuário',
-              role: 'user',
-              email: user?.email
-            };
-            setUserProfile(tempProfile);
-          } else {
-            console.log('Perfil criado com sucesso:', newProfile);
-            setUserProfile(newProfile);
-          }
-        }
         return;
       }
 
-      console.log('useUserProfile - Perfil encontrado:', data);
-      setUserProfile(data);
+      if (!data) {
+        console.log('useUserProfile - Perfil não encontrado, criando perfil básico');
+        
+        // Tentar criar perfil se não existir
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: userId,
+            name: 'Usuário',
+            email: user?.email || '',
+            role: 'user',
+            active: true
+          })
+          .select()
+          .maybeSingle();
+
+        if (createError) {
+          console.error('Erro ao criar perfil:', createError);
+          // Se falhar ao criar, usar perfil temporário
+          const tempProfile = {
+            user_id: userId,
+            name: 'Usuário',
+            role: 'user',
+            email: user?.email
+          };
+          setUserProfile(tempProfile);
+        } else {
+          console.log('Perfil criado com sucesso:', newProfile);
+          setUserProfile(newProfile);
+        }
+      } else {
+        console.log('useUserProfile - Perfil encontrado:', data);
+        setUserProfile(data);
+      }
     } catch (error) {
       console.error('useUserProfile - Erro ao buscar perfil do usuário:', error);
     }

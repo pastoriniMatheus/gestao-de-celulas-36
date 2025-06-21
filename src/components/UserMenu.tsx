@@ -17,6 +17,9 @@ import { EditProfileDialog } from './EditProfileDialog';
 export const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
 
+  console.log('UserMenu - Renderizando com user:', user);
+  console.log('UserMenu - Renderizando com userProfile:', userProfile);
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -53,12 +56,10 @@ export const UserMenu = () => {
     }
   };
 
-  if (!user || !userProfile) {
+  if (!user) {
+    console.log('UserMenu - Usuário não encontrado');
     return null;
   }
-
-  console.log('UserMenu - userProfile:', userProfile);
-  console.log('UserMenu - photo_url:', userProfile?.photo_url);
 
   return (
     <DropdownMenu>
