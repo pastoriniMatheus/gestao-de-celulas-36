@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,6 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { userProfile, user } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     name: userProfile?.name || '',
@@ -50,55 +49,51 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     setLoading(true);
     try {
       console.log('Salvando perfil para usuário:', user.id);
+      console.log('Dados do formulário:', formData);
       
-      // Primeiro verificar se já existe perfil
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Erro ao buscar perfil existente:', fetchError);
-        throw fetchError;
-      }
-
       const profileData = {
+        user_id: user.id,
         name: formData.name.trim(),
-        photo_url: formData.photo_url || null
+        email: user.email || '',
+        photo_url: formData.photo_url || null,
+        role: userProfile?.role || 'user',
+        active: true
       };
 
-      let result;
-      if (existingProfile) {
-        // Atualizar perfil existente
-        console.log('Atualizando perfil existente:', existingProfile.id);
-        result = await supabase
+      console.log('Dados a serem salvos:', profileData);
+
+      // Tentar atualizar primeiro
+      const { data: updateData, error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          name: profileData.name,
+          photo_url: profileData.photo_url
+        })
+        .eq('user_id', user.id)
+        .select();
+
+      if (updateError || !updateData || updateData.length === 0) {
+        console.log('Perfil não existe, criando novo...', updateError);
+        
+        // Se não conseguiu atualizar, criar novo
+        const { data: insertData, error: insertError } = await supabase
           .from('profiles')
-          .update(profileData)
-          .eq('user_id', user.id);
+          .insert([profileData])
+          .select();
+
+        if (insertError) {
+          console.error('Erro ao criar perfil:', insertError);
+          throw insertError;
+        }
+        
+        console.log('Perfil criado com sucesso:', insertData);
       } else {
-        // Criar novo perfil
-        console.log('Criando novo perfil');
-        result = await supabase
-          .from('profiles')
-          .insert({
-            user_id: user.id,
-            email: user.email || '',
-            role: 'user',
-            active: true,
-            ...profileData
-          });
+        console.log('Perfil atualizado com sucesso:', updateData);
       }
 
-      if (result.error) {
-        console.error('Erro ao salvar perfil:', result.error);
-        throw result.error;
-      }
-
-      console.log('Perfil salvo com sucesso');
       toast({
         title: "Sucesso",
-        description: "Perfil atualizado com sucesso!",
+        description: "Perfil atualizado com sucesso! Sistema desenvolvido por Matheus Pastorini.",
       });
 
       onOpenChange(false);
@@ -178,14 +173,14 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         .toUpperCase()
         .substring(0, 2);
     }
-    return 'U';
+    return 'MP';
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Editar Perfil</DialogTitle>
+          <DialogTitle>Editar Perfil - Sistema Matheus Pastorini</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -202,14 +197,14 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
                 type="button"
                 size="sm"
                 className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => document.getElementById('photo-input')?.click()}
                 disabled={uploading}
               >
                 <Camera className="h-4 w-4" />
               </Button>
             </div>
             <input
-              ref={fileInputRef}
+              id="photo-input"
               type="file"
               accept="image/*"
               onChange={handlePhotoUpload}

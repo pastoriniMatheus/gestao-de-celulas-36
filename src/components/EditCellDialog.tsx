@@ -1,3 +1,4 @@
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,60 +42,14 @@ export const EditCellDialog = ({
   const [selectedCityId, setSelectedCityId] = useState('');
   const { neighborhoods } = useNeighborhoods(selectedCityId);
   
-  const [formState, setFormState] = useState<Partial<Cell>>({
-    name: cell.name,
-    address: cell.address,
-    leader_id: cell.leader_id,
-    neighborhood_id: cell.neighborhood_id,
-    active: cell.active,
-    meeting_day: cell.meeting_day,
-    meeting_time: cell.meeting_time,
-  });
-
+  const [formState, setFormState] = useState<Partial<Cell>>({});
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Inicializar formState quando o dialog abrir ou célula mudar
   useEffect(() => {
-    const fetchLeaders = async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("role", ["admin", "leader"])
-        .eq("active", true);
-
-      if (error) {
-        toast({
-          title: "Erro ao buscar líderes.",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        setLeaders(data || []);
-      }
-    };
-
-    const fetchCellNeighborhoodCity = async () => {
-      if (cell.neighborhood_id) {
-        const { data, error } = await supabase
-          .from('neighborhoods')
-          .select('city_id')
-          .eq('id', cell.neighborhood_id)
-          .single();
-        
-        if (!error && data) {
-          setSelectedCityId(data.city_id);
-        }
-      }
-    };
-
-    if (isOpen) {
-      fetchLeaders();
-      fetchCellNeighborhoodCity();
-    }
-  }, [isOpen, cell.neighborhood_id]);
-
-  useEffect(() => {
-    if (cell) {
+    if (isOpen && cell) {
+      console.log('EditCellDialog: Inicializando form com célula:', cell);
       setFormState({
         name: cell.name,
         address: cell.address,
@@ -105,17 +60,66 @@ export const EditCellDialog = ({
         meeting_time: cell.meeting_time,
       });
     }
-  }, [cell]);
+  }, [isOpen, cell]);
+
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      if (!isOpen) return;
+      
+      console.log('EditCellDialog: Buscando líderes...');
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("role", ["admin", "leader"])
+        .eq("active", true);
+
+      if (error) {
+        console.error('EditCellDialog: Erro ao buscar líderes:', error);
+        toast({
+          title: "Erro ao buscar líderes.",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log('EditCellDialog: Líderes encontrados:', data);
+        setLeaders(data || []);
+      }
+    };
+
+    const fetchCellNeighborhoodCity = async () => {
+      if (!isOpen || !cell?.neighborhood_id) return;
+      
+      console.log('EditCellDialog: Buscando cidade do bairro...');
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('city_id')
+        .eq('id', cell.neighborhood_id)
+        .single();
+      
+      if (!error && data) {
+        console.log('EditCellDialog: Cidade encontrada:', data.city_id);
+        setSelectedCityId(data.city_id);
+      }
+    };
+
+    if (isOpen) {
+      fetchLeaders();
+      fetchCellNeighborhoodCity();
+    }
+  }, [isOpen, cell?.neighborhood_id]);
 
   const handleChange = (field: string, value: any) => {
+    console.log('EditCellDialog: Alterando campo:', field, 'para:', value);
     setFormState((prevState) => ({
       ...prevState,
       [field]: value,
     }));
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('EditCellDialog: Iniciando submissão com dados:', formState);
     
     if (!formState.name?.trim()) {
       toast({ 
@@ -135,11 +139,7 @@ export const EditCellDialog = ({
       return;
     }
     
-    if (
-      formState.meeting_day === undefined ||
-      formState.meeting_day === null ||
-      String(formState.meeting_day) === ""
-    ) {
+    if (formState.meeting_day === undefined || formState.meeting_day === null) {
       toast({ 
         title: "Erro",
         description: "Informe o dia da reunião.",
@@ -159,18 +159,18 @@ export const EditCellDialog = ({
 
     setSaving(true);
     try {
-      console.log('EditCellDialog: Atualizando célula:', formState);
-      
       const updateData = {
-        name: formState.name,
-        address: formState.address,
+        name: formState.name.trim(),
+        address: formState.address.trim(),
         leader_id: formState.leader_id || null,
         neighborhood_id: formState.neighborhood_id || null,
-        active: formState.active,
+        active: formState.active !== undefined ? formState.active : true,
         meeting_day: Number(formState.meeting_day),
         meeting_time: formState.meeting_time,
         updated_at: new Date().toISOString()
       };
+
+      console.log('EditCellDialog: Enviando dados para atualização:', updateData);
 
       const { data, error } = await supabase
         .from("cells")
@@ -220,7 +220,7 @@ export const EditCellDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Editar Célula</AlertDialogTitle>
           <AlertDialogDescription>
-            Atualize os dados da célula.
+            Atualize os dados da célula - Sistema desenvolvido por Matheus Pastorini.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
@@ -349,7 +349,7 @@ export const EditCellDialog = ({
               type="checkbox"
               id="active"
               name="active"
-              checked={formState.active || false}
+              checked={formState.active !== undefined ? formState.active : true}
               onChange={(e) => handleChange('active', e.target.checked)}
               className="w-4 h-4"
             />

@@ -72,62 +72,66 @@ export const KanbanPipeline = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">Carregando pipeline...</span>
+        <span className="ml-2">Carregando pipeline - Sistema Matheus Pastorini...</span>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col p-6">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Filtros fixos - compactos */}
-      <Card className="mb-4 flex-shrink-0">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-4 w-4 text-blue-600" />
+      <div className="flex-shrink-0 p-4 border-b bg-gray-50">
+        <div className="flex items-center gap-2 mb-2">
+          <Filter className="h-4 w-4 text-blue-600" />
+          <h3 className="text-sm font-medium">
             {isAdmin ? 'Filtros do Pipeline' : 'Meus Discípulos - Filtros'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Buscar discípulo</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Nome ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-9"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Filtrar por célula</label>
-              <Select value={selectedCellFilter} onValueChange={setSelectedCellFilter}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Todas as células" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as células</SelectItem>
-                  <SelectItem value="no-cell">Sem célula</SelectItem>
-                  {cells.filter(cell => cell.active).map((cell) => (
-                    <SelectItem key={cell.id} value={cell.id}>
-                      {cell.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700">Buscar discípulo</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3" />
+              <Input
+                placeholder="Nome ou telefone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 h-8 text-xs"
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
+          
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700">Filtrar por célula</label>
+            <Select value={selectedCellFilter} onValueChange={setSelectedCellFilter}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todas as células" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as células</SelectItem>
+                <SelectItem value="no-cell">Sem célula</SelectItem>
+                {cells.filter(cell => cell.active).map((cell) => (
+                  <SelectItem key={cell.id} value={cell.id}>
+                    {cell.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
 
-      {/* Pipeline - altura fixa com scroll horizontal */}
-      <div className="flex-1 min-h-0">
+      {/* Pipeline - Scroll horizontal apenas, sem scroll vertical na página */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="h-full overflow-x-auto overflow-y-hidden">
-            <div className="flex gap-4 h-full pb-4" style={{ minWidth: `${stages.length * 320}px` }}>
+          <div className="h-full overflow-x-auto overflow-y-hidden bg-gray-50">
+            <div 
+              className="flex gap-4 h-full p-4" 
+              style={{ 
+                minWidth: `${stages.length * 320}px`,
+                maxHeight: '100%'
+              }}
+            >
               {stages.map((stage) => {
                 const stageContacts = filteredContacts.filter(
                   contact => contact.pipeline_stage_id === stage.id
@@ -135,30 +139,38 @@ export const KanbanPipeline = () => {
 
                 return (
                   <div key={stage.id} className="w-80 flex-shrink-0 h-full">
-                    <Card className="h-full flex flex-col">
+                    <Card className="h-full flex flex-col shadow-sm">
                       <CardHeader 
-                        className="pb-3 flex-shrink-0"
-                        style={{ backgroundColor: `${stage.color}15`, borderBottom: `2px solid ${stage.color}` }}
+                        className="pb-2 flex-shrink-0 border-b-2"
+                        style={{ 
+                          backgroundColor: `${stage.color}10`, 
+                          borderBottomColor: stage.color 
+                        }}
                       >
-                        <CardTitle className="flex items-center justify-between text-base">
-                          <span style={{ color: stage.color }}>{stage.name}</span>
-                          <Badge variant="secondary">{stageContacts.length}</Badge>
+                        <CardTitle className="flex items-center justify-between text-sm">
+                          <span style={{ color: stage.color }} className="font-semibold">
+                            {stage.name}
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            {stageContacts.length}
+                          </Badge>
                         </CardTitle>
                       </CardHeader>
+                      
                       <Droppable droppableId={stage.id} isDropDisabled={!isAdmin}>
                         {(provided, snapshot) => (
                           <CardContent 
                             {...provided.droppableProps}
                             ref={provided.innerRef}
-                            className={`flex-1 min-h-0 p-3 overflow-y-auto ${
+                            className={`flex-1 min-h-0 p-2 overflow-y-auto ${
                               snapshot.isDraggingOver ? 'bg-blue-50' : ''
                             }`}
                           >
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                               {stageContacts.length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
-                                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                  <p className="text-sm">Nenhum discípulo</p>
+                                  <User className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                                  <p className="text-xs">Nenhum discípulo</p>
                                 </div>
                               ) : (
                                 stageContacts.map((contact, index) => (
@@ -173,23 +185,25 @@ export const KanbanPipeline = () => {
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
-                                        className={`border-l-4 transition-shadow ${
-                                          snapshot.isDragging ? 'shadow-lg rotate-2' : 'hover:shadow-md'
-                                        } ${!isAdmin ? 'cursor-pointer' : 'cursor-grab'}`}
+                                        className={`border-l-4 transition-all duration-200 ${
+                                          snapshot.isDragging ? 'shadow-lg rotate-1 scale-105' : 'hover:shadow-md'
+                                        } ${!isAdmin ? 'cursor-pointer' : 'cursor-grab'} active:cursor-grabbing`}
                                         style={{ 
                                           borderLeftColor: stage.color,
                                           ...provided.draggableProps.style
                                         }}
                                         onDoubleClick={() => handleContactDoubleClick(contact)}
                                       >
-                                        <CardContent className="p-3">
-                                          <div className="space-y-2">
+                                        <CardContent className="p-2">
+                                          <div className="space-y-1">
                                             <div className="flex items-center justify-between">
-                                              <h4 className="font-semibold text-sm">{contact.name}</h4>
+                                              <h4 className="font-medium text-xs truncate">
+                                                {contact.name}
+                                              </h4>
                                               <Badge 
                                                 variant={contact.status === 'member' ? 'default' : 
                                                        contact.status === 'visitor' ? 'secondary' : 'outline'}
-                                                className="text-xs"
+                                                className="text-[10px] px-1 py-0"
                                               >
                                                 {contact.status === 'member' ? 'Membro' :
                                                  contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
@@ -197,29 +211,29 @@ export const KanbanPipeline = () => {
                                             </div>
                                             
                                             {contact.whatsapp && (
-                                              <div className="flex items-center gap-2 text-xs text-gray-600">
-                                                <Phone className="h-3 w-3" />
-                                                <span>{contact.whatsapp}</span>
+                                              <div className="flex items-center gap-1 text-[10px] text-gray-600">
+                                                <Phone className="h-2 w-2" />
+                                                <span className="truncate">{contact.whatsapp}</span>
                                               </div>
                                             )}
                                             
-                                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                                              <MapPin className="h-3 w-3" />
-                                              <span>{contact.neighborhood}</span>
+                                            <div className="flex items-center gap-1 text-[10px] text-gray-600">
+                                              <MapPin className="h-2 w-2" />
+                                              <span className="truncate">{contact.neighborhood}</span>
                                             </div>
 
                                             {contact.cell_id && (
-                                              <div className="text-xs text-blue-600 font-medium">
+                                              <div className="text-[10px] text-blue-600 font-medium truncate">
                                                 {getCellName(contact.cell_id)}
                                               </div>
                                             )}
                                             
-                                            <div className="flex gap-1 mt-2">
+                                            <div className="flex gap-1 mt-1">
                                               {contact.encounter_with_god && (
-                                                <Badge variant="outline" className="text-xs">EcD</Badge>
+                                                <Badge variant="outline" className="text-[9px] px-1 py-0">EcD</Badge>
                                               )}
                                               {contact.baptized && (
-                                                <Badge variant="outline" className="text-xs">Batizado</Badge>
+                                                <Badge variant="outline" className="text-[9px] px-1 py-0">Batizado</Badge>
                                               )}
                                             </div>
                                           </div>
