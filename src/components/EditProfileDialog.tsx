@@ -58,7 +58,7 @@ export const EditProfileDialog = () => {
       // Buscar o perfil existente usando user_id
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
-        .select('id, user_id')
+        .select('id, user_id, email')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -69,7 +69,7 @@ export const EditProfileDialog = () => {
 
       let result;
       if (existingProfile) {
-        // Atualizar perfil existente - APENAS nome e foto
+        // Atualizar perfil existente - apenas nome e foto, não email
         result = await supabase
           .from('profiles')
           .update({

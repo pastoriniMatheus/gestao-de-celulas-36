@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from './AuthProvider';
+import { useLeaderPermissions } from '@/hooks/useLeaderPermissions';
 
 const adminItems = [
   {
@@ -79,34 +79,11 @@ const leaderItems = [
   },
 ];
 
-const userItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "Contatos",
-    url: "/contacts",
-    icon: Users,
-  },
-];
-
 export function AppSidebar() {
   const location = useLocation();
-  const { userProfile } = useAuth();
+  const { isAdmin, isLeader } = useLeaderPermissions();
   
-  console.log('AppSidebar - userProfile:', userProfile);
-  
-  // Determinar itens baseado no papel do usuário
-  let items = userItems;
-  if (userProfile?.role === 'admin') {
-    items = adminItems;
-  } else if (userProfile?.role === 'leader') {
-    items = leaderItems;
-  }
-
-  console.log('AppSidebar - items selecionados:', items.length);
+  const items = isAdmin ? adminItems : (isLeader ? leaderItems : []);
 
   return (
     <Sidebar>
