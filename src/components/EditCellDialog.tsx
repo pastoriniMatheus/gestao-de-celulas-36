@@ -1,3 +1,4 @@
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -208,6 +209,7 @@ export const EditCellDialog = ({
         active: formState.active !== undefined ? formState.active : true,
         meeting_day: Number(formState.meeting_day),
         meeting_time: formState.meeting_time,
+        updated_at: new Date().toISOString()
       };
 
       console.log('EditCellDialog: Enviando dados para atualização:', updateData);
@@ -238,8 +240,8 @@ export const EditCellDialog = ({
       if (error) {
         console.error('EditCellDialog: Erro ao atualizar célula:', error);
         toast({
-          title: "Erro ao atualizar a célula.",
-          description: error.message,
+          title: "Erro",
+          description: `Erro ao atualizar célula: ${error.message}`,
           variant: "destructive",
         });
         return;
@@ -419,10 +421,10 @@ export const EditCellDialog = ({
           </div>
           
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction type="submit" disabled={saving}>
+            <AlertDialogCancel disabled={saving} type="button">Cancelar</AlertDialogCancel>
+            <Button type="submit" disabled={saving}>
               {saving ? "Salvando..." : "Salvar"}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </form>
       </AlertDialogContent>

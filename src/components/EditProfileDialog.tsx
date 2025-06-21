@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +21,20 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const { userProfile, user } = useAuth();
   
   const [formData, setFormData] = useState({
-    name: userProfile?.name || '',
-    photo_url: userProfile?.photo_url || ''
+    name: '',
+    photo_url: ''
   });
+
+  // Inicializar formData quando o dialog abrir
+  useEffect(() => {
+    if (open && userProfile) {
+      console.log('EditProfileDialog: Inicializando com perfil:', userProfile);
+      setFormData({
+        name: userProfile.name || '',
+        photo_url: userProfile.photo_url || ''
+      });
+    }
+  }, [open, userProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,47 +59,58 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
     setLoading(true);
     try {
-      console.log('Salvando perfil para usuário:', user.id);
-      console.log('Dados do formulário:', formData);
+      console.log('EditProfileDialog: Salvando perfil para usuário:', user.id);
+      console.log('EditProfileDialog: Dados do formulário:', formData);
       
-      const profileData = {
-        user_id: user.id,
+      const updateData = {
         name: formData.name.trim(),
-        email: user.email || '',
         photo_url: formData.photo_url || null,
-        role: userProfile?.role || 'user',
-        active: true
+        updated_at: new Date().toISOString()
       };
 
-      console.log('Dados a serem salvos:', profileData);
+      console.log('EditProfileDialog: Dados a serem atualizados:', updateData);
 
-      // Tentar atualizar primeiro
-      const { data: updateData, error: updateError } = await supabase
+      // Primeiro, tentar atualizar o perfil existente
+      const { data: updateResult, error: updateError } = await supabase
         .from('profiles')
-        .update({
-          name: profileData.name,
-          photo_url: profileData.photo_url
-        })
+        .update(updateData)
         .eq('user_id', user.id)
-        .select();
+        .select()
+        .single();
 
-      if (updateError || !updateData || updateData.length === 0) {
-        console.log('Perfil não existe, criando novo...', updateError);
+      if (updateError) {
+        console.error('EditProfileDialog: Erro ao atualizar perfil:', updateError);
         
-        // Se não conseguiu atualizar, criar novo
-        const { data: insertData, error: insertError } = await supabase
-          .from('profiles')
-          .insert([profileData])
-          .select();
+        // Se o erro for porque o perfil não existe, criar um novo
+        if (updateError.code === 'PGRST116') {
+          console.log('EditProfileDialog: Perfil não existe, criando novo...');
+          
+          const profileData = {
+            user_id: user.id,
+            name: formData.name.trim(),
+            email: user.email || '',
+            photo_url: formData.photo_url || null,
+            role: userProfile?.role || 'user',
+            active: true
+          };
 
-        if (insertError) {
-          console.error('Erro ao criar perfil:', insertError);
-          throw insertError;
+          const { data: insertResult, error: insertError } = await supabase
+            .from('profiles')
+            .insert([profileData])
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('EditProfileDialog: Erro ao criar perfil:', insertError);
+            throw insertError;
+          }
+          
+          console.log('EditProfileDialog: Perfil criado com sucesso:', insertResult);
+        } else {
+          throw updateError;
         }
-        
-        console.log('Perfil criado com sucesso:', insertData);
       } else {
-        console.log('Perfil atualizado com sucesso:', updateData);
+        console.log('EditProfileDialog: Perfil atualizado com sucesso:', updateResult);
       }
 
       toast({
@@ -98,13 +120,13 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
       onOpenChange(false);
       
-      // Recarregar após um pequeno delay
+      // Recarregar página após um pequeno delay para mostrar as alterações
       setTimeout(() => {
         window.location.reload();
-      }, 500);
+      }, 1000);
       
     } catch (error: any) {
-      console.error('Erro ao salvar perfil:', error);
+      console.error('EditProfileDialog: Erro ao salvar perfil:', error);
       toast({
         title: "Erro",
         description: `Erro ao salvar perfil: ${error.message}`,
@@ -141,9 +163,12 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
     setUploading(true);
     try {
+      console.log('EditProfileDialog: Fazendo upload da foto...');
+      
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string;
+        console.log('EditProfileDialog: Foto carregada como base64');
         setFormData(prev => ({ ...prev, photo_url: imageUrl }));
       };
       reader.readAsDataURL(file);
@@ -153,7 +178,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         description: "Foto carregada com sucesso. Clique em 'Salvar' para confirmar.",
       });
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
+      console.error('EditProfileDialog: Erro ao fazer upload:', error);
       toast({
         title: "Erro",
         description: "Erro ao fazer upload da foto.",
@@ -167,6 +192,14 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const getUserInitials = () => {
     if (formData.name) {
       return formData.name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    if (userProfile?.name) {
+      return userProfile.name
         .split(' ')
         .map((n: string) => n[0])
         .join('')
