@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import FormPage from "./pages/FormPage";
+import MessagesPage from "./pages/MessagesPage";
 import { QRRedirect } from "./pages/QRRedirect";
 import CellAttendancePage from "./pages/CellAttendancePage";
 import MemberAttendancePage from "./pages/MemberAttendancePage";
@@ -27,7 +28,8 @@ const App = () => (
             <Route path="/cells" element={<Index />} />
             <Route path="/contacts" element={<Index />} />
             <Route path="/pipeline" element={<Index />} />
-            <Route path="/messaging" element={<Index />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/messaging" element={<MessagesPage />} />
             <Route path="/events" element={<Index />} />
             <Route path="/settings" element={<Index />} />
             <Route path="/users" element={<Index />} />

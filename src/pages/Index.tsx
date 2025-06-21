@@ -5,7 +5,6 @@ import { Dashboard } from '@/components/Dashboard';
 import { EventsManager } from '@/components/EventsManager';
 import { ContactsManager } from '@/components/ContactsManager';
 import { CellsManager } from '@/components/CellsManager';
-import { MessagingCenter } from '@/components/MessagingCenter';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
 import { UsersManager } from '@/components/UsersManager';
@@ -27,7 +26,6 @@ const Index = () => {
     '/contacts': 'contacts',
     '/cells': 'cells',
     '/pipeline': 'pipeline',
-    '/messaging': 'messaging',
     '/events': 'events',
     '/settings': 'settings',
     '/users': 'users'
@@ -51,8 +49,6 @@ const Index = () => {
         return <ContactsManager />;
       case 'cells':
         return <CellsManager />;
-      case 'messaging':
-        return <MessagingCenter />;
       case 'pipeline':
         return <Pipeline />;
       case 'settings':
