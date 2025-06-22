@@ -86,24 +86,60 @@ export const Dashboard = () => {
     setLoading(true);
     try {
       // Buscar todos os dados em paralelo
-      const [contactsData, cellsData, neighborhoodsData, citiesData, attendancesData, profilesData, neighborhoodStatsData] = await Promise.all([
+      const [contactsData, cellsData, neighborhoodsData, citiesData, attendancesData, profilesData] = await Promise.all([
         supabase.from('contacts').select('*'),
         supabase.from('cells').select('*'),
         supabase.from('neighborhoods').select('*, cities(name)'),
         supabase.from('cities').select('*'),
         supabase.from('attendances').select('*'),
-        supabase.from('profiles').select('id, role, active'),
-        supabase.from('neighborhood_stats').select('*').order('total_people', { ascending: false }).limit(5)
+        supabase.from('profiles').select('id, role, active')
       ]);
 
-      console.log('Dashboard: Dados dos bairros carregados:', neighborhoodStatsData.data);
+      console.log('Dashboard: Dados dos contatos:', contactsData.data?.length);
+      console.log('Dashboard: Dados das células:', cellsData.data?.length);
+
+      // Calcular estatísticas dos bairros manualmente para debug
+      const neighborhoodStats = [];
+      
+      if (neighborhoodsData.data && cellsData.data && contactsData.data) {
+        for (const neighborhood of neighborhoodsData.data) {
+          const neighborhoodCells = cellsData.data.filter(cell => 
+            cell.neighborhood_id === neighborhood.id && cell.active
+          );
+          
+          const neighborhoodContacts = contactsData.data.filter(contact => 
+            neighborhoodCells.some(cell => cell.id === contact.cell_id)
+          );
+          
+          const neighborhoodLeaders = neighborhoodCells.filter(cell => cell.leader_id).length;
+          
+          neighborhoodStats.push({
+            id: neighborhood.id,
+            neighborhood_name: neighborhood.name,
+            city_name: neighborhood.cities?.name || 'N/A',
+            total_cells: neighborhoodCells.length,
+            total_contacts: neighborhoodContacts.length,
+            total_leaders: neighborhoodLeaders,
+            total_people: neighborhoodContacts.length + neighborhoodLeaders
+          });
+
+          console.log(`Dashboard: Bairro ${neighborhood.name} - Células: ${neighborhoodCells.length}, Contatos: ${neighborhoodContacts.length}, Total: ${neighborhoodContacts.length + neighborhoodLeaders}`);
+        }
+      }
+
+      // Ordenar por total de pessoas e pegar top 5
+      const sortedStats = neighborhoodStats
+        .sort((a, b) => b.total_people - a.total_people)
+        .slice(0, 5);
+
+      console.log('Dashboard: Top 5 bairros calculados:', sortedStats);
 
       setContacts(contactsData.data || []);
       setCells(cellsData.data || []);
       setNeighborhoods(neighborhoodsData.data || []);
       setCities(citiesData.data || []);
       setAttendances(attendancesData.data || []);
-      setTopNeighborhoods(neighborhoodStatsData.data || []);
+      setTopNeighborhoods(sortedStats);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
@@ -314,6 +350,7 @@ export const Dashboard = () => {
             <div className="text-center text-gray-500 py-8">
               <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-400" />
               <p>Nenhum dado de bairro disponível</p>
+              <p className="text-sm">Verifique se as células estão vinculadas aos bairros</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -336,7 +373,7 @@ export const Dashboard = () => {
                       <p className="font-semibold text-gray-900">{neighborhood.neighborhood_name}</p>
                       <p className="text-xs text-gray-500 flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {neighborhood.city_name || 'Cidade não especificada'}
+                        {neighborhood.city_name}
                       </p>
                     </div>
                   </div>
