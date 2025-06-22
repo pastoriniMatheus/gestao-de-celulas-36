@@ -176,9 +176,7 @@ export const AuthPage = () => {
               </CardTitle>
               <Sparkles className="w-5 h-5 text-white/60" />
             </div>
-            <CardDescription className="text-gray-300 text-base">
-              Entre com sua conta ou crie uma nova para começar
-            </CardDescription>
+            
           </CardHeader>
           
           <CardContent className="relative">
