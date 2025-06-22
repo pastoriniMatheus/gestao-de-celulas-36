@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useUniqueAttendanceCode } from './useUniqueAttendanceCode';
 
 interface Contact {
   id: string;
@@ -21,23 +22,10 @@ interface Contact {
   updated_at: string;
 }
 
-const generateAttendanceCode = async () => {
-  try {
-    const { data, error } = await supabase.rpc('generate_attendance_code');
-    if (error) {
-      console.error('Erro ao gerar código:', error);
-      return Math.floor(100000 + Math.random() * 900000).toString();
-    }
-    return data;
-  } catch (error) {
-    console.error('Erro ao gerar código:', error);
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
-};
-
 export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const { generateUniqueAttendanceCode } = useUniqueAttendanceCode();
 
   const fetchContacts = async () => {
     try {
@@ -81,13 +69,17 @@ export const useContacts = () => {
 
   const addContact = async (contactData: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      // Gerar código de presença se não fornecido
-      const attendanceCode = contactData.attendance_code || await generateAttendanceCode();
+      console.log('useContacts: Criando contato com dados:', contactData);
+      
+      // Sempre gerar código único para cada novo contato
+      const uniqueCode = await generateUniqueAttendanceCode();
       
       const dataWithCode = {
         ...contactData,
-        attendance_code: attendanceCode
+        attendance_code: uniqueCode
       };
+
+      console.log('useContacts: Dados finais com código único:', dataWithCode);
 
       const { data, error } = await supabase
         .from('contacts')
@@ -102,7 +94,7 @@ export const useContacts = () => {
 
       toast({
         title: "Sucesso",
-        description: "Contato criado com sucesso!"
+        description: `Contato criado com código de presença: ${uniqueCode}`
       });
 
       // Transform and update state
@@ -136,11 +128,25 @@ export const useContacts = () => {
     try {
       console.log('useContacts: Atualizando contato com dados:', { id, updates });
       
-      // Se não tem código de presença, gerar um
+      // Lógica para atualizar status baseado na célula
+      if (updates.cell_id !== undefined) {
+        if (updates.cell_id && updates.cell_id !== null) {
+          // Se está atribuindo uma célula, mudar para membro
+          updates.status = 'member';
+          console.log('useContacts: Atribuindo célula, mudando status para member');
+        } else if (updates.cell_id === null) {
+          // Se está removendo a célula, voltar para pendente
+          updates.status = 'pending';
+          console.log('useContacts: Removendo célula, mudando status para pending');
+        }
+      }
+
+      // Gerar código único se não tiver
       if (!updates.attendance_code) {
         const contact = contacts.find(c => c.id === id);
         if (contact && !contact.attendance_code) {
-          updates.attendance_code = await generateAttendanceCode();
+          updates.attendance_code = await generateUniqueAttendanceCode();
+          console.log('useContacts: Gerando código único para contato existente:', updates.attendance_code);
         }
       }
 

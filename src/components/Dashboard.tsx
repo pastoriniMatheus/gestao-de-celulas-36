@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DashboardCharts } from "./DashboardCharts";
 import { DashboardPipelineMetrics } from './DashboardPipelineMetrics';
 import { DiscipleAnalysisChart } from './DiscipleAnalysisChart';
+import { AttendanceLineChart } from './AttendanceLineChart';
 
 export const Dashboard = () => {
   const [contacts, setContacts] = useState([]);
@@ -340,6 +342,9 @@ export const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Gráfico de Presença ao Longo do Tempo */}
+      <AttendanceLineChart />
 
       {/* Primeira linha com 3 gráficos: Estágios, Análise e Métricas por Cidade */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">

@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useCities } from '@/hooks/useCities';
 import { useNeighborhoods } from '@/hooks/useNeighborhoods';
+import { useUniqueAttendanceCode } from '@/hooks/useUniqueAttendanceCode';
 
 const steps = [
   { id: 'name', title: 'Nome', icon: User, field: 'name' },
@@ -29,6 +30,7 @@ export const DynamicEventForm = () => {
   const [qrInfo, setQrInfo] = useState<any>(null);
   const { settings } = useSystemSettings();
   const { cities } = useCities();
+  const { generateUniqueAttendanceCode } = useUniqueAttendanceCode();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -128,6 +130,12 @@ export const DynamicEventForm = () => {
 
     setSubmitting(true);
     try {
+      console.log('DynamicEventForm: Iniciando submit do formulário');
+      
+      // Gerar código único para cada contato do formulário
+      const uniqueCode = await generateUniqueAttendanceCode();
+      console.log('DynamicEventForm: Código único gerado:', uniqueCode);
+
       const contactData = {
         name: formData.name.trim(),
         whatsapp: formData.whatsapp.trim(),
@@ -136,8 +144,10 @@ export const DynamicEventForm = () => {
         status: 'pending',
         encounter_with_god: false,
         baptized: false,
-        attendance_code: cod || null
+        attendance_code: uniqueCode // Usar código único gerado
       };
+
+      console.log('DynamicEventForm: Dados do contato:', contactData);
 
       const { error } = await supabase
         .from('contacts')
@@ -173,7 +183,7 @@ export const DynamicEventForm = () => {
 
       toast({
         title: "Sucesso!",
-        description: "Seu cadastro foi realizado com sucesso!"
+        description: `Cadastro realizado! Seu código de presença: ${uniqueCode}`
       });
 
       setCurrentStep(steps.length);

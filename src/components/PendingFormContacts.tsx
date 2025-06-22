@@ -26,14 +26,19 @@ export const PendingFormContacts = () => {
     try {
       console.log('PendingFormContacts: Atribuindo contato à célula:', { contactId, cellId });
       
-      await updateContact(contactId, {
+      // Explicitamente definir que será membro ao atribuir célula
+      const updateData = {
         cell_id: cellId,
-        status: 'member' // Alterar status para membro ao atribuir célula
-      });
+        status: 'member' as const // Garantir que o status seja alterado para member
+      };
+
+      console.log('P endingFormContacts: Dados de atualização:', updateData);
+      
+      await updateContact(contactId, updateData);
 
       toast({
         title: "Sucesso",
-        description: "Contato atribuído à célula e status atualizado!"
+        description: "Contato atribuído à célula e transformado em membro!"
       });
     } catch (error: any) {
       console.error('PendingFormContacts: Erro ao atribuir célula:', error);
@@ -136,7 +141,7 @@ export const PendingFormContacts = () => {
                             Cadastrado em: {formatDate(contact.created_at)}
                           </span>
                           {contact.attendance_code && (
-                            <span className="text-xs text-blue-600">
+                            <span className="text-xs text-blue-600 font-semibold">
                               Código: {contact.attendance_code}
                             </span>
                           )}
