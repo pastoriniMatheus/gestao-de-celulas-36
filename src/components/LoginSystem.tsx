@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,7 +63,18 @@ export const LoginSystem = () => {
         return;
       }
 
-      setUsers(data || []);
+      // Mapear os dados do Supabase para o tipo User esperado
+      const mappedUsers: User[] = (data || []).map(profile => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: (profile.role as 'admin' | 'leader' | 'user') || 'user',
+        photo_url: profile.photo_url,
+        active: profile.active,
+        created_at: profile.created_at
+      }));
+
+      setUsers(mappedUsers);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
     } finally {
