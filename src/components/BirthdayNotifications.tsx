@@ -1,17 +1,23 @@
 
 import { useState } from 'react';
-import { Bell, Gift, Phone, X } from 'lucide-react';
+import { Bell, Gift, Phone, X, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useBirthdayNotifications } from '@/hooks/useBirthdayNotifications';
+import { useNewContactNotifications } from '@/hooks/useNewContactNotifications';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const BirthdayNotifications = () => {
-  const { todayBirthdays, loading, markNotificationSent } = useBirthdayNotifications();
+  const { todayBirthdays, loading: birthdayLoading, markNotificationSent } = useBirthdayNotifications();
+  const { newContacts, loading: contactsLoading } = useNewContactNotifications();
   const [isOpen, setIsOpen] = useState(false);
+
+  const totalNotifications = todayBirthdays.length + newContacts.length;
+  const loading = birthdayLoading || contactsLoading;
 
   const handleSendMessage = async (contactId: string, name: string, whatsapp: string | null) => {
     if (!whatsapp) {
@@ -37,12 +43,43 @@ export const BirthdayNotifications = () => {
     });
   };
 
+  const handleWelcomeMessage = (name: string, whatsapp: string | null) => {
+    if (!whatsapp) {
+      toast({
+        title: "WhatsApp não cadastrado",
+        description: `${name} não possui WhatsApp cadastrado`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Abrir WhatsApp com mensagem de boas-vindas
+    const message = `🙏 Olá ${name}!\n\nSeja muito bem-vindo(a) à nossa comunidade! Ficamos felizes em tê-lo(a) conosco.\n\nEm breve entraremos em contato para conhecê-lo(a) melhor.\n\nQue Deus abençoe!\n\nEquipe de Células`;
+    const whatsappUrl = `https://wa.me/55${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
+    
+    toast({
+      title: "Mensagem enviada",
+      description: `Mensagem de boas-vindas enviada para ${name}`
+    });
+  };
+
   const formatBirthDate = (birthDate: string) => {
     try {
       const date = new Date(birthDate);
       return format(date, "dd 'de' MMMM", { locale: ptBR });
     } catch (error) {
       return birthDate;
+    }
+  };
+
+  const formatContactTime = (createdAt: string) => {
+    try {
+      const date = new Date(createdAt);
+      return format(date, "HH:mm", { locale: ptBR });
+    } catch (error) {
+      return createdAt;
     }
   };
 
@@ -57,9 +94,9 @@ export const BirthdayNotifications = () => {
         className="relative h-9 w-9"
       >
         <Bell className="h-4 w-4" />
-        {todayBirthdays.length > 0 && (
+        {totalNotifications > 0 && (
           <Badge className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-xs bg-red-500 flex items-center justify-center">
-            {todayBirthdays.length}
+            {totalNotifications}
           </Badge>
         )}
       </Button>
@@ -69,13 +106,13 @@ export const BirthdayNotifications = () => {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div>
               <CardTitle className="text-sm flex items-center gap-2">
-                <Gift className="h-4 w-4 text-orange-500" />
-                Aniversariantes
+                <Bell className="h-4 w-4 text-blue-500" />
+                Notificações
               </CardTitle>
               <CardDescription className="text-xs">
-                {todayBirthdays.length === 0 
-                  ? "Nenhum aniversariante hoje" 
-                  : `${todayBirthdays.length} pessoa(s) fazendo aniversário`
+                {totalNotifications === 0 
+                  ? "Nenhuma notificação hoje" 
+                  : `${totalNotifications} notificação(ões) hoje`
                 }
               </CardDescription>
             </div>
@@ -83,33 +120,84 @@ export const BirthdayNotifications = () => {
               <X className="h-3 w-3" />
             </Button>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {todayBirthdays.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4 text-sm">
-                🎉 Nenhum aniversariante hoje
-              </p>
-            ) : (
-              todayBirthdays.map((contact) => (
-                <div key={contact.contact_id} className="flex items-center justify-between p-3 bg-orange-50 rounded-md border border-orange-100">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{contact.contact_name}</p>
-                    <p className="text-xs text-orange-600 font-medium">
-                      {formatBirthDate(contact.birth_date)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {contact.age !== null && contact.age !== undefined ? `${contact.age} anos` : 'Idade não calculada'}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleSendMessage(contact.contact_id, contact.contact_name, contact.whatsapp)}
-                    className="bg-green-600 hover:bg-green-700 h-7 text-xs"
-                  >
-                    <Phone className="h-3 w-3 mr-1" />
-                    Enviar
-                  </Button>
+          <CardContent className="space-y-4">
+            {/* Seção de Aniversariantes */}
+            {todayBirthdays.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Gift className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm font-medium">Aniversariantes ({todayBirthdays.length})</span>
                 </div>
-              ))
+                <div className="space-y-2">
+                  {todayBirthdays.map((contact) => (
+                    <div key={contact.contact_id} className="flex items-center justify-between p-3 bg-orange-50 rounded-md border border-orange-100">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{contact.contact_name}</p>
+                        <p className="text-xs text-orange-600 font-medium">
+                          {formatBirthDate(contact.birth_date)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {contact.age !== null && contact.age !== undefined ? `${contact.age} anos` : 'Idade não calculada'}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSendMessage(contact.contact_id, contact.contact_name, contact.whatsapp)}
+                        className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                      >
+                        <Phone className="h-3 w-3 mr-1" />
+                        Enviar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Separador se ambas as seções têm conteúdo */}
+            {todayBirthdays.length > 0 && newContacts.length > 0 && (
+              <Separator />
+            )}
+
+            {/* Seção de Novos Contatos */}
+            {newContacts.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <UserPlus className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium">Novos Contatos ({newContacts.length})</span>
+                </div>
+                <div className="space-y-2">
+                  {newContacts.map((contact) => (
+                    <div key={contact.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-md border border-blue-100">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{contact.name}</p>
+                        <p className="text-xs text-blue-600 font-medium">
+                          Cadastrado às {formatContactTime(contact.created_at)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {contact.whatsapp ? `WhatsApp: ${contact.whatsapp}` : 'WhatsApp não informado'}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleWelcomeMessage(contact.name, contact.whatsapp)}
+                        className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                        disabled={!contact.whatsapp}
+                      >
+                        <Phone className="h-3 w-3 mr-1" />
+                        Saudar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mensagem quando não há notificações */}
+            {totalNotifications === 0 && (
+              <p className="text-center text-muted-foreground py-4 text-sm">
+                🔔 Nenhuma notificação hoje
+              </p>
             )}
           </CardContent>
         </Card>
