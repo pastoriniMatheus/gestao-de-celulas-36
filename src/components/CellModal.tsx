@@ -64,6 +64,8 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     
     setLoading(true);
     try {
+      console.log('CellModal: Buscando dados da célula:', cell.id);
+      
       // Buscar contatos da célula
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
@@ -71,6 +73,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
         .eq('cell_id', cell.id);
 
       if (contactsError) throw contactsError;
+      console.log('CellModal: Contatos encontrados:', contactsData?.length || 0);
 
       // Buscar presenças
       const { data: attendancesData, error: attendancesError } = await supabase
@@ -80,11 +83,12 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
         .order('attendance_date', { ascending: false });
 
       if (attendancesError) throw attendancesError;
+      console.log('CellModal: Presenças encontradas:', attendancesData?.length || 0);
 
       if (mountedRef.current) {
         setContacts(contactsData || []);
         setAttendances(attendancesData || []);
-        generateWeeklyStats(attendancesData || []);
+        generateWeeklyStats(contactsData || [], attendancesData || []);
       }
     } catch (error) {
       console.error('Erro ao buscar dados da célula:', error);
@@ -100,7 +104,11 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     }
   };
 
-  const generateWeeklyStats = (attendancesData: Attendance[]) => {
+  const generateWeeklyStats = (contactsData: Contact[], attendancesData: Attendance[]) => {
+    console.log('CellModal: Gerando estatísticas semanais');
+    console.log('CellModal: Total de contatos:', contactsData.length);
+    console.log('CellModal: Total de presenças:', attendancesData.length);
+    
     const last8Weeks = [];
     const now = new Date();
     
@@ -110,13 +118,25 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       
+      console.log(`CellModal: Analisando semana ${i}: ${weekStart.toDateString()} até ${weekEnd.toDateString()}`);
+      
+      // Filtrar presenças da semana que estavam presentes
       const weekAttendances = attendancesData.filter(att => {
         const attDate = new Date(att.attendance_date);
-        return attDate >= weekStart && attDate <= weekEnd && att.present;
+        const isInWeek = attDate >= weekStart && attDate <= weekEnd;
+        const isPresent = att.present;
+        return isInWeek && isPresent;
       });
       
+      console.log(`CellModal: Presenças na semana ${i}:`, weekAttendances.length);
+      
+      // Separar membros e visitantes baseado no campo 'visitor' da tabela attendances
+      // Se visitor = true na attendance, é visitante
+      // Se visitor = false na attendance, é membro
       const membersCount = weekAttendances.filter(att => !att.visitor).length;
       const visitorsCount = weekAttendances.filter(att => att.visitor).length;
+      
+      console.log(`CellModal: Semana ${i} - Membros: ${membersCount}, Visitantes: ${visitorsCount}`);
       
       last8Weeks.push({
         semana: `${weekStart.getDate()}/${weekStart.getMonth() + 1}`,
@@ -126,6 +146,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
       });
     }
     
+    console.log('CellModal: Estatísticas finais:', last8Weeks);
     setWeeklyStats(last8Weeks);
   };
 
@@ -150,7 +171,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
       if (contactError) throw contactError;
 
-      // Adicionar presença automática para a data selecionada
+      // Adicionar presença automática para a data selecionada com visitor = true
       const { error: attendanceError } = await supabase
         .from('attendances')
         .insert({
@@ -158,7 +179,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
           contact_id: contactData.id,
           attendance_date: selectedDate,
           present: true,
-          visitor: true
+          visitor: true // Importante: marcar como visitante
         });
 
       if (attendanceError) throw attendanceError;
@@ -187,6 +208,10 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
         att => att.contact_id === contactId && att.attendance_date === selectedDate
       );
 
+      // Verificar se o contato é visitante
+      const contact = contacts.find(c => c.id === contactId);
+      const isVisitorContact = contact?.status === 'visitor';
+
       if (existingAttendance) {
         const { error } = await supabase
           .from('attendances')
@@ -202,7 +227,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
             contact_id: contactId,
             attendance_date: selectedDate,
             present: true,
-            visitor: false
+            visitor: isVisitorContact // Definir visitor baseado no status do contato
           });
 
         if (error) throw error;
