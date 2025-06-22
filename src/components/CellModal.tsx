@@ -74,6 +74,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
       if (contactsError) throw contactsError;
       console.log('CellModal: Contatos encontrados:', contactsData?.length || 0);
+      console.log('CellModal: Detalhes dos contatos:', contactsData?.map(c => ({ id: c.id, name: c.name, status: c.status })));
 
       // Buscar presenças
       const { data: attendancesData, error: attendancesError } = await supabase
@@ -84,6 +85,12 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
       if (attendancesError) throw attendancesError;
       console.log('CellModal: Presenças encontradas:', attendancesData?.length || 0);
+      console.log('CellModal: Detalhes das presenças:', attendancesData?.map(a => ({ 
+        contact_id: a.contact_id, 
+        date: a.attendance_date, 
+        present: a.present, 
+        visitor: a.visitor 
+      })));
 
       if (mountedRef.current) {
         setContacts(contactsData || []);
@@ -105,9 +112,13 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
   };
 
   const generateWeeklyStats = (contactsData: Contact[], attendancesData: Attendance[]) => {
-    console.log('CellModal: Gerando estatísticas semanais');
+    console.log('CellModal: ===== GERANDO ESTATÍSTICAS SEMANAIS =====');
     console.log('CellModal: Total de contatos:', contactsData.length);
     console.log('CellModal: Total de presenças:', attendancesData.length);
+    
+    // Criar mapa de contatos para facilitar lookup
+    const contactsMap = new Map(contactsData.map(c => [c.id, c]));
+    console.log('CellModal: Mapa de contatos criado com', contactsMap.size, 'entradas');
     
     const last8Weeks = [];
     const now = new Date();
@@ -115,10 +126,14 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     for (let i = 7; i >= 0; i--) {
       const weekStart = new Date(now);
       weekStart.setDate(now.getDate() - (i * 7) - now.getDay());
+      weekStart.setHours(0, 0, 0, 0);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
       
-      console.log(`CellModal: Analisando semana ${i}: ${weekStart.toDateString()} até ${weekEnd.toDateString()}`);
+      console.log(`CellModal: ===== SEMANA ${i} =====`);
+      console.log(`CellModal: Data início: ${weekStart.toISOString()}`);
+      console.log(`CellModal: Data fim: ${weekEnd.toISOString()}`);
       
       // Filtrar presenças da semana que estavam presentes
       const weekAttendances = attendancesData.filter(att => {
@@ -128,15 +143,39 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
         return isInWeek && isPresent;
       });
       
-      console.log(`CellModal: Presenças na semana ${i}:`, weekAttendances.length);
+      console.log(`CellModal: Presenças presentes na semana ${i}:`, weekAttendances.length);
       
-      // Separar membros e visitantes baseado no campo 'visitor' da tabela attendances
-      // Se visitor = true na attendance, é visitante
-      // Se visitor = false na attendance, é membro
-      const membersCount = weekAttendances.filter(att => !att.visitor).length;
-      const visitorsCount = weekAttendances.filter(att => att.visitor).length;
+      let membersCount = 0;
+      let visitorsCount = 0;
       
-      console.log(`CellModal: Semana ${i} - Membros: ${membersCount}, Visitantes: ${visitorsCount}`);
+      weekAttendances.forEach(att => {
+        // Primeiro verificar o campo visitor da attendance
+        if (att.visitor === true) {
+          visitorsCount++;
+          console.log(`CellModal: Visitante encontrado pela attendance: contact_id=${att.contact_id}, visitor=${att.visitor}`);
+        } else {
+          // Se visitor=false ou null, verificar se o contato existe e seu status
+          const contact = contactsMap.get(att.contact_id);
+          if (contact) {
+            if (contact.status === 'visitor') {
+              visitorsCount++;
+              console.log(`CellModal: Visitante encontrado pelo status do contato: ${contact.name} (${contact.status})`);
+            } else {
+              membersCount++;
+              console.log(`CellModal: Membro encontrado: ${contact.name} (${contact.status})`);
+            }
+          } else {
+            // Contato não encontrado, assumir como membro
+            membersCount++;
+            console.log(`CellModal: Contato não encontrado, assumindo como membro: contact_id=${att.contact_id}`);
+          }
+        }
+      });
+      
+      console.log(`CellModal: RESULTADO SEMANA ${i}:`);
+      console.log(`CellModal: - Membros: ${membersCount}`);
+      console.log(`CellModal: - Visitantes: ${visitorsCount}`);
+      console.log(`CellModal: - Total: ${membersCount + visitorsCount}`);
       
       last8Weeks.push({
         semana: `${weekStart.getDate()}/${weekStart.getMonth() + 1}`,
@@ -146,7 +185,8 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
       });
     }
     
-    console.log('CellModal: Estatísticas finais:', last8Weeks);
+    console.log('CellModal: ===== ESTATÍSTICAS FINAIS =====');
+    console.log('CellModal: Dados do gráfico:', JSON.stringify(last8Weeks, null, 2));
     setWeeklyStats(last8Weeks);
   };
 
