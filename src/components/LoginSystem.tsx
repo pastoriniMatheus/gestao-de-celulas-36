@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,46 +9,24 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Plus, Edit, Trash2, User, Shield, Eye, EyeOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from './AuthProvider';
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: 'admin' | 'leader' | 'user';
-  photo?: string;
+  photo_url?: string;
   active: boolean;
-  createdAt: string;
+  created_at: string;
 }
 
 export const LoginSystem = () => {
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      name: 'Admin Principal',
-      email: 'admin@igreja.com',
-      role: 'admin',
-      active: true,
-      createdAt: '2024-01-01'
-    },
-    {
-      id: '2',
-      name: 'João Silva',
-      email: 'joao@igreja.com',
-      role: 'leader',
-      photo: '/placeholder.svg',
-      active: true,
-      createdAt: '2024-02-01'
-    },
-    {
-      id: '3',
-      name: 'Maria Santos',
-      email: 'maria@igreja.com',
-      role: 'leader',
-      active: true,
-      createdAt: '2024-02-15'
-    }
-  ]);
-
+  const { userProfile } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -59,30 +37,107 @@ export const LoginSystem = () => {
     role: 'user' as 'admin' | 'leader' | 'user'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Verificar se é admin
+  const isAdmin = userProfile?.role === 'admin';
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadUsers();
+    }
+  }, [isAdmin]);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar usuários:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar usuários",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingUser) {
-      setUsers(users.map(user => 
-        user.id === editingUser.id 
-          ? { ...user, name: formData.name, email: formData.email, role: formData.role }
-          : user
-      ));
-    } else {
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        active: true,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setUsers([...users, newUser]);
+    try {
+      if (editingUser) {
+        // Atualizar usuário existente
+        const updateData: any = {
+          name: formData.name,
+          email: formData.email,
+          role: formData.role,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', editingUser.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Usuário atualizado com sucesso!",
+        });
+      } else {
+        // Criar novo usuário
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: formData.email,
+          password: formData.password,
+          email_confirm: true
+        });
+
+        if (authError) throw authError;
+
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([{
+              user_id: authData.user.id,
+              name: formData.name,
+              email: formData.email,
+              role: formData.role,
+              active: true
+            }]);
+
+          if (profileError) throw profileError;
+        }
+
+        toast({
+          title: "Sucesso",
+          description: "Usuário criado com sucesso!",
+        });
+      }
+      
+      setFormData({ name: '', email: '', password: '', role: 'user' });
+      setEditingUser(null);
+      setIsDialogOpen(false);
+      loadUsers();
+    } catch (error: any) {
+      console.error('Erro ao salvar usuário:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao salvar usuário",
+        variant: "destructive",
+      });
     }
-    
-    setFormData({ name: '', email: '', password: '', role: 'user' });
-    setEditingUser(null);
-    setIsDialogOpen(false);
   };
 
   const handleEdit = (user: User) => {
@@ -96,14 +151,54 @@ export const LoginSystem = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setUsers(users.filter(user => user.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Usuário removido com sucesso!",
+      });
+      
+      loadUsers();
+    } catch (error: any) {
+      console.error('Erro ao remover usuário:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao remover usuário",
+        variant: "destructive",
+      });
+    }
   };
 
-  const toggleActive = (id: string) => {
-    setUsers(users.map(user => 
-      user.id === id ? { ...user, active: !user.active } : user
-    ));
+  const toggleActive = async (id: string, currentActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ active: !currentActive })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Usuário ${!currentActive ? 'ativado' : 'desativado'} com sucesso!`,
+      });
+      
+      loadUsers();
+    } catch (error: any) {
+      console.error('Erro ao alterar status:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao alterar status do usuário",
+        variant: "destructive",
+      });
+    }
   };
 
   const getRoleLabel = (role: string) => {
@@ -123,6 +218,37 @@ export const LoginSystem = () => {
     };
     return colors[role as keyof typeof colors];
   };
+
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-red-600" />
+            Acesso Negado
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">
+            Apenas administradores podem acessar o gerenciamento de usuários.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Carregando usuários...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -213,7 +339,7 @@ export const LoginSystem = () => {
             <CardHeader>
               <div className="flex items-center gap-3">
                 <Avatar className="w-12 h-12">
-                  <AvatarImage src={user.photo} />
+                  <AvatarImage src={user.photo_url} />
                   <AvatarFallback>
                     {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </AvatarFallback>
@@ -237,14 +363,14 @@ export const LoginSystem = () => {
               </div>
               
               <div className="text-sm text-gray-600">
-                <p>Criado em: {new Date(user.createdAt).toLocaleDateString('pt-BR')}</p>
+                <p>Criado em: {new Date(user.created_at).toLocaleDateString('pt-BR')}</p>
               </div>
               
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => toggleActive(user.id)}
+                  onClick={() => toggleActive(user.id, user.active)}
                   className="flex-1"
                 >
                   {user.active ? 'Desativar' : 'Ativar'}

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Camera } from 'lucide-react';
+import { Camera, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from './AuthProvider';
@@ -18,11 +18,14 @@ interface EditProfileDialogProps {
 export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { userProfile, user } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
-    photo_url: ''
+    photo_url: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
   useEffect(() => {
@@ -30,7 +33,9 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       console.log('EditProfileDialog: Inicializando com perfil:', userProfile);
       setFormData({
         name: userProfile.name || '',
-        photo_url: userProfile.photo_url || ''
+        photo_url: userProfile.photo_url || '',
+        newPassword: '',
+        confirmPassword: ''
       });
     }
   }, [open, userProfile]);
@@ -47,6 +52,27 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       return;
     }
 
+    // Validar senhas se preenchidas
+    if (formData.newPassword || formData.confirmPassword) {
+      if (formData.newPassword !== formData.confirmPassword) {
+        toast({
+          title: "Erro",
+          description: "As senhas não coincidem.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (formData.newPassword.length < 6) {
+        toast({
+          title: "Erro",
+          description: "A senha deve ter pelo menos 6 caracteres.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     if (!user?.id) {
       toast({
         title: "Erro",
@@ -60,6 +86,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     try {
       console.log('EditProfileDialog: Salvando perfil para usuário:', user.id);
       
+      // Atualizar perfil
       const updateData = {
         name: formData.name.trim(),
         photo_url: formData.photo_url || null,
@@ -68,47 +95,30 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
       console.log('EditProfileDialog: Dados a serem atualizados:', updateData);
 
-      // Verificar se perfil existe
-      const { data: existingProfile } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+        .update(updateData)
+        .eq('user_id', user.id);
 
-      if (existingProfile) {
-        // Atualizar perfil existente
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('user_id', user.id);
+      if (profileError) {
+        console.error('EditProfileDialog: Erro ao atualizar perfil:', profileError);
+        throw profileError;
+      }
+      
+      console.log('EditProfileDialog: Perfil atualizado com sucesso');
 
-        if (updateError) {
-          console.error('EditProfileDialog: Erro ao atualizar perfil:', updateError);
-          throw updateError;
+      // Atualizar senha se fornecida
+      if (formData.newPassword) {
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: formData.newPassword
+        });
+
+        if (passwordError) {
+          console.error('EditProfileDialog: Erro ao atualizar senha:', passwordError);
+          throw passwordError;
         }
         
-        console.log('EditProfileDialog: Perfil atualizado com sucesso');
-      } else {
-        // Criar novo perfil
-        const profileData = {
-          user_id: user.id,
-          name: formData.name.trim(),
-          email: user.email || '',
-          photo_url: formData.photo_url || null,
-          role: 'user',
-          active: true
-        };
-
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert([profileData]);
-
-        if (insertError) {
-          console.error('EditProfileDialog: Erro ao criar perfil:', insertError);
-          throw insertError;
-        }
-        
-        console.log('EditProfileDialog: Perfil criado com sucesso');
+        console.log('EditProfileDialog: Senha atualizada com sucesso');
       }
 
       toast({
@@ -202,14 +212,14 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         .toUpperCase()
         .substring(0, 2);
     }
-    return 'MP';
+    return 'U';
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Editar Perfil - Sistema Matheus Pastorini</DialogTitle>
+          <DialogTitle>Editar Perfil</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -251,6 +261,39 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Seu nome completo"
               required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="newPassword">Nova Senha</Label>
+            <div className="relative">
+              <Input
+                id="newPassword"
+                type={showPassword ? "text" : "password"}
+                value={formData.newPassword}
+                onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+                placeholder="Deixe em branco para manter a atual"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+              placeholder="Confirme a nova senha"
             />
           </div>
 

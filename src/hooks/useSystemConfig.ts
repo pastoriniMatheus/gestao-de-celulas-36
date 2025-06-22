@@ -14,6 +14,7 @@ interface DatabaseConfig {
 interface SystemConfig {
   site_logo: { url: string; alt: string };
   site_favicon?: { url: string };
+  login_logo?: { url: string; alt: string };
   form_title: { text: string };
   form_description: { text: string };
   church_name: { text: string };
@@ -24,6 +25,7 @@ export const useSystemConfig = () => {
   const [config, setConfig] = useState<SystemConfig>({
     site_logo: { url: '', alt: 'Logo da Igreja' },
     site_favicon: { url: '' },
+    login_logo: { url: '', alt: 'Logo do Login' },
     form_title: { text: 'Sistema de Células' },
     form_description: { text: 'Preencha seus dados para nos conectarmos com você' },
     church_name: { text: '' }
@@ -38,7 +40,7 @@ export const useSystemConfig = () => {
         const { data, error } = await supabase
           .from('system_settings')
           .select('key, value')
-          .in('key', ['site_logo', 'site_favicon', 'form_title', 'form_description', 'church_name', 'database_config']);
+          .in('key', ['site_logo', 'site_favicon', 'login_logo', 'form_title', 'form_description', 'church_name', 'database_config']);
 
         if (error) {
           console.error('Erro ao carregar configurações:', error);

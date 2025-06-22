@@ -13,20 +13,23 @@ export const AppearanceSettings = () => {
   const [logoUrl, setLogoUrl] = useState('');
   const [logoAlt, setLogoAlt] = useState('');
   const [faviconUrl, setFaviconUrl] = useState('');
+  const [loginLogoUrl, setLoginLogoUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
+  const loginLogoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (config) {
       setLogoUrl(config.site_logo?.url || '');
       setLogoAlt(config.site_logo?.alt || 'Logo da Igreja');
       setFaviconUrl(config.site_favicon?.url || '');
+      setLoginLogoUrl(config.login_logo?.url || '');
     }
   }, [config]);
 
-  const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
+  const handleFileUpload = async (file: File, type: 'logo' | 'favicon' | 'login') => {
     if (!file) return;
 
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml'];
@@ -55,12 +58,14 @@ export const AppearanceSettings = () => {
         const result = e.target?.result as string;
         if (type === 'logo') {
           setLogoUrl(result);
-        } else {
+        } else if (type === 'favicon') {
           setFaviconUrl(result);
+        } else if (type === 'login') {
+          setLoginLogoUrl(result);
         }
         toast({
           title: "Sucesso",
-          description: `${type === 'logo' ? 'Logo' : 'Favicon'} carregado! Não esqueça de salvar as configurações.`,
+          description: `${type === 'logo' ? 'Logo' : type === 'favicon' ? 'Favicon' : 'Logo do Login'} carregado! Não esqueça de salvar as configurações.`,
         });
       };
       reader.readAsDataURL(file);
@@ -109,6 +114,10 @@ export const AppearanceSettings = () => {
         site_logo: {
           url: logoUrl,
           alt: logoAlt
+        },
+        login_logo: {
+          url: loginLogoUrl,
+          alt: 'Logo do Login'
         }
       };
 
@@ -210,6 +219,58 @@ export const AppearanceSettings = () => {
               <img 
                 src={logoUrl} 
                 alt="Preview do logo"
+                className="h-16 w-auto border rounded"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Logo da Tela de Login */}
+        <div className="space-y-2">
+          <Label>Logo da Tela de Login</Label>
+          <div className="flex gap-4 items-start">
+            <div className="flex-1">
+              <Input
+                type="url"
+                value={loginLogoUrl}
+                onChange={(e) => setLoginLogoUrl(e.target.value)}
+                placeholder="https://exemplo.com/logo-login.png ou carregue um arquivo"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                URL da imagem do logo que aparecerá na tela de login
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => loginLogoInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {uploading ? 'Carregando...' : 'Carregar'}
+              </Button>
+              <input
+                ref={loginLogoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file, 'login');
+                }}
+              />
+            </div>
+          </div>
+          {loginLogoUrl && (
+            <div className="mt-2">
+              <img 
+                src={loginLogoUrl} 
+                alt="Preview do logo de login"
                 className="h-16 w-auto border rounded"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
