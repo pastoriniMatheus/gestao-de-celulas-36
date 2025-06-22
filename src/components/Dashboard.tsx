@@ -1,4 +1,3 @@
-
 import {
   Card,
   CardContent,
@@ -96,6 +95,8 @@ export const Dashboard = () => {
         supabase.from('profiles').select('id, role, active'),
         supabase.from('neighborhood_stats').select('*').order('total_people', { ascending: false }).limit(5)
       ]);
+
+      console.log('Dashboard: Dados dos bairros carregados:', neighborhoodStatsData.data);
 
       setContacts(contactsData.data || []);
       setCells(cellsData.data || []);
@@ -309,37 +310,44 @@ export const Dashboard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {topNeighborhoods.map((neighborhood, index) => (
-              <div
-                key={neighborhood.id}
-                className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-blue-50 hover:to-purple-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`
-                    w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
-                    ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : ''}
-                    ${index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-600' : ''}
-                    ${index === 2 ? 'bg-gradient-to-r from-orange-400 to-orange-600' : ''}
-                    ${index >= 3 ? 'bg-gradient-to-r from-blue-400 to-blue-600' : ''}
-                  `}>
-                    {index + 1}
+          {topNeighborhoods.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <p>Nenhum dado de bairro disponível</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {topNeighborhoods.map((neighborhood, index) => (
+                <div
+                  key={neighborhood.id}
+                  className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-blue-50 hover:to-purple-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`
+                      w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
+                      ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : ''}
+                      ${index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-600' : ''}
+                      ${index === 2 ? 'bg-gradient-to-r from-orange-400 to-orange-600' : ''}
+                      ${index >= 3 ? 'bg-gradient-to-r from-blue-400 to-blue-600' : ''}
+                    `}>
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{neighborhood.neighborhood_name}</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {neighborhood.city_name || 'Cidade não especificada'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">{neighborhood.neighborhood_name}</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {neighborhood.city_name}
-                    </p>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-blue-600">{neighborhood.total_people || 0}</p>
+                    <p className="text-xs text-gray-500">discípulos</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-blue-600">{neighborhood.total_people}</p>
-                  <p className="text-xs text-gray-500">discípulos</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

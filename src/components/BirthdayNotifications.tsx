@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Bell, Gift, Phone, X, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useBirthdayNotifications } from '@/hooks/useBirthdayNotifications';
 import { useNewContactNotifications } from '@/hooks/useNewContactNotifications';
 import { toast } from '@/hooks/use-toast';
@@ -120,85 +120,89 @@ export const BirthdayNotifications = () => {
               <X className="h-3 w-3" />
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Seção de Aniversariantes */}
-            {todayBirthdays.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Gift className="h-4 w-4 text-orange-500" />
-                  <span className="text-sm font-medium">Aniversariantes ({todayBirthdays.length})</span>
-                </div>
-                <div className="space-y-2">
-                  {todayBirthdays.map((contact) => (
-                    <div key={contact.contact_id} className="flex items-center justify-between p-3 bg-orange-50 rounded-md border border-orange-100">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{contact.contact_name}</p>
-                        <p className="text-xs text-orange-600 font-medium">
-                          {formatBirthDate(contact.birth_date)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {contact.age !== null && contact.age !== undefined ? `${contact.age} anos` : 'Idade não calculada'}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSendMessage(contact.contact_id, contact.contact_name, contact.whatsapp)}
-                        className="bg-green-600 hover:bg-green-700 h-7 text-xs"
-                      >
-                        <Phone className="h-3 w-3 mr-1" />
-                        Enviar
-                      </Button>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-4 p-6">
+                {/* Seção de Aniversariantes */}
+                {todayBirthdays.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Gift className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm font-medium">Aniversariantes ({todayBirthdays.length})</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Separador se ambas as seções têm conteúdo */}
-            {todayBirthdays.length > 0 && newContacts.length > 0 && (
-              <Separator />
-            )}
-
-            {/* Seção de Novos Contatos */}
-            {newContacts.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <UserPlus className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-medium">Novos Contatos ({newContacts.length})</span>
-                </div>
-                <div className="space-y-2">
-                  {newContacts.map((contact) => (
-                    <div key={contact.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-md border border-blue-100">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{contact.name}</p>
-                        <p className="text-xs text-blue-600 font-medium">
-                          Cadastrado às {formatContactTime(contact.created_at)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {contact.whatsapp ? `WhatsApp: ${contact.whatsapp}` : 'WhatsApp não informado'}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleWelcomeMessage(contact.name, contact.whatsapp)}
-                        className="bg-green-600 hover:bg-green-700 h-7 text-xs"
-                        disabled={!contact.whatsapp}
-                      >
-                        <Phone className="h-3 w-3 mr-1" />
-                        Saudar
-                      </Button>
+                    <div className="space-y-2">
+                      {todayBirthdays.map((contact) => (
+                        <div key={contact.contact_id} className="flex items-center justify-between p-3 bg-orange-50 rounded-md border border-orange-100">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{contact.contact_name}</p>
+                            <p className="text-xs text-orange-600 font-medium">
+                              {formatBirthDate(contact.birth_date)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {contact.age !== null && contact.age !== undefined ? `${contact.age} anos` : 'Idade não calculada'}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSendMessage(contact.contact_id, contact.contact_name, contact.whatsapp)}
+                            className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                          >
+                            <Phone className="h-3 w-3 mr-1" />
+                            Enviar
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </div>
+                )}
 
-            {/* Mensagem quando não há notificações */}
-            {totalNotifications === 0 && (
-              <p className="text-center text-muted-foreground py-4 text-sm">
-                🔔 Nenhuma notificação hoje
-              </p>
-            )}
+                {/* Separador se ambas as seções têm conteúdo */}
+                {todayBirthdays.length > 0 && newContacts.length > 0 && (
+                  <Separator />
+                )}
+
+                {/* Seção de Novos Contatos */}
+                {newContacts.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserPlus className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm font-medium">Novos Contatos ({newContacts.length})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {newContacts.map((contact) => (
+                        <div key={contact.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-md border border-blue-100">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{contact.name}</p>
+                            <p className="text-xs text-blue-600 font-medium">
+                              Cadastrado às {formatContactTime(contact.created_at)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {contact.whatsapp ? `WhatsApp: ${contact.whatsapp}` : 'WhatsApp não informado'}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleWelcomeMessage(contact.name, contact.whatsapp)}
+                            className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                            disabled={!contact.whatsapp}
+                          >
+                            <Phone className="h-3 w-3 mr-1" />
+                            Saudar
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensagem quando não há notificações */}
+                {totalNotifications === 0 && (
+                  <p className="text-center text-muted-foreground py-4 text-sm">
+                    🔔 Nenhuma notificação hoje
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       )}
