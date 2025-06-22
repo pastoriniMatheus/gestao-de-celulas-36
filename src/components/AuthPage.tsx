@@ -94,9 +94,9 @@ export const AuthPage = () => {
     }
   };
 
-  // Usar configurações do sistema
+  // Usar o logo da tela de login das configurações
   const loginLogoUrl = config.login_logo?.url;
-  const logoAlt = config.login_logo?.alt || config.site_logo?.alt || 'Logo';
+  const logoAlt = config.login_logo?.alt || 'Logo';
   
   if (configLoading) {
     return (
@@ -147,6 +147,7 @@ export const AuthPage = () => {
                   alt={logoAlt}
                   className="relative w-20 h-20 object-contain rounded-2xl bg-white/5 p-3 backdrop-blur-sm border border-white/10"
                   onError={(e) => {
+                    console.error('Erro ao carregar logo da tela de login:', loginLogoUrl);
                     e.currentTarget.style.display = 'none';
                   }}
                 />
@@ -165,7 +166,6 @@ export const AuthPage = () => {
 
         {/* Card de Login */}
         <Card className="shadow-2xl border-0 bg-white/[0.02] backdrop-blur-xl border border-white/10 relative overflow-hidden">
-          {/* Card glow effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] via-transparent to-white/[0.02] rounded-lg"></div>
           
           <CardHeader className="text-center pb-8 relative">

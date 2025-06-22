@@ -86,7 +86,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     try {
       console.log('EditProfileDialog: Salvando perfil para usuário:', user.id);
       
-      // Atualizar perfil
+      // Atualizar perfil na tabela profiles
       const updateData = {
         name: formData.name.trim(),
         photo_url: formData.photo_url || null,
@@ -128,7 +128,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
       onOpenChange(false);
       
-      // Recarregar página após um pequeno delay
+      // Recarregar página após um pequeno delay para atualizar os dados
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -171,18 +171,20 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     try {
       console.log('EditProfileDialog: Fazendo upload da foto...');
       
+      // Converter para base64 para armazenar diretamente no banco
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string;
         console.log('EditProfileDialog: Foto carregada como base64');
         setFormData(prev => ({ ...prev, photo_url: imageUrl }));
+        
+        toast({
+          title: "Foto carregada",
+          description: "Foto carregada com sucesso. Clique em 'Salvar' para confirmar.",
+        });
       };
       reader.readAsDataURL(file);
 
-      toast({
-        title: "Foto carregada",
-        description: "Foto carregada com sucesso. Clique em 'Salvar' para confirmar.",
-      });
     } catch (error) {
       console.error('EditProfileDialog: Erro ao fazer upload:', error);
       toast({
