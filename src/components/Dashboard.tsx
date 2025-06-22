@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -97,34 +98,53 @@ export const Dashboard = () => {
 
       console.log('Dashboard: Dados dos contatos:', contactsData.data?.length);
       console.log('Dashboard: Dados das células:', cellsData.data?.length);
+      console.log('Dashboard: Dados dos bairros:', neighborhoodsData.data?.length);
 
-      // Calcular estatísticas dos bairros manualmente para debug
+      // Calcular estatísticas dos bairros manualmente
       const neighborhoodStats = [];
       
       if (neighborhoodsData.data && cellsData.data && contactsData.data) {
-        for (const neighborhood of neighborhoodsData.data) {
+        // Agrupar contatos por bairro diretamente (campo neighborhood)
+        const contactsByNeighborhood = {};
+        
+        contactsData.data.forEach(contact => {
+          const neighborhood = contact.neighborhood;
+          if (neighborhood) {
+            if (!contactsByNeighborhood[neighborhood]) {
+              contactsByNeighborhood[neighborhood] = [];
+            }
+            contactsByNeighborhood[neighborhood].push(contact);
+          }
+        });
+
+        console.log('Dashboard: Contatos agrupados por bairro:', contactsByNeighborhood);
+
+        // Criar estatísticas para cada bairro
+        Object.keys(contactsByNeighborhood).forEach(neighborhoodName => {
+          const contacts = contactsByNeighborhood[neighborhoodName];
+          
+          // Buscar células do bairro
+          const neighborhoodData = neighborhoodsData.data.find(n => n.name === neighborhoodName);
           const neighborhoodCells = cellsData.data.filter(cell => 
-            cell.neighborhood_id === neighborhood.id && cell.active
+            cell.neighborhood_id === neighborhoodData?.id && cell.active
           );
           
-          const neighborhoodContacts = contactsData.data.filter(contact => 
-            neighborhoodCells.some(cell => cell.id === contact.cell_id)
-          );
-          
-          const neighborhoodLeaders = neighborhoodCells.filter(cell => cell.leader_id).length;
+          const totalContacts = contacts.length;
+          const totalCells = neighborhoodCells.length;
+          const totalLeaders = neighborhoodCells.filter(cell => cell.leader_id).length;
           
           neighborhoodStats.push({
-            id: neighborhood.id,
-            neighborhood_name: neighborhood.name,
-            city_name: neighborhood.cities?.name || 'N/A',
-            total_cells: neighborhoodCells.length,
-            total_contacts: neighborhoodContacts.length,
-            total_leaders: neighborhoodLeaders,
-            total_people: neighborhoodContacts.length + neighborhoodLeaders
+            id: neighborhoodData?.id || neighborhoodName,
+            neighborhood_name: neighborhoodName,
+            city_name: neighborhoodData?.cities?.name || 'N/A',
+            total_cells: totalCells,
+            total_contacts: totalContacts,
+            total_leaders: totalLeaders,
+            total_people: totalContacts
           });
 
-          console.log(`Dashboard: Bairro ${neighborhood.name} - Células: ${neighborhoodCells.length}, Contatos: ${neighborhoodContacts.length}, Total: ${neighborhoodContacts.length + neighborhoodLeaders}`);
-        }
+          console.log(`Dashboard: Bairro ${neighborhoodName} - Contatos: ${totalContacts}, Células: ${totalCells}, Líderes: ${totalLeaders}`);
+        });
       }
 
       // Ordenar por total de pessoas e pegar top 5
@@ -167,11 +187,26 @@ export const Dashboard = () => {
   const activeCells = cells.filter(c => c.active).length;
   const totalLeaders = cells.filter(c => c.leader_id).length;
   
-  // Calcular média de idade
-  const contactsWithAge = contacts.filter(c => c.age);
-  const averageAge = contactsWithAge.length > 0 
-    ? Math.round(contactsWithAge.reduce((sum, c) => sum + c.age, 0) / contactsWithAge.length)
+  // Calcular média de idade corrigida - usando birth_date
+  const contactsWithBirthDate = contacts.filter(c => c.birth_date);
+  const averageAge = contactsWithBirthDate.length > 0 
+    ? Math.round(contactsWithBirthDate.reduce((sum, c) => {
+        const birthDate = new Date(c.birth_date);
+        const today = new Date();
+        const age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        // Ajustar se ainda não fez aniversário este ano
+        const finalAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+          ? age - 1 
+          : age;
+        
+        return sum + finalAge;
+      }, 0) / contactsWithBirthDate.length)
     : 0;
+
+  console.log('Dashboard: Contatos com data de nascimento:', contactsWithBirthDate.length);
+  console.log('Dashboard: Idade média calculada:', averageAge);
 
   // Calcular estatísticas de presença (últimos 30 dias)
   const thirtyDaysAgo = new Date();
@@ -350,7 +385,7 @@ export const Dashboard = () => {
             <div className="text-center text-gray-500 py-8">
               <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-400" />
               <p>Nenhum dado de bairro disponível</p>
-              <p className="text-sm">Verifique se as células estão vinculadas aos bairros</p>
+              <p className="text-sm">Verifique se os contatos têm bairros cadastrados</p>
             </div>
           ) : (
             <div className="space-y-3">
