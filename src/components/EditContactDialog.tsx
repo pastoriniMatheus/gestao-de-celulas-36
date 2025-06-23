@@ -91,6 +91,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         newStatus = 'pending';
       }
 
+      // Processar referred_by corretamente
+      let referredByValue = null;
+      if (form.referred_by && form.referred_by !== 'no-referral' && form.referred_by !== '') {
+        referredByValue = form.referred_by;
+      }
+
       const updateData = {
         name: form.name,
         whatsapp: form.whatsapp,
@@ -101,7 +107,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         baptized: !!form.baptized,
         status: newStatus,
         cell_id: form.cell_id || null,
-        referred_by: form.referred_by || null,
+        referred_by: referredByValue,
       };
 
       console.log('EditContactDialog: Dados de atualização:', updateData);

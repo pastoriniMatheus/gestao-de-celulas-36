@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,8 @@ export const FormSettings = () => {
   const [formImageUrl, setFormImageUrl] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadFormSettings();
@@ -55,6 +57,71 @@ export const FormSettings = () => {
     }
   };
 
+  const uploadImage = async (file: File) => {
+    try {
+      setUploadingImage(true);
+      
+      // Gerar nome único para a imagem
+      const fileExt = file.name.split('.').pop();
+      const fileName = `form-image-${Date.now()}.${fileExt}`;
+      
+      // Upload para o storage do Supabase
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      // Obter URL pública da imagem
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(fileName);
+
+      setFormImageUrl(publicUrl);
+      
+      toast({
+        title: "Sucesso",
+        description: "Imagem enviada com sucesso!"
+      });
+    } catch (error) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar imagem",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verificar se é uma imagem
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione apenas arquivos de imagem",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Verificar tamanho (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      uploadImage(file);
+    }
+  };
+
   const saveFormSettings = async () => {
     try {
       setLoading(true);
@@ -68,15 +135,35 @@ export const FormSettings = () => {
       ];
 
       for (const config of configs) {
-        const { error } = await supabase
+        // Primeiro, tentar atualizar se já existe
+        const { data: existingData, error: selectError } = await supabase
           .from('system_settings')
-          .upsert({
-            key: config.key,
-            value: config.value,
-            updated_at: new Date().toISOString()
-          });
+          .select('id')
+          .eq('key', config.key)
+          .single();
 
-        if (error) throw error;
+        if (existingData) {
+          // Atualizar registro existente
+          const { error: updateError } = await supabase
+            .from('system_settings')
+            .update({
+              value: config.value,
+              updated_at: new Date().toISOString()
+            })
+            .eq('key', config.key);
+
+          if (updateError) throw updateError;
+        } else {
+          // Inserir novo registro
+          const { error: insertError } = await supabase
+            .from('system_settings')
+            .insert({
+              key: config.key,
+              value: config.value
+            });
+
+          if (insertError) throw insertError;
+        }
       }
 
       toast({
@@ -133,15 +220,36 @@ export const FormSettings = () => {
             <div>
               <Label htmlFor="form_image_url" className="flex items-center gap-2">
                 <Image className="h-4 w-4" />
-                URL da Imagem do Formulário
+                Imagem do Formulário
               </Label>
-              <Input
-                id="form_image_url"
-                value={formImageUrl}
-                onChange={(e) => setFormImageUrl(e.target.value)}
-                placeholder="https://exemplo.com/imagem.jpg"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
+              <div className="space-y-2">
+                <Input
+                  id="form_image_url"
+                  value={formImageUrl}
+                  onChange={(e) => setFormImageUrl(e.target.value)}
+                  placeholder="https://exemplo.com/imagem.jpg ou escolha um arquivo"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {uploadingImage ? "Enviando..." : "Escolher Arquivo"}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
                 Imagem que aparece no cabeçalho do formulário (diferente da logo do sistema)
               </p>
             </div>
