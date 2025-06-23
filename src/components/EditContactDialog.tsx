@@ -9,6 +9,7 @@ import { useContactDialogData } from '@/hooks/useContactDialogData';
 import { useCells } from '@/hooks/useCells';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
 import { BaptizedField } from './contact-form/BaptizedField';
+import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { UserCheck, ArrowRightLeft, Calendar } from 'lucide-react';
@@ -24,8 +25,8 @@ interface EditContactDialogProps {
 
 export function EditContactDialog({ open, onOpenChange, contact, context = 'contacts', onContactUpdated }: EditContactDialogProps) {
   const { updateContact } = useContacts();
-  const { neighborhoods, cities } = useContactDialogData(open);
-  const { cells, fetchCells } = useCells();
+  const { neighborhoods, cities, cells, contacts, profiles } = useContactDialogData(open);
+  const { cells: cellsData, fetchCells } = useCells();
 
   const [form, setForm] = useState({
     name: contact?.name ?? '',
@@ -37,6 +38,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     baptized: contact?.baptized ?? false,
     status: contact?.status ?? 'pending',
     cell_id: contact?.cell_id ?? '',
+    referred_by: contact?.referred_by ?? '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -56,6 +58,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       baptized: contact?.baptized ?? false,
       status: contact?.status ?? 'pending',
       cell_id: contact?.cell_id ?? '',
+      referred_by: contact?.referred_by ?? '',
     });
   }, [contact, neighborhoods]);
 
@@ -97,6 +100,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         baptized: !!form.baptized,
         status: newStatus,
         cell_id: form.cell_id || null,
+        referred_by: form.referred_by || null,
       };
 
       console.log('EditContactDialog: Dados de atualização:', updateData);
@@ -177,7 +181,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   };
 
   const getCellName = (cellId: string) => {
-    const cell = cells.find(c => c.id === cellId);
+    const allCells = [...cells, ...cellsData];
+    const cell = allCells.find(c => c.id === cellId);
     return cell ? cell.name : 'Célula não encontrada';
   };
 
@@ -196,6 +201,10 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   };
 
   const statusBadge = getStatusBadge();
+
+  const updateFormData = (updates: any) => {
+    setForm(prev => ({ ...prev, ...updates }));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -279,38 +288,6 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
             </Select>
           </div>
 
-          {showCellField && (
-            <div>
-              <Label htmlFor="edit-contact-cell">Célula</Label>
-              <Select
-                value={form.cell_id || "placeholder-cell"}
-                onValueChange={value =>
-                  setForm(f => ({
-                    ...f,
-                    cell_id: value === "placeholder-cell" ? "" : value,
-                  }))
-                }
-              >
-                <SelectTrigger id="edit-contact-cell">
-                  <SelectValue placeholder="Selecione a célula" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="placeholder-cell">Sem célula</SelectItem>
-                  {cells.filter(cell => cell.active).map(cell => (
-                    <SelectItem key={cell.id} value={cell.id}>
-                      {cell.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {contact.cell_id && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Atual: {getCellName(contact.cell_id)}
-                </p>
-              )}
-            </div>
-          )}
-
           <div>
             <Label htmlFor="edit-contact-birth-date">Data de Nascimento</Label>
             <Input
@@ -320,6 +297,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
               onChange={e => setForm(f => ({ ...f, birth_date: e.target.value }))}
             />
           </div>
+
           <div className="grid grid-cols-1 gap-4">
             <EncounterWithGodField
               checked={!!form.encounter_with_god}
@@ -334,6 +312,25 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
               }
             />
           </div>
+
+          {/* Seção de Célula e Quem Indicou */}
+          {(showCellField || context === 'contacts') && (
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Células</h4>
+              <ReferralAndCellFields
+                formData={form}
+                onUpdateFormData={updateFormData}
+                cells={[...cells, ...cellsData]}
+                contacts={contacts}
+                profiles={profiles}
+              />
+              {contact.cell_id && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Célula atual: {getCellName(contact.cell_id)}
+                </p>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter className="flex-col gap-2">
           {showTransformButton && (
