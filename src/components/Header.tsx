@@ -1,5 +1,6 @@
 
 import { BirthdayNotifications } from './BirthdayNotifications';
+import { MonthlyBirthdaysSection } from './MonthlyBirthdaysSection';
 import { UserMenu } from './UserMenu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -48,6 +49,7 @@ export const Header = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          <MonthlyBirthdaysSection />
           <BirthdayNotifications />
           <UserMenu />
         </div>
