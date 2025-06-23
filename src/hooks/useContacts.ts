@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -55,7 +56,7 @@ export const useContacts = () => {
         age: contact.age,
         birth_date: contact.birth_date,
         attendance_code: contact.attendance_code,
-        referred_by: contact.referred_by || null,
+        referred_by: (contact as any).referred_by || null,
         created_at: contact.created_at,
         updated_at: contact.updated_at
       }));
@@ -113,7 +114,7 @@ export const useContacts = () => {
         age: data.age,
         birth_date: data.birth_date,
         attendance_code: data.attendance_code,
-        referred_by: data.referred_by || null,
+        referred_by: (data as any).referred_by || null,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -186,7 +187,7 @@ export const useContacts = () => {
         age: data.age,
         birth_date: data.birth_date,
         attendance_code: data.attendance_code,
-        referred_by: data.referred_by || null,
+        referred_by: (data as any).referred_by || null,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -258,7 +259,7 @@ export const useContacts = () => {
               age: payload.new.age,
               birth_date: payload.new.birth_date,
               attendance_code: payload.new.attendance_code,
-              referred_by: payload.new.referred_by || null,
+              referred_by: (payload.new as any).referred_by || null,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
             };
@@ -278,7 +279,7 @@ export const useContacts = () => {
               age: payload.new.age,
               birth_date: payload.new.birth_date,
               attendance_code: payload.new.attendance_code,
-              referred_by: payload.new.referred_by || null,
+              referred_by: (payload.new as any).referred_by || null,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
             };
