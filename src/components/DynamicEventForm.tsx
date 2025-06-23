@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useCities } from '@/hooks/useCities';
 import { useUniqueAttendanceCode } from '@/hooks/useUniqueAttendanceCode';
+import { useWebhookConfigs } from '@/hooks/useWebhookConfigs';
 
 interface Neighborhood {
   id: string;
@@ -36,10 +36,12 @@ export const DynamicEventForm = () => {
   const [qrInfo, setQrInfo] = useState<any>(null);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [neighborhoodsLoading, setNeighborhoodsLoading] = useState(false);
+  const [formConfig, setFormConfig] = useState<any>({});
   
   const { settings } = useSystemSettings();
   const { cities } = useCities();
   const { generateUniqueAttendanceCode } = useUniqueAttendanceCode();
+  const { webhooks } = useWebhookConfigs();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -51,6 +53,31 @@ export const DynamicEventForm = () => {
   const eventId = searchParams.get('evento');
   const cod = searchParams.get('cod');
   const errorCode = searchParams.get('error');
+
+  // Carregar configurações do formulário
+  useEffect(() => {
+    const loadFormConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_configs')
+          .select('*')
+          .in('config_key', ['form_title', 'form_description', 'form_image_url', 'welcome_message', 'success_message']);
+
+        if (error) throw error;
+
+        const config: any = {};
+        data?.forEach((item) => {
+          config[item.config_key] = item.config_value;
+        });
+
+        setFormConfig(config);
+      } catch (error) {
+        console.error('Erro ao carregar configurações do formulário:', error);
+      }
+    };
+
+    loadFormConfig();
+  }, []);
 
   // Carregar todos os bairros quando uma cidade é selecionada
   useEffect(() => {
@@ -88,6 +115,7 @@ export const DynamicEventForm = () => {
     loadNeighborhoods();
   }, [formData.city_id]);
 
+  // Carregar dados do formulário
   useEffect(() => {
     const loadFormData = async () => {
       try {
@@ -103,7 +131,6 @@ export const DynamicEventForm = () => {
           if (!error && event) {
             setEventInfo(event);
             
-            // Incrementar scan_count quando o formulário é carregado
             console.log('Incrementando scan_count para evento:', eventId);
             const { error: scanError } = await supabase.rpc('increment_event_scan_count', {
               event_uuid: eventId
@@ -127,7 +154,6 @@ export const DynamicEventForm = () => {
           if (!error && qr) {
             setQrInfo(qr);
             
-            // Incrementar scan_count do QR code
             const { error: qrError } = await supabase.rpc('increment_qr_scan_count', {
               qr_id: qr.id
             });
@@ -147,6 +173,50 @@ export const DynamicEventForm = () => {
 
     loadFormData();
   }, [eventId, cod, errorCode]);
+
+  // Função para enviar dados para webhook
+  const sendToWebhook = async (contactData: any) => {
+    try {
+      const newContactWebhooks = webhooks.filter(w => w.event_type === 'new_contact' && w.active);
+      
+      if (newContactWebhooks.length === 0) {
+        console.log('Nenhum webhook de novo contato ativo encontrado');
+        return;
+      }
+
+      const webhookData = {
+        name: contactData.name,
+        whatsapp: contactData.whatsapp,
+        event: 'new_contact',
+        timestamp: new Date().toISOString()
+      };
+
+      for (const webhook of newContactWebhooks) {
+        try {
+          console.log('Enviando para webhook:', webhook.webhook_url);
+          
+          const response = await fetch(webhook.webhook_url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...webhook.headers
+            },
+            body: JSON.stringify(webhookData)
+          });
+
+          if (response.ok) {
+            console.log('Webhook enviado com sucesso:', webhook.name);
+          } else {
+            console.error('Erro no webhook:', webhook.name, response.statusText);
+          }
+        } catch (webhookError) {
+          console.error('Erro ao enviar webhook:', webhook.name, webhookError);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao processar webhooks:', error);
+    }
+  };
 
   const currentStepData = steps[currentStep];
   const isLastStep = currentStep === steps.length - 1;
@@ -175,7 +245,6 @@ export const DynamicEventForm = () => {
     try {
       console.log('DynamicEventForm: Iniciando submit do formulário');
       
-      // Gerar código único para cada contato do formulário
       const uniqueCode = await generateUniqueAttendanceCode();
       console.log('DynamicEventForm: Código único gerado:', uniqueCode);
 
@@ -187,7 +256,7 @@ export const DynamicEventForm = () => {
         status: 'pending',
         encounter_with_god: false,
         baptized: false,
-        attendance_code: uniqueCode // Usar código único gerado
+        attendance_code: uniqueCode
       };
 
       console.log('DynamicEventForm: Dados do contato:', contactData);
@@ -198,7 +267,10 @@ export const DynamicEventForm = () => {
 
       if (error) throw error;
 
-      // Incrementar registration_count para eventos
+      // Enviar para webhook
+      await sendToWebhook(contactData);
+
+      // Incrementar scan_count para eventos
       if (eventId && eventInfo) {
         console.log('Incrementando registration_count para evento:', eventId);
         const { error: incrementError } = await supabase.rpc('increment_event_registration', { 
@@ -243,6 +315,14 @@ export const DynamicEventForm = () => {
     }
   };
 
+  // Determinar qual imagem usar
+  const getFormImage = () => {
+    if (formConfig.form_image_url?.url) {
+      return formConfig.form_image_url.url;
+    }
+    return settings.logo_url;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -262,7 +342,9 @@ export const DynamicEventForm = () => {
         <Card className="w-full max-w-md text-center shadow-2xl border-0 bg-white/90 backdrop-blur-lg">
           <CardContent className="p-8">
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Cadastro Concluído!</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+              {formConfig.success_message?.text || 'Cadastro Concluído!'}
+            </h3>
             <p className="text-gray-600 mb-6">
               Obrigado por se cadastrar. Em breve entraremos em contato!
             </p>
@@ -396,20 +478,27 @@ export const DynamicEventForm = () => {
         <CardHeader className="text-center pb-6 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 text-white rounded-t-lg relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20"></div>
           <div className="relative z-10">
-            {settings.logo_url && (
+            {getFormImage() && (
               <div className="flex justify-center mb-4">
                 <img 
-                  src={settings.logo_url} 
+                  src={getFormImage()} 
                   alt="Logo" 
                   className="h-16 w-auto filter drop-shadow-lg"
                 />
               </div>
             )}
             <CardTitle className="text-2xl font-bold mb-2">
-              {eventInfo ? eventInfo.name : 
-               qrInfo ? qrInfo.title : 
+              {formConfig.form_title?.text || 
+               eventInfo?.name || 
+               qrInfo?.title || 
                settings.church_name || 'Cadastro'}
             </CardTitle>
+            
+            {formConfig.form_description?.text && (
+              <p className="text-white/90 text-sm mb-2">
+                {formConfig.form_description.text}
+              </p>
+            )}
             
             <div className="flex justify-center space-x-2 mt-4">
               {steps.map((_, index) => (
