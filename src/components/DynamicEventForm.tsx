@@ -36,6 +36,7 @@ export const DynamicEventForm = () => {
   const [qrInfo, setQrInfo] = useState<any>(null);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [neighborhoodsLoading, setNeighborhoodsLoading] = useState(false);
+  const [allNeighborhoods, setAllNeighborhoods] = useState<Neighborhood[]>([]);
   const [formConfig, setFormConfig] = useState<any>({});
   
   const { settings } = useSystemSettings();
@@ -59,15 +60,15 @@ export const DynamicEventForm = () => {
     const loadFormConfig = async () => {
       try {
         const { data, error } = await supabase
-          .from('system_configs')
+          .from('system_settings')
           .select('*')
-          .in('config_key', ['form_title', 'form_description', 'form_image_url', 'welcome_message', 'success_message']);
+          .in('key', ['form_title', 'form_description', 'form_image_url', 'welcome_message', 'success_message']);
 
         if (error) throw error;
 
         const config: any = {};
         data?.forEach((item) => {
-          config[item.config_key] = item.config_value;
+          config[item.key] = item.value;
         });
 
         setFormConfig(config);
@@ -79,22 +80,15 @@ export const DynamicEventForm = () => {
     loadFormConfig();
   }, []);
 
-  // Carregar todos os bairros quando uma cidade é selecionada
+  // Carregar todos os bairros uma única vez
   useEffect(() => {
-    const loadNeighborhoods = async () => {
-      if (!formData.city_id) {
-        setNeighborhoods([]);
-        return;
-      }
-
+    const loadAllNeighborhoods = async () => {
       try {
-        setNeighborhoodsLoading(true);
-        console.log('Carregando bairros para cidade:', formData.city_id);
+        console.log('Carregando todos os bairros...');
         
         const { data, error } = await supabase
           .from('neighborhoods')
           .select('*')
-          .eq('city_id', formData.city_id)
           .eq('active', true)
           .order('name');
 
@@ -103,17 +97,28 @@ export const DynamicEventForm = () => {
           return;
         }
 
-        console.log('Bairros carregados:', data);
-        setNeighborhoods(data || []);
+        console.log('Todos os bairros carregados:', data);
+        setAllNeighborhoods(data || []);
       } catch (error) {
         console.error('Erro ao carregar bairros:', error);
-      } finally {
-        setNeighborhoodsLoading(false);
       }
     };
 
-    loadNeighborhoods();
-  }, [formData.city_id]);
+    loadAllNeighborhoods();
+  }, []);
+
+  // Filtrar bairros quando uma cidade é selecionada
+  useEffect(() => {
+    if (!formData.city_id) {
+      setNeighborhoods([]);
+      return;
+    }
+
+    console.log('Filtrando bairros para cidade:', formData.city_id);
+    const filteredNeighborhoods = allNeighborhoods.filter(n => n.city_id === formData.city_id);
+    console.log('Bairros filtrados:', filteredNeighborhoods);
+    setNeighborhoods(filteredNeighborhoods);
+  }, [formData.city_id, allNeighborhoods]);
 
   // Carregar dados do formulário
   useEffect(() => {
@@ -429,37 +434,30 @@ export const DynamicEventForm = () => {
               <p className="text-gray-600">Selecione seu bairro</p>
             </div>
             
-            {neighborhoodsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-orange-600 border-t-transparent"></div>
-                <span className="ml-2 text-gray-600">Carregando bairros...</span>
-              </div>
-            ) : (
-              <Select 
-                value={formData.neighborhood} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
-                disabled={!formData.city_id || neighborhoodsLoading}
-              >
-                <SelectTrigger className="text-center text-lg py-6 border-2 focus:border-orange-500">
-                  <SelectValue placeholder={
-                    !formData.city_id 
-                      ? "Selecione primeiro a cidade" 
-                      : neighborhoods.length === 0 
-                        ? "Nenhum bairro encontrado"
-                        : "Selecione seu bairro"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {neighborhoods.map((neighborhood) => (
-                    <SelectItem key={neighborhood.id} value={neighborhood.name}>
-                      {neighborhood.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Select 
+              value={formData.neighborhood} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
+              disabled={!formData.city_id}
+            >
+              <SelectTrigger className="text-center text-lg py-6 border-2 focus:border-orange-500">
+                <SelectValue placeholder={
+                  !formData.city_id 
+                    ? "Selecione primeiro a cidade" 
+                    : neighborhoods.length === 0 
+                      ? "Nenhum bairro encontrado"
+                      : "Selecione seu bairro"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {neighborhoods.map((neighborhood) => (
+                  <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                    {neighborhood.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
-            {formData.city_id && neighborhoods.length === 0 && !neighborhoodsLoading && (
+            {formData.city_id && neighborhoods.length === 0 && (
               <p className="text-center text-sm text-gray-500">
                 Nenhum bairro encontrado para esta cidade
               </p>

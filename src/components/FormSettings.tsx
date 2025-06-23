@@ -24,28 +24,28 @@ export const FormSettings = () => {
   const loadFormSettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('system_configs')
+        .from('system_settings')
         .select('*')
-        .in('config_key', ['form_title', 'form_description', 'form_image_url', 'welcome_message', 'success_message']);
+        .in('key', ['form_title', 'form_description', 'form_image_url', 'welcome_message', 'success_message']);
 
       if (error) throw error;
 
-      data?.forEach((config) => {
-        switch (config.config_key) {
+      data?.forEach((setting) => {
+        switch (setting.key) {
           case 'form_title':
-            setFormTitle(config.config_value?.text || '');
+            setFormTitle(setting.value?.text || '');
             break;
           case 'form_description':
-            setFormDescription(config.config_value?.text || '');
+            setFormDescription(setting.value?.text || '');
             break;
           case 'form_image_url':
-            setFormImageUrl(config.config_value?.url || '');
+            setFormImageUrl(setting.value?.url || '');
             break;
           case 'welcome_message':
-            setWelcomeMessage(config.config_value?.text || '');
+            setWelcomeMessage(setting.value?.text || '');
             break;
           case 'success_message':
-            setSuccessMessage(config.config_value?.text || '');
+            setSuccessMessage(setting.value?.text || '');
             break;
         }
       });
@@ -68,10 +68,10 @@ export const FormSettings = () => {
 
       for (const config of configs) {
         const { error } = await supabase
-          .from('system_configs')
+          .from('system_settings')
           .upsert({
-            config_key: config.key,
-            config_value: config.value,
+            key: config.key,
+            value: config.value,
             updated_at: new Date().toISOString()
           });
 
