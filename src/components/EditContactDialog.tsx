@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -31,6 +30,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const [form, setForm] = useState({
     name: contact?.name ?? '',
     whatsapp: contact?.whatsapp ?? '',
+    email: contact?.email ?? '',
     neighborhood: contact?.neighborhood ?? '',
     city_id: contact?.city_id ?? '',
     birth_date: contact?.birth_date ?? '',
@@ -51,6 +51,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     setForm({
       name: contact?.name ?? '',
       whatsapp: contact?.whatsapp ?? '',
+      email: contact?.email ?? '',
       neighborhood: contact?.neighborhood ?? '',
       city_id: city_id ?? '',
       birth_date: contact?.birth_date ?? '',
@@ -314,7 +315,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           </div>
 
           {/* Seção de Célula e Quem Indicou */}
-          {(showCellField || context === 'contacts') && (
+          {showCellField && (
             <div className="border-t pt-4">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Células</h4>
               <ReferralAndCellFields

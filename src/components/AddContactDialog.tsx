@@ -56,6 +56,7 @@ export const AddContactDialog = () => {
         pipeline_stage_id: null,
         age: null,
         attendance_code: null,
+        referred_by: formData.referred_by || null,
       };
       await addContact(contactToAdd);
       toast({
