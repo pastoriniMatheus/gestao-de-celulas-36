@@ -31,21 +31,22 @@ export const FormSettings = () => {
       if (error) throw error;
 
       data?.forEach((setting) => {
+        const value = setting.value;
         switch (setting.key) {
           case 'form_title':
-            setFormTitle(setting.value?.text || '');
+            setFormTitle(value && typeof value === 'object' && 'text' in value ? String(value.text) : '');
             break;
           case 'form_description':
-            setFormDescription(setting.value?.text || '');
+            setFormDescription(value && typeof value === 'object' && 'text' in value ? String(value.text) : '');
             break;
           case 'form_image_url':
-            setFormImageUrl(setting.value?.url || '');
+            setFormImageUrl(value && typeof value === 'object' && 'url' in value ? String(value.url) : '');
             break;
           case 'welcome_message':
-            setWelcomeMessage(setting.value?.text || '');
+            setWelcomeMessage(value && typeof value === 'object' && 'text' in value ? String(value.text) : '');
             break;
           case 'success_message':
-            setSuccessMessage(setting.value?.text || '');
+            setSuccessMessage(value && typeof value === 'object' && 'text' in value ? String(value.text) : '');
             break;
         }
       });
