@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +12,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useCities } from '@/hooks/useCities';
-import { useNeighborhoods } from '@/hooks/useNeighborhoods';
 import { useUniqueAttendanceCode } from '@/hooks/useUniqueAttendanceCode';
+
+interface Neighborhood {
+  id: string;
+  name: string;
+  city_id: string;
+}
 
 const steps = [
   { id: 'name', title: 'Nome', icon: User, field: 'name' },
@@ -28,6 +34,9 @@ export const DynamicEventForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [eventInfo, setEventInfo] = useState<any>(null);
   const [qrInfo, setQrInfo] = useState<any>(null);
+  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const [neighborhoodsLoading, setNeighborhoodsLoading] = useState(false);
+  
   const { settings } = useSystemSettings();
   const { cities } = useCities();
   const { generateUniqueAttendanceCode } = useUniqueAttendanceCode();
@@ -39,11 +48,45 @@ export const DynamicEventForm = () => {
     neighborhood: ''
   });
 
-  const { neighborhoods } = useNeighborhoods(formData.city_id);
-
   const eventId = searchParams.get('evento');
   const cod = searchParams.get('cod');
   const errorCode = searchParams.get('error');
+
+  // Carregar todos os bairros quando uma cidade é selecionada
+  useEffect(() => {
+    const loadNeighborhoods = async () => {
+      if (!formData.city_id) {
+        setNeighborhoods([]);
+        return;
+      }
+
+      try {
+        setNeighborhoodsLoading(true);
+        console.log('Carregando bairros para cidade:', formData.city_id);
+        
+        const { data, error } = await supabase
+          .from('neighborhoods')
+          .select('*')
+          .eq('city_id', formData.city_id)
+          .eq('active', true)
+          .order('name');
+
+        if (error) {
+          console.error('Erro ao carregar bairros:', error);
+          return;
+        }
+
+        console.log('Bairros carregados:', data);
+        setNeighborhoods(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar bairros:', error);
+      } finally {
+        setNeighborhoodsLoading(false);
+      }
+    };
+
+    loadNeighborhoods();
+  }, [formData.city_id]);
 
   useEffect(() => {
     const loadFormData = async () => {
@@ -277,7 +320,10 @@ export const DynamicEventForm = () => {
               <h2 className="text-2xl font-bold text-gray-800">Sua cidade</h2>
               <p className="text-gray-600">Selecione onde você mora</p>
             </div>
-            <Select value={formData.city_id} onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value, neighborhood: '' }))}>
+            <Select 
+              value={formData.city_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value, neighborhood: '' }))}
+            >
               <SelectTrigger className="text-center text-lg py-6 border-2 focus:border-purple-500">
                 <SelectValue placeholder="Selecione sua cidade" />
               </SelectTrigger>
@@ -300,22 +346,42 @@ export const DynamicEventForm = () => {
               <h2 className="text-2xl font-bold text-gray-800">Seu bairro</h2>
               <p className="text-gray-600">Selecione seu bairro</p>
             </div>
-            <Select 
-              value={formData.neighborhood} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
-              disabled={!formData.city_id}
-            >
-              <SelectTrigger className="text-center text-lg py-6 border-2 focus:border-orange-500">
-                <SelectValue placeholder={formData.city_id ? "Selecione seu bairro" : "Selecione primeiro a cidade"} />
-              </SelectTrigger>
-              <SelectContent>
-                {neighborhoods.map((neighborhood) => (
-                  <SelectItem key={neighborhood.id} value={neighborhood.name}>
-                    {neighborhood.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {neighborhoodsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-orange-600 border-t-transparent"></div>
+                <span className="ml-2 text-gray-600">Carregando bairros...</span>
+              </div>
+            ) : (
+              <Select 
+                value={formData.neighborhood} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, neighborhood: value }))}
+                disabled={!formData.city_id || neighborhoodsLoading}
+              >
+                <SelectTrigger className="text-center text-lg py-6 border-2 focus:border-orange-500">
+                  <SelectValue placeholder={
+                    !formData.city_id 
+                      ? "Selecione primeiro a cidade" 
+                      : neighborhoods.length === 0 
+                        ? "Nenhum bairro encontrado"
+                        : "Selecione seu bairro"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {neighborhoods.map((neighborhood) => (
+                    <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                      {neighborhood.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {formData.city_id && neighborhoods.length === 0 && !neighborhoodsLoading && (
+              <p className="text-center text-sm text-gray-500">
+                Nenhum bairro encontrado para esta cidade
+              </p>
+            )}
           </div>
         );
       
