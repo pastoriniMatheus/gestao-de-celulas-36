@@ -8,6 +8,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import FormPage from "./pages/FormPage";
 import MessagesPage from "./pages/MessagesPage";
+import GenealogyPage from "./pages/GenealogyPage";
 import { QRRedirect } from "./pages/QRRedirect";
 import CellAttendancePage from "./pages/CellAttendancePage";
 import MemberAttendancePage from "./pages/MemberAttendancePage";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/events" element={<Index />} />
             <Route path="/settings" element={<Index />} />
             <Route path="/users" element={<Index />} />
+            <Route path="/genealogia" element={<GenealogyPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/qr/:keyword" element={<QRRedirect />} />
             <Route path="/cells/:cellId/attendance" element={<CellAttendancePage />} />
