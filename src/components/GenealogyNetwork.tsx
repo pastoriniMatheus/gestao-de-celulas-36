@@ -18,8 +18,11 @@ import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Network, Eye, EyeOff } from 'lucide-react';
+import { Users, Network, Eye, EyeOff, ChevronDown, ChevronRight, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HierarchyLevelControls } from './genealogy/HierarchyLevelControls';
+import { LevelMetrics } from './genealogy/LevelMetrics';
+import { CustomNode } from './genealogy/CustomNode';
 
 // Interface para os dados dos membros
 interface MemberData {
@@ -32,10 +35,13 @@ interface MemberData {
   indicados: string[];
 }
 
-// Interface para os dados do nó customizado - agora estende Record<string, unknown>
+// Interface para os dados do nó customizado
 interface CustomNodeData extends Record<string, unknown> {
   membro: MemberData;
   indicadosCount: number;
+  level: number;
+  isExpanded: boolean;
+  totalDescendants: number;
 }
 
 // Dados simulados para a genealogia
@@ -150,116 +156,104 @@ const mockMembersData: MemberData[] = [
   }
 ];
 
-const getEstagioColor = (estagio: string) => {
-  const colors = {
-    pastor: '#8B5CF6',
-    lider: '#3B82F6',
-    discipulador: '#10B981',
-    em_formacao: '#F59E0B',
-    novo_convertido: '#EF4444'
-  };
-  return colors[estagio as keyof typeof colors] || '#6B7280';
-};
-
-const getEstagioLabel = (estagio: string) => {
-  const labels = {
-    pastor: 'Pastor',
-    lider: 'Líder',
-    discipulador: 'Discipulador',
-    em_formacao: 'Em Formação',
-    novo_convertido: 'Novo Convertido'
-  };
-  return labels[estagio as keyof typeof labels] || estagio;
-};
-
-const CustomNode = ({ data }: { data: CustomNodeData }) => {
-  const { membro, indicadosCount } = data;
-  
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div 
-            className="px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[200px] cursor-pointer hover:shadow-xl transition-all duration-200"
-            style={{ borderColor: getEstagioColor(membro.estagio) }}
-          >
-            <div className="text-sm font-semibold text-gray-900 mb-1">
-              {membro.nome}
-            </div>
-            <div className="text-xs text-gray-600 mb-1">
-              Líder: {membro.lider}
-            </div>
-            <div className="text-xs text-gray-600 mb-2">
-              {membro.celula}
-            </div>
-            <Badge 
-              className="text-xs"
-              style={{ 
-                backgroundColor: getEstagioColor(membro.estagio),
-                color: 'white'
-              }}
-            >
-              {getEstagioLabel(membro.estagio)}
-            </Badge>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="font-medium">{membro.nome}</p>
-          <p className="text-sm">Indicou {indicadosCount} pessoa(s)</p>
-          <p className="text-sm">Estágio: {getEstagioLabel(membro.estagio)}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
 const nodeTypes = {
   customNode: CustomNode,
 };
 
 export const GenealogyNetwork = () => {
   const [showMiniMap, setShowMiniMap] = useState(true);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1', '2', '3', '4']));
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
+  const [visibleLevels, setVisibleLevels] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
+  const [focusedLevel, setFocusedLevel] = useState<number | null>(null);
+
+  // Calcular métricas por nível
+  const levelMetrics = useMemo(() => {
+    const metrics: { [level: number]: { count: number; stages: { [stage: string]: number } } } = {};
+    
+    mockMembersData.forEach(member => {
+      const level = getNodeLevel(member.id, mockMembersData);
+      if (!metrics[level]) {
+        metrics[level] = { count: 0, stages: {} };
+      }
+      metrics[level].count++;
+      metrics[level].stages[member.estagio] = (metrics[level].stages[member.estagio] || 0) + 1;
+    });
+    
+    return metrics;
+  }, []);
 
   const { nodes, edges } = useMemo(() => {
-    const visibleMembers = mockMembersData.filter(member => 
-      expandedNodes.has(member.id) || 
-      (member.indicador_id && expandedNodes.has(member.indicador_id))
-    );
+    const allMembers = mockMembersData.map(member => ({
+      ...member,
+      level: getNodeLevel(member.id, mockMembersData),
+      totalDescendants: getTotalDescendants(member.id, mockMembersData)
+    }));
 
-    const nodes: Node[] = visibleMembers.map((membro, index) => {
-      const level = membro.indicador_id ? getNodeLevel(membro.id, mockMembersData) : 0;
-      const position = calculateNodePosition(membro.id, level, index, mockMembersData);
+    // Filtrar por níveis visíveis e nós expandidos
+    const visibleMembers = allMembers.filter(member => {
+      const shouldShowByLevel = visibleLevels.has(member.level);
+      const shouldShowByExpansion = expandedNodes.has(member.id) || 
+        (member.indicador_id && expandedNodes.has(member.indicador_id)) || 
+        member.level === 0;
+      
+      if (focusedLevel !== null) {
+        return member.level === focusedLevel;
+      }
+      
+      return shouldShowByLevel && shouldShowByExpansion;
+    });
+
+    const nodes: Node[] = visibleMembers.map((membro) => {
+      const position = calculateNodePosition(membro.id, membro.level, allMembers);
+      const isExpanded = expandedNodes.has(membro.id);
       
       return {
         id: membro.id,
         type: 'customNode',
         position,
-        data: { 
-          membro, 
-          indicadosCount: membro.indicados.length 
+        data: {
+          membro: {
+            id: membro.id,
+            nome: membro.nome,
+            lider: membro.lider,
+            celula: membro.celula,
+            estagio: membro.estagio,
+            indicador_id: membro.indicador_id,
+            indicados: membro.indicados
+          },
+          indicadosCount: membro.indicados.length,
+          level: membro.level,
+          isExpanded,
+          totalDescendants: membro.totalDescendants
         } satisfies CustomNodeData,
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
+        style: {
+          zIndex: 1000 - membro.level, // Níveis superiores ficam por cima
+        }
       };
     });
 
     const edges: Edge[] = [];
     visibleMembers.forEach(membro => {
-      if (membro.indicador_id && expandedNodes.has(membro.indicador_id)) {
+      if (membro.indicador_id && visibleMembers.find(m => m.id === membro.indicador_id)) {
         edges.push({
           id: `${membro.indicador_id}-${membro.id}`,
           source: membro.indicador_id,
           target: membro.id,
           type: 'smoothstep',
           animated: false,
-          style: { strokeWidth: 2, stroke: '#6B7280' },
+          style: { 
+            strokeWidth: 2, 
+            stroke: getLevelColor(membro.level),
+            opacity: focusedLevel !== null ? (membro.level === focusedLevel ? 1 : 0.3) : 1
+          },
         });
       }
     });
 
     return { nodes, edges };
-  }, [expandedNodes]);
+  }, [expandedNodes, visibleLevels, focusedLevel]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -275,15 +269,42 @@ export const GenealogyNetwork = () => {
       setExpandedNodes(prev => {
         const newSet = new Set(prev);
         if (prev.has(nodeId)) {
-          // Contrair: remover este nó e seus descendentes
-          const toRemove = getDescendants(nodeId, mockMembersData);
-          toRemove.forEach(id => newSet.delete(id));
+          // Contrair: remover descendentes
+          const descendants = getDescendants(nodeId, mockMembersData);
+          descendants.forEach(id => newSet.delete(id));
         } else {
-          // Expandir: adicionar este nó
+          // Expandir: adicionar filhos diretos
           newSet.add(nodeId);
-          // Adicionar filhos diretos
           member.indicados.forEach(childId => newSet.add(childId));
         }
+        return newSet;
+      });
+    }
+  };
+
+  const toggleLevel = (level: number) => {
+    setVisibleLevels(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(level)) {
+        newSet.delete(level);
+      } else {
+        newSet.add(level);
+      }
+      return newSet;
+    });
+  };
+
+  const focusOnLevel = (level: number | null) => {
+    setFocusedLevel(level);
+    if (level !== null) {
+      // Expandir todos os nós do nível focado
+      const levelMembers = mockMembersData.filter(m => getNodeLevel(m.id, mockMembersData) === level);
+      setExpandedNodes(prev => {
+        const newSet = new Set(prev);
+        levelMembers.forEach(member => {
+          newSet.add(member.id);
+          if (member.indicador_id) newSet.add(member.indicador_id);
+        });
         return newSet;
       });
     }
@@ -300,6 +321,7 @@ export const GenealogyNetwork = () => {
 
   return (
     <div className="w-full h-[800px] relative">
+      {/* Controles superiores */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <Button
           variant="outline"
@@ -310,6 +332,7 @@ export const GenealogyNetwork = () => {
           {showMiniMap ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
           {showMiniMap ? 'Ocultar' : 'Mostrar'} Minimap
         </Button>
+        
         <Button
           variant="outline"
           size="sm"
@@ -319,6 +342,7 @@ export const GenealogyNetwork = () => {
           <Network className="w-4 h-4 mr-2" />
           Expandir Tudo
         </Button>
+        
         <Button
           variant="outline"
           size="sm"
@@ -328,34 +352,35 @@ export const GenealogyNetwork = () => {
           <Users className="w-4 h-4 mr-2" />
           Contrair Tudo
         </Button>
+
+        <Button
+          variant={focusedLevel !== null ? "default" : "outline"}
+          size="sm"
+          onClick={() => focusOnLevel(focusedLevel !== null ? null : 0)}
+          className="bg-white shadow-md"
+        >
+          <BarChart3 className="w-4 h-4 mr-2" />
+          {focusedLevel !== null ? 'Ver Todos' : 'Foco por Nível'}
+        </Button>
       </div>
 
-      <div className="absolute top-4 right-4 z-10">
-        <Card className="w-64 bg-white/95 backdrop-blur-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Network className="w-4 h-4" />
-              Legenda
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {Object.entries({
-              pastor: 'Pastor',
-              lider: 'Líder',
-              discipulador: 'Discipulador',
-              em_formacao: 'Em Formação',
-              novo_convertido: 'Novo Convertido'
-            }).map(([key, label]) => (
-              <div key={key} className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: getEstagioColor(key) }}
-                />
-                <span className="text-xs">{label}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {/* Controles de Nível */}
+      <div className="absolute top-4 right-4 z-10 space-y-2 max-w-sm">
+        <HierarchyLevelControls
+          levelMetrics={levelMetrics}
+          visibleLevels={visibleLevels}
+          focusedLevel={focusedLevel}
+          onToggleLevel={toggleLevel}
+          onFocusLevel={focusOnLevel}
+        />
+      </div>
+
+      {/* Métricas detalhadas */}
+      <div className="absolute bottom-4 right-4 z-10">
+        <LevelMetrics 
+          levelMetrics={levelMetrics}
+          totalMembers={mockMembersData.length}
+        />
       </div>
 
       <ReactFlow
@@ -377,7 +402,7 @@ export const GenealogyNetwork = () => {
             nodeStrokeWidth={3}
             nodeColor={(node) => {
               const nodeData = node.data as unknown as CustomNodeData;
-              return getEstagioColor(nodeData.membro.estagio);
+              return getLevelColor(nodeData.level);
             }}
           />
         )}
@@ -394,18 +419,31 @@ function getNodeLevel(nodeId: string, members: MemberData[]): number {
   return 1 + getNodeLevel(member.indicador_id, members);
 }
 
-function calculateNodePosition(nodeId: string, level: number, index: number, members: MemberData[]) {
-  const baseX = 400;
-  const baseY = 100;
-  const levelSpacing = 200;
-  const siblingSpacing = 300;
-  
-  // Encontrar irmãos (outros nós no mesmo nível com o mesmo pai)
+function getTotalDescendants(nodeId: string, members: MemberData[]): number {
   const member = members.find(m => m.id === nodeId);
-  const siblings = members.filter(m => m.indicador_id === member?.indicador_id);
+  if (!member) return 0;
+  
+  let total = member.indicados.length;
+  member.indicados.forEach(childId => {
+    total += getTotalDescendants(childId, members);
+  });
+  
+  return total;
+}
+
+function calculateNodePosition(nodeId: string, level: number, allMembers: typeof mockMembersData) {
+  const baseX = 400;
+  const baseY = 150;
+  const levelSpacing = 250;
+  const siblingSpacing = 350;
+  
+  // Encontrar irmãos no mesmo nível
+  const member = allMembers.find(m => m.id === nodeId);
+  const siblings = allMembers.filter(m => m.indicador_id === member?.indicador_id);
   const siblingIndex = siblings.findIndex(s => s.id === nodeId);
   
-  const x = baseX + (siblingIndex - siblings.length / 2) * siblingSpacing;
+  // Calcular posição com base no nível e posição entre irmãos
+  const x = baseX + (siblingIndex - (siblings.length - 1) / 2) * siblingSpacing;
   const y = baseY + level * levelSpacing;
   
   return { x, y };
@@ -423,4 +461,16 @@ function getDescendants(nodeId: string, members: MemberData[]): string[] {
   }
   
   return descendants;
+}
+
+function getLevelColor(level: number): string {
+  const colors = [
+    '#8B5CF6', // Nível 0 - Roxo
+    '#3B82F6', // Nível 1 - Azul
+    '#10B981', // Nível 2 - Verde
+    '#F59E0B', // Nível 3 - Amarelo
+    '#EF4444', // Nível 4 - Vermelho
+    '#6B7280', // Outros níveis - Cinza
+  ];
+  return colors[level] || colors[colors.length - 1];
 }
