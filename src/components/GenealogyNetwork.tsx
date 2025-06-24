@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   ReactFlow,
@@ -31,8 +32,8 @@ interface MemberData {
   indicados: string[];
 }
 
-// Interface para os dados do nó customizado
-interface CustomNodeData {
+// Interface para os dados do nó customizado - agora estende Record<string, unknown>
+interface CustomNodeData extends Record<string, unknown> {
   membro: MemberData;
   indicadosCount: number;
 }
@@ -237,7 +238,7 @@ export const GenealogyNetwork = () => {
         data: { 
           membro, 
           indicadosCount: membro.indicados.length 
-        } as CustomNodeData,
+        } satisfies CustomNodeData,
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
       };
@@ -375,7 +376,7 @@ export const GenealogyNetwork = () => {
             className="bg-white shadow-lg rounded-lg border"
             nodeStrokeWidth={3}
             nodeColor={(node) => {
-              const nodeData = node.data as CustomNodeData;
+              const nodeData = node.data as unknown as CustomNodeData;
               return getEstagioColor(nodeData.membro.estagio);
             }}
           />
