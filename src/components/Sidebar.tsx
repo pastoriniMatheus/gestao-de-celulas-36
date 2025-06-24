@@ -12,7 +12,8 @@ import {
   UserCog,
   MapPin,
   TrendingUp,
-  Contact
+  Contact,
+  TreePine
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,13 @@ const Sidebar = () => {
       description: 'Células domiciliares',
       path: '/cells', 
       show: permissions.canAccessCells 
+    },
+    { 
+      icon: TreePine, 
+      label: 'Genealogia da Igreja', 
+      description: 'Rede de discipulado',
+      path: '/genealogia', 
+      show: permissions.canAccessDashboard 
     },
     { 
       icon: MessageSquare, 
