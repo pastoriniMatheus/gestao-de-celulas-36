@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChevronDown, ChevronRight, Users, Crown } from 'lucide-react';
+import { ChevronDown, ChevronRight, Users, Crown, Phone, MapPin } from 'lucide-react';
 
 interface MemberData {
   id: string;
@@ -13,6 +13,9 @@ interface MemberData {
   estagio: string;
   indicador_id: string | null;
   indicados: string[];
+  whatsapp?: string | null;
+  neighborhood?: string;
+  status?: string;
 }
 
 interface CustomNodeData {
@@ -60,13 +63,13 @@ export const CustomNode: React.FC<{ data: CustomNodeData }> = ({ data }) => {
         <TooltipTrigger asChild>
           <div 
             className={`
-              relative px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[220px] 
+              relative px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[240px] max-w-[240px]
               cursor-pointer hover:shadow-xl transition-all duration-200
               ${level === 0 ? 'ring-2 ring-purple-200' : ''}
             `}
             style={{ 
               borderColor: getEstagioColor(membro.estagio),
-              transform: `scale(${1 - level * 0.05})` // Nodes menores em níveis mais profundos
+              transform: `scale(${Math.max(0.8, 1 - level * 0.03)})` // Escala menor
             }}
           >
             {/* Indicador de nível */}
@@ -89,8 +92,11 @@ export const CustomNode: React.FC<{ data: CustomNodeData }> = ({ data }) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 w-6 p-0 bg-white border-2 rounded-full"
+                  className="h-6 w-6 p-0 bg-white border-2 rounded-full hover:bg-gray-50"
                   style={{ borderColor: getEstagioColor(membro.estagio) }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                 >
                   {isExpanded ? 
                     <ChevronDown className="w-3 h-3" /> : 
@@ -101,17 +107,34 @@ export const CustomNode: React.FC<{ data: CustomNodeData }> = ({ data }) => {
             )}
 
             {/* Conteúdo do nó */}
-            <div className="text-sm font-semibold text-gray-900 mb-1">
+            <div className="text-sm font-semibold text-gray-900 mb-1 truncate">
               {membro.nome}
             </div>
             
-            <div className="text-xs text-gray-600 mb-1">
-              Líder: {membro.lider}
+            <div className="text-xs text-gray-600 mb-1 truncate">
+              <strong>Líder:</strong> {membro.lider}
             </div>
             
-            <div className="text-xs text-gray-600 mb-2">
-              {membro.celula}
+            <div className="text-xs text-gray-600 mb-2 truncate">
+              <strong>Célula:</strong> {membro.celula}
             </div>
+
+            {/* Informações adicionais */}
+            <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+              {membro.whatsapp && (
+                <div className="flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  <span className="truncate">{membro.whatsapp}</span>
+                </div>
+              )}
+            </div>
+
+            {membro.neighborhood && (
+              <div className="flex items-center gap-1 mb-2 text-xs text-gray-500">
+                <MapPin className="w-3 h-3" />
+                <span className="truncate">{membro.neighborhood}</span>
+              </div>
+            )}
             
             <div className="flex items-center justify-between">
               <Badge 
@@ -139,7 +162,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData }> = ({ data }) => {
                   className="h-1 rounded-full transition-all"
                   style={{ 
                     backgroundColor: getEstagioColor(membro.estagio),
-                    width: `${Math.min((totalDescendants / 10) * 100, 100)}%`
+                    width: `${Math.min((totalDescendants / 5) * 100, 100)}%`
                   }}
                 />
               </div>
@@ -150,11 +173,15 @@ export const CustomNode: React.FC<{ data: CustomNodeData }> = ({ data }) => {
           <div className="space-y-2">
             <p className="font-medium">{membro.nome}</p>
             <div className="text-sm space-y-1">
-              <p>Nível hierárquico: {level}</p>
-              <p>Indicações diretas: {indicadosCount}</p>
-              <p>Total de descendentes: {totalDescendants}</p>
-              <p>Estágio: {getEstagioLabel(membro.estagio)}</p>
-              <p>Célula: {membro.celula}</p>
+              <p><strong>Nível:</strong> {level}</p>
+              <p><strong>Indicações diretas:</strong> {indicadosCount}</p>
+              <p><strong>Total descendentes:</strong> {totalDescendants}</p>
+              <p><strong>Estágio:</strong> {getEstagioLabel(membro.estagio)}</p>
+              <p><strong>Célula:</strong> {membro.celula}</p>
+              <p><strong>Líder:</strong> {membro.lider}</p>
+              {membro.whatsapp && <p><strong>WhatsApp:</strong> {membro.whatsapp}</p>}
+              {membro.neighborhood && <p><strong>Bairro:</strong> {membro.neighborhood}</p>}
+              {membro.status && <p><strong>Status:</strong> {membro.status}</p>}
             </div>
           </div>
         </TooltipContent>

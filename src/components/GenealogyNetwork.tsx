@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -15,16 +15,15 @@ import {
   BackgroundVariant,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Network, Eye, EyeOff, ChevronDown, ChevronRight, BarChart3 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Users, Network, Eye, EyeOff, BarChart3 } from 'lucide-react';
 import { HierarchyLevelControls } from './genealogy/HierarchyLevelControls';
 import { LevelMetrics } from './genealogy/LevelMetrics';
 import { CustomNode } from './genealogy/CustomNode';
+import { useContacts } from '@/hooks/useContacts';
+import { useCells } from '@/hooks/useCells';
 
-// Interface para os dados dos membros
+// Interface para os dados dos membros baseada nos contatos reais
 interface MemberData {
   id: string;
   nome: string;
@@ -33,6 +32,9 @@ interface MemberData {
   estagio: string;
   indicador_id: string | null;
   indicados: string[];
+  whatsapp?: string | null;
+  neighborhood?: string;
+  status?: string;
 }
 
 // Interface para os dados do nó customizado
@@ -44,134 +46,94 @@ interface CustomNodeData extends Record<string, unknown> {
   totalDescendants: number;
 }
 
-// Dados simulados para a genealogia
-const mockMembersData: MemberData[] = [
-  {
-    id: '1',
-    nome: 'Pastor João Silva',
-    lider: 'Pastor Principal',
-    celula: 'Liderança Central',
-    estagio: 'pastor',
-    indicador_id: null,
-    indicados: ['2', '3', '4']
-  },
-  {
-    id: '2',
-    nome: 'Maria Santos',
-    lider: 'Pastor João',
-    celula: 'Célula Esperança',
-    estagio: 'discipulador',
-    indicador_id: '1',
-    indicados: ['5', '6']
-  },
-  {
-    id: '3',
-    nome: 'Pedro Lima',
-    lider: 'Pastor João',
-    celula: 'Célula Fé',
-    estagio: 'discipulador',
-    indicador_id: '1',
-    indicados: ['7', '8', '9']
-  },
-  {
-    id: '4',
-    nome: 'Ana Costa',
-    lider: 'Pastor João',
-    celula: 'Célula Amor',
-    estagio: 'lider',
-    indicador_id: '1',
-    indicados: ['10']
-  },
-  {
-    id: '5',
-    nome: 'Carlos Oliveira',
-    lider: 'Maria Santos',
-    celula: 'Célula Esperança',
-    estagio: 'em_formacao',
-    indicador_id: '2',
-    indicados: ['11']
-  },
-  {
-    id: '6',
-    nome: 'Sofia Almeida',
-    lider: 'Maria Santos',
-    celula: 'Célula Esperança',
-    estagio: 'novo_convertido',
-    indicador_id: '2',
-    indicados: []
-  },
-  {
-    id: '7',
-    nome: 'Roberto Silva',
-    lider: 'Pedro Lima',
-    celula: 'Célula Fé',
-    estagio: 'discipulador',
-    indicador_id: '3',
-    indicados: ['12']
-  },
-  {
-    id: '8',
-    nome: 'Carla Souza',
-    lider: 'Pedro Lima',
-    celula: 'Célula Fé',
-    estagio: 'em_formacao',
-    indicador_id: '3',
-    indicados: []
-  },
-  {
-    id: '9',
-    nome: 'Lucas Martins',
-    lider: 'Pedro Lima',
-    celula: 'Célula Fé',
-    estagio: 'novo_convertido',
-    indicador_id: '3',
-    indicados: []
-  },
-  {
-    id: '10',
-    nome: 'Julia Ferreira',
-    lider: 'Ana Costa',
-    celula: 'Célula Amor',
-    estagio: 'em_formacao',
-    indicador_id: '4',
-    indicados: []
-  },
-  {
-    id: '11',
-    nome: 'Diego Santos',
-    lider: 'Carlos Oliveira',
-    celula: 'Célula Esperança',
-    estagio: 'novo_convertido',
-    indicador_id: '5',
-    indicados: []
-  },
-  {
-    id: '12',
-    nome: 'Fernanda Lima',
-    lider: 'Roberto Silva',
-    celula: 'Célula Fé',
-    estagio: 'novo_convertido',
-    indicador_id: '7',
-    indicados: []
-  }
-];
-
 const nodeTypes = {
   customNode: CustomNode,
 };
 
 export const GenealogyNetwork = () => {
   const [showMiniMap, setShowMiniMap] = useState(true);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [visibleLevels, setVisibleLevels] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
   const [focusedLevel, setFocusedLevel] = useState<number | null>(null);
+  
+  // Hooks para dados reais
+  const { contacts, loading: contactsLoading } = useContacts();
+  const { cells, loading: cellsLoading } = useCells();
+
+  // Transformar contatos em dados de membros com hierarquia por indicação
+  const membersData = useMemo(() => {
+    if (contactsLoading || cellsLoading || !contacts.length) return [];
+
+    // Criar mapa de células para busca rápida
+    const cellsMap = new Map(cells.map(cell => [cell.id, cell]));
+
+    // Transformar contatos em membros
+    const members: MemberData[] = contacts.map(contact => {
+      const cell = contact.cell_id ? cellsMap.get(contact.cell_id) : null;
+      
+      // Mapear status/estágio do contato para estágios da genealogia
+      let estagio = 'novo_convertido';
+      if (contact.status === 'member' && contact.baptized && contact.encounter_with_god) {
+        estagio = 'discipulador';
+      } else if (contact.status === 'member' && contact.baptized) {
+        estagio = 'em_formacao';
+      } else if (contact.status === 'member') {
+        estagio = 'lider';
+      }
+
+      return {
+        id: contact.id,
+        nome: contact.name,
+        lider: cell?.leader_name || 'Sem líder',
+        celula: cell?.name || 'Sem célula',
+        estagio,
+        indicador_id: contact.referred_by || null,
+        indicados: [], // Será preenchido abaixo
+        whatsapp: contact.whatsapp,
+        neighborhood: contact.neighborhood,
+        status: contact.status
+      };
+    });
+
+    // Preencher array de indicados para cada membro
+    members.forEach(member => {
+      member.indicados = members
+        .filter(m => m.indicador_id === member.id)
+        .map(m => m.id);
+    });
+
+    // Se não há dados de referência, criar uma hierarquia básica por células
+    if (members.every(m => !m.indicador_id)) {
+      const leaderMembers = members.filter(m => m.status === 'member' && m.celula !== 'Sem célula');
+      const otherMembers = members.filter(m => m.status !== 'member' || m.celula === 'Sem célula');
+      
+      // Conectar membros sem célula aos líderes de célula
+      leaderMembers.forEach((leader, index) => {
+        const membersToAssign = otherMembers.slice(index * 2, (index + 1) * 2);
+        leader.indicados = membersToAssign.map(m => m.id);
+        membersToAssign.forEach(member => {
+          member.indicador_id = leader.id;
+        });
+      });
+    }
+
+    return members;
+  }, [contacts, cells, contactsLoading, cellsLoading]);
+
+  // Inicializar com alguns nós expandidos
+  useEffect(() => {
+    if (membersData.length > 0) {
+      const rootMembers = membersData.filter(m => !m.indicador_id);
+      setExpandedNodes(new Set(rootMembers.slice(0, 3).map(m => m.id)));
+    }
+  }, [membersData]);
 
   // Calcular métricas por nível
   const levelMetrics = useMemo(() => {
     const metrics: { [level: number]: { count: number; stages: { [stage: string]: number } } } = {};
     
-    mockMembersData.forEach(member => {
-      const level = getNodeLevel(member.id, mockMembersData);
+    membersData.forEach(member => {
+      const level = getNodeLevel(member.id, membersData);
       if (!metrics[level]) {
         metrics[level] = { count: 0, stages: {} };
       }
@@ -180,21 +142,23 @@ export const GenealogyNetwork = () => {
     });
     
     return metrics;
-  }, []);
+  }, [membersData]);
 
   const { nodes, edges } = useMemo(() => {
-    const allMembers = mockMembersData.map(member => ({
+    if (!membersData.length) return { nodes: [], edges: [] };
+
+    const allMembers = membersData.map(member => ({
       ...member,
-      level: getNodeLevel(member.id, mockMembersData),
-      totalDescendants: getTotalDescendants(member.id, mockMembersData)
+      level: getNodeLevel(member.id, membersData),
+      totalDescendants: getTotalDescendants(member.id, membersData)
     }));
 
     // Filtrar por níveis visíveis e nós expandidos
     const visibleMembers = allMembers.filter(member => {
       const shouldShowByLevel = visibleLevels.has(member.level);
-      const shouldShowByExpansion = expandedNodes.has(member.id) || 
-        (member.indicador_id && expandedNodes.has(member.indicador_id)) || 
-        member.level === 0;
+      const shouldShowByExpansion = member.level === 0 || // Sempre mostrar raiz
+        expandedNodes.has(member.id) || 
+        (member.indicador_id && expandedNodes.has(member.indicador_id));
       
       if (focusedLevel !== null) {
         return member.level === focusedLevel;
@@ -229,7 +193,7 @@ export const GenealogyNetwork = () => {
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
         style: {
-          zIndex: 1000 - membro.level, // Níveis superiores ficam por cima
+          zIndex: 1000 - membro.level,
         }
       };
     });
@@ -253,7 +217,7 @@ export const GenealogyNetwork = () => {
     });
 
     return { nodes, edges };
-  }, [expandedNodes, visibleLevels, focusedLevel]);
+  }, [membersData, expandedNodes, visibleLevels, focusedLevel]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -263,24 +227,24 @@ export const GenealogyNetwork = () => {
     [setEdges]
   );
 
-  const toggleNodeExpansion = (nodeId: string) => {
-    const member = mockMembersData.find(m => m.id === nodeId);
+  const toggleNodeExpansion = useCallback((nodeId: string) => {
+    const member = membersData.find(m => m.id === nodeId);
     if (member && member.indicados.length > 0) {
       setExpandedNodes(prev => {
         const newSet = new Set(prev);
+        
         if (prev.has(nodeId)) {
-          // Contrair: remover descendentes
-          const descendants = getDescendants(nodeId, mockMembersData);
-          descendants.forEach(id => newSet.delete(id));
+          // Contrair: remover este nó da lista de expandidos
+          newSet.delete(nodeId);
         } else {
-          // Expandir: adicionar filhos diretos
+          // Expandir: adicionar este nó à lista de expandidos
           newSet.add(nodeId);
-          member.indicados.forEach(childId => newSet.add(childId));
         }
+        
         return newSet;
       });
     }
-  };
+  }, [membersData]);
 
   const toggleLevel = (level: number) => {
     setVisibleLevels(prev => {
@@ -297,8 +261,7 @@ export const GenealogyNetwork = () => {
   const focusOnLevel = (level: number | null) => {
     setFocusedLevel(level);
     if (level !== null) {
-      // Expandir todos os nós do nível focado
-      const levelMembers = mockMembersData.filter(m => getNodeLevel(m.id, mockMembersData) === level);
+      const levelMembers = membersData.filter(m => getNodeLevel(m.id, membersData) === level);
       setExpandedNodes(prev => {
         const newSet = new Set(prev);
         levelMembers.forEach(member => {
@@ -316,8 +279,34 @@ export const GenealogyNetwork = () => {
   }, [nodes, edges, setNodes, setEdges]);
 
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
     toggleNodeExpansion(node.id);
-  }, []);
+  }, [toggleNodeExpansion]);
+
+  if (contactsLoading || cellsLoading) {
+    return (
+      <div className="w-full h-[800px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando dados da genealogia...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!membersData.length) {
+    return (
+      <div className="w-full h-[800px] flex items-center justify-center">
+        <div className="text-center">
+          <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">Nenhum dado de genealogia encontrado.</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Adicione contatos com referências para visualizar a rede de discipulado.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-[800px] relative">
@@ -336,7 +325,7 @@ export const GenealogyNetwork = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setExpandedNodes(new Set(mockMembersData.map(m => m.id)))}
+          onClick={() => setExpandedNodes(new Set(membersData.map(m => m.id)))}
           className="bg-white shadow-md"
         >
           <Network className="w-4 h-4 mr-2" />
@@ -346,7 +335,10 @@ export const GenealogyNetwork = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setExpandedNodes(new Set(['1']))}
+          onClick={() => {
+            const rootMembers = membersData.filter(m => !m.indicador_id);
+            setExpandedNodes(new Set(rootMembers.map(m => m.id)));
+          }}
           className="bg-white shadow-md"
         >
           <Users className="w-4 h-4 mr-2" />
@@ -364,8 +356,8 @@ export const GenealogyNetwork = () => {
         </Button>
       </div>
 
-      {/* Controles de Nível */}
-      <div className="absolute top-4 right-4 z-10 space-y-2 max-w-sm">
+      {/* Controles de Nível - movido para baixo para não sobrepor */}
+      <div className="absolute top-16 right-4 z-10 space-y-2 max-w-sm">
         <HierarchyLevelControls
           levelMetrics={levelMetrics}
           visibleLevels={visibleLevels}
@@ -375,11 +367,11 @@ export const GenealogyNetwork = () => {
         />
       </div>
 
-      {/* Métricas detalhadas */}
-      <div className="absolute bottom-4 right-4 z-10">
+      {/* Métricas detalhadas - lado esquerdo para não sobrepor */}
+      <div className="absolute bottom-4 left-4 z-10">
         <LevelMetrics 
           levelMetrics={levelMetrics}
-          totalMembers={mockMembersData.length}
+          totalMembers={membersData.length}
         />
       </div>
 
@@ -392,7 +384,7 @@ export const GenealogyNetwork = () => {
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         fitView
-        attributionPosition="bottom-left"
+        attributionPosition="bottom-right"
         className="bg-gradient-to-br from-blue-50 to-purple-50"
       >
         <Controls className="bg-white shadow-lg rounded-lg" />
@@ -431,36 +423,20 @@ function getTotalDescendants(nodeId: string, members: MemberData[]): number {
   return total;
 }
 
-function calculateNodePosition(nodeId: string, level: number, allMembers: typeof mockMembersData) {
+function calculateNodePosition(nodeId: string, level: number, allMembers: MemberData[]) {
   const baseX = 400;
-  const baseY = 150;
-  const levelSpacing = 250;
-  const siblingSpacing = 350;
+  const baseY = 100;  // Reduzido para dar mais espaço
+  const levelSpacing = 200;  // Reduzido para compactar
+  const siblingSpacing = 280;
   
-  // Encontrar irmãos no mesmo nível
   const member = allMembers.find(m => m.id === nodeId);
   const siblings = allMembers.filter(m => m.indicador_id === member?.indicador_id);
   const siblingIndex = siblings.findIndex(s => s.id === nodeId);
   
-  // Calcular posição com base no nível e posição entre irmãos
   const x = baseX + (siblingIndex - (siblings.length - 1) / 2) * siblingSpacing;
   const y = baseY + level * levelSpacing;
   
   return { x, y };
-}
-
-function getDescendants(nodeId: string, members: MemberData[]): string[] {
-  const descendants: string[] = [];
-  const member = members.find(m => m.id === nodeId);
-  
-  if (member) {
-    member.indicados.forEach(childId => {
-      descendants.push(childId);
-      descendants.push(...getDescendants(childId, members));
-    });
-  }
-  
-  return descendants;
 }
 
 function getLevelColor(level: number): string {
