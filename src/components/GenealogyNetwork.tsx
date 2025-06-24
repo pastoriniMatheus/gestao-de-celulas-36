@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   ReactFlow,
@@ -12,6 +11,7 @@ import {
   Edge,
   Node,
   Position,
+  BackgroundVariant,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,8 +20,25 @@ import { Button } from '@/components/ui/button';
 import { Users, Network, Eye, EyeOff } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// Interface para os dados dos membros
+interface MemberData {
+  id: string;
+  nome: string;
+  lider: string;
+  celula: string;
+  estagio: string;
+  indicador_id: string | null;
+  indicados: string[];
+}
+
+// Interface para os dados do nó customizado
+interface CustomNodeData {
+  membro: MemberData;
+  indicadosCount: number;
+}
+
 // Dados simulados para a genealogia
-const mockMembersData = [
+const mockMembersData: MemberData[] = [
   {
     id: '1',
     nome: 'Pastor João Silva',
@@ -154,7 +171,7 @@ const getEstagioLabel = (estagio: string) => {
   return labels[estagio as keyof typeof labels] || estagio;
 };
 
-const CustomNode = ({ data }: { data: any }) => {
+const CustomNode = ({ data }: { data: CustomNodeData }) => {
   const { membro, indicadosCount } = data;
   
   return (
@@ -220,7 +237,7 @@ export const GenealogyNetwork = () => {
         data: { 
           membro, 
           indicadosCount: membro.indicados.length 
-        },
+        } as CustomNodeData,
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
       };
@@ -357,23 +374,26 @@ export const GenealogyNetwork = () => {
           <MiniMap 
             className="bg-white shadow-lg rounded-lg border"
             nodeStrokeWidth={3}
-            nodeColor={(node) => getEstagioColor(node.data.membro.estagio)}
+            nodeColor={(node) => {
+              const nodeData = node.data as CustomNodeData;
+              return getEstagioColor(nodeData.membro.estagio);
+            }}
           />
         )}
-        <Background variant="dots" gap={20} size={1} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
       </ReactFlow>
     </div>
   );
 };
 
 // Funções auxiliares
-function getNodeLevel(nodeId: string, members: typeof mockMembersData): number {
+function getNodeLevel(nodeId: string, members: MemberData[]): number {
   const member = members.find(m => m.id === nodeId);
   if (!member || !member.indicador_id) return 0;
   return 1 + getNodeLevel(member.indicador_id, members);
 }
 
-function calculateNodePosition(nodeId: string, level: number, index: number, members: typeof mockMembersData) {
+function calculateNodePosition(nodeId: string, level: number, index: number, members: MemberData[]) {
   const baseX = 400;
   const baseY = 100;
   const levelSpacing = 200;
@@ -390,7 +410,7 @@ function calculateNodePosition(nodeId: string, level: number, index: number, mem
   return { x, y };
 }
 
-function getDescendants(nodeId: string, members: typeof mockMembersData): string[] {
+function getDescendants(nodeId: string, members: MemberData[]): string[] {
   const descendants: string[] = [];
   const member = members.find(m => m.id === nodeId);
   
