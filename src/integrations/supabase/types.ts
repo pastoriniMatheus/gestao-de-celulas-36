@@ -271,6 +271,7 @@ export type Database = {
           id: string
           name: string
           neighborhood: string
+          photo_url: string | null
           pipeline_stage_id: string | null
           referred_by: string | null
           status: string
@@ -291,6 +292,7 @@ export type Database = {
           id?: string
           name: string
           neighborhood: string
+          photo_url?: string | null
           pipeline_stage_id?: string | null
           referred_by?: string | null
           status?: string
@@ -311,6 +313,7 @@ export type Database = {
           id?: string
           name?: string
           neighborhood?: string
+          photo_url?: string | null
           pipeline_stage_id?: string | null
           referred_by?: string | null
           status?: string
