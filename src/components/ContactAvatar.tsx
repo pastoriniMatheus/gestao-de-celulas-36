@@ -24,19 +24,14 @@ export const ContactAvatar: React.FC<ContactAvatarProps> = ({
       .slice(0, 2);
   };
 
-  const getSizeClasses = (size: string) => {
-    switch (size) {
-      case 'sm':
-        return 'w-8 h-8 text-xs';
-      case 'lg':
-        return 'w-16 h-16 text-lg';
-      default:
-        return 'w-10 h-10 text-sm';
-    }
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-12 h-12 text-sm',
+    lg: 'w-16 h-16 text-base'
   };
 
   return (
-    <Avatar className={`${getSizeClasses(size)} ${className}`}>
+    <Avatar className={`${sizeClasses[size]} ${className}`}>
       <AvatarImage src={photoUrl || ''} alt={name} />
       <AvatarFallback className="bg-gradient-to-br from-purple-400 to-blue-400 text-white font-semibold">
         {getInitials(name)}

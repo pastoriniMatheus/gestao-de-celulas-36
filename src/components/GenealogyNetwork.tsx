@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
@@ -15,10 +16,10 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { Users, Network, Eye, EyeOff, BarChart3, UserPlus } from 'lucide-react';
+import { Users, Network, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { PyramidLevelControls } from './genealogy/PyramidLevelControls';
 import { NetworkMetrics } from './genealogy/NetworkMetrics';
-import { GenealogyNode } from './genealogy/GenealogyNode';
+import { CompactGenealogyNode } from './genealogy/CompactGenealogyNode';
 import { StandbyPanel } from './genealogy/StandbyPanel';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
@@ -47,7 +48,7 @@ interface CustomNodeData extends Record<string, unknown> {
 }
 
 const nodeTypes = {
-  genealogyNode: GenealogyNode,
+  compactGenealogyNode: CompactGenealogyNode,
 };
 
 export const GenealogyNetwork = () => {
@@ -55,26 +56,10 @@ export const GenealogyNetwork = () => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [visibleLevels, setVisibleLevels] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
   const [focusedLevel, setFocusedLevel] = useState<number | null>(null);
-  const [showStandby, setShowStandby] = useState(true);
+  const [showStandby, setShowStandby] = useState(false);
   
   const { contacts, loading: contactsLoading } = useContacts();
   const { cells, loading: cellsLoading } = useCells();
-
-  // Define toggleNodeExpansion BEFORE it's used in useMemo
-  const toggleNodeExpansion = useCallback((nodeId: string) => {
-    const member = connectedMembers.find(m => m.id === nodeId);
-    if (member && member.referrals.length > 0) {
-      setExpandedNodes(prev => {
-        const newSet = new Set(prev);
-        if (prev.has(nodeId)) {
-          newSet.delete(nodeId);
-        } else {
-          newSet.add(nodeId);
-        }
-        return newSet;
-      });
-    }
-  }, []);
 
   // Processar dados dos contatos em estrutura hierárquica
   const { connectedMembers, standbyMembers } = useMemo(() => {
@@ -116,7 +101,7 @@ export const GenealogyNetwork = () => {
       member.totalDescendants = calculateTotalDescendants(member.id, allMembers);
     });
 
-    // Separar membros conectados (com referência ou sendo referência) dos em standby
+    // Separar membros conectados dos em standby
     const connected = allMembers.filter(member => 
       member.referredBy || member.referrals.length > 0
     );
@@ -128,7 +113,6 @@ export const GenealogyNetwork = () => {
     return { connectedMembers: connected, standbyMembers: standby };
   }, [contacts, cells, contactsLoading, cellsLoading]);
 
-  // Update the toggleNodeExpansion to use the processed data
   const toggleNodeExpansionCallback = useCallback((nodeId: string) => {
     const member = connectedMembers.find(m => m.id === nodeId);
     if (member && member.referrals.length > 0) {
@@ -148,7 +132,7 @@ export const GenealogyNetwork = () => {
   useEffect(() => {
     if (connectedMembers.length > 0) {
       const rootMembers = connectedMembers.filter(m => !m.referredBy);
-      setExpandedNodes(new Set(rootMembers.slice(0, 2).map(m => m.id)));
+      setExpandedNodes(new Set(rootMembers.slice(0, 3).map(m => m.id)));
     }
   }, [connectedMembers]);
 
@@ -168,14 +152,14 @@ export const GenealogyNetwork = () => {
     return metrics;
   }, [connectedMembers]);
 
-  // Gerar nós e arestas da rede
+  // Gerar nós e arestas da rede - Layout mais compacto
   const { nodes, edges } = useMemo(() => {
     if (!connectedMembers.length) return { nodes: [], edges: [] };
 
     // Filtrar membros por níveis visíveis e nós expandidos
     const visibleMembers = connectedMembers.filter(member => {
       const shouldShowByLevel = visibleLevels.has(member.level);
-      const shouldShowByExpansion = member.level === 0 || // Sempre mostrar raiz
+      const shouldShowByExpansion = member.level === 0 || 
         expandedNodes.has(member.id) || 
         (member.referredBy && expandedNodes.has(member.referredBy));
       
@@ -187,12 +171,12 @@ export const GenealogyNetwork = () => {
     });
 
     const nodes: Node[] = visibleMembers.map((member) => {
-      const position = calculatePyramidPosition(member, visibleMembers);
+      const position = calculateCompactPosition(member, visibleMembers);
       const isExpanded = expandedNodes.has(member.id);
       
       return {
         id: member.id,
-        type: 'genealogyNode',
+        type: 'compactGenealogyNode',
         position,
         data: {
           member,
@@ -276,9 +260,9 @@ export const GenealogyNetwork = () => {
 
   if (contactsLoading || cellsLoading) {
     return (
-      <div className="w-full h-[800px] flex items-center justify-center">
+      <div className="w-full h-[600px] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Carregando rede de genealogia...</p>
         </div>
       </div>
@@ -287,7 +271,7 @@ export const GenealogyNetwork = () => {
 
   if (!connectedMembers.length && !standbyMembers.length) {
     return (
-      <div className="w-full h-[800px] flex items-center justify-center">
+      <div className="w-full h-[600px] flex items-center justify-center">
         <div className="text-center">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600">Nenhum membro encontrado para a rede de genealogia.</p>
@@ -300,27 +284,27 @@ export const GenealogyNetwork = () => {
   }
 
   return (
-    <div className="w-full h-[800px] relative">
-      {/* Controles superiores */}
-      <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+    <div className="w-full h-[600px] relative border rounded-lg overflow-hidden">
+      {/* Controles superiores compactos */}
+      <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-1">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShowMiniMap(!showMiniMap)}
-          className="bg-white/90 backdrop-blur-sm shadow-md"
+          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
         >
-          {showMiniMap ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-          Minimap
+          {showMiniMap ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
+          Mapa
         </Button>
         
         <Button
           variant="outline"
           size="sm"
           onClick={() => setExpandedNodes(new Set(connectedMembers.map(m => m.id)))}
-          className="bg-white/90 backdrop-blur-sm shadow-md"
+          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
         >
-          <Network className="w-4 h-4 mr-2" />
-          Expandir Tudo
+          <Network className="w-3 h-3 mr-1" />
+          Expandir
         </Button>
         
         <Button
@@ -330,9 +314,9 @@ export const GenealogyNetwork = () => {
             const rootMembers = connectedMembers.filter(m => !m.referredBy);
             setExpandedNodes(new Set(rootMembers.map(m => m.id)));
           }}
-          className="bg-white/90 backdrop-blur-sm shadow-md"
+          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
         >
-          <Users className="w-4 h-4 mr-2" />
+          <Users className="w-3 h-3 mr-1" />
           Colapsar
         </Button>
 
@@ -340,15 +324,15 @@ export const GenealogyNetwork = () => {
           variant={showStandby ? "default" : "outline"}
           size="sm"
           onClick={() => setShowStandby(!showStandby)}
-          className="bg-white/90 backdrop-blur-sm shadow-md"
+          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
         >
-          <UserPlus className="w-4 h-4 mr-2" />
+          <UserPlus className="w-3 h-3 mr-1" />
           Standby ({standbyMembers.length})
         </Button>
       </div>
 
-      {/* Controles de Pirâmide */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Controles de Pirâmide compactos */}
+      <div className="absolute top-2 right-2 z-10">
         <PyramidLevelControls
           levelMetrics={levelMetrics}
           visibleLevels={visibleLevels}
@@ -358,8 +342,8 @@ export const GenealogyNetwork = () => {
         />
       </div>
 
-      {/* Métricas da Rede */}
-      <div className="absolute bottom-4 left-4 z-10">
+      {/* Métricas da Rede compactas */}
+      <div className="absolute bottom-2 left-2 z-10">
         <NetworkMetrics 
           levelMetrics={levelMetrics}
           totalConnected={connectedMembers.length}
@@ -369,7 +353,7 @@ export const GenealogyNetwork = () => {
 
       {/* Painel de Standby */}
       {showStandby && (
-        <div className="absolute bottom-4 right-4 z-10">
+        <div className="absolute bottom-2 right-2 z-10">
           <StandbyPanel members={standbyMembers} />
         </div>
       )}
@@ -383,21 +367,25 @@ export const GenealogyNetwork = () => {
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.1 }}
         attributionPosition="bottom-right"
         className="bg-gradient-to-br from-blue-50 to-purple-50"
+        minZoom={0.3}
+        maxZoom={2}
       >
-        <Controls className="bg-white/90 backdrop-blur-sm shadow-lg rounded-lg" />
+        <Controls className="bg-white/95 backdrop-blur-sm shadow-md rounded-md" />
         {showMiniMap && (
           <MiniMap 
-            className="bg-white/90 backdrop-blur-sm shadow-lg rounded-lg border"
-            nodeStrokeWidth={3}
+            className="bg-white/95 backdrop-blur-sm shadow-md rounded-md border"
+            nodeStrokeWidth={2}
             nodeColor={(node) => {
               const nodeData = node.data as unknown as CustomNodeData;
               return getLevelColor(nodeData.member.level);
             }}
+            style={{ width: 120, height: 80 }}
           />
         )}
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+        <Background variant={BackgroundVariant.Dots} gap={15} size={0.5} />
       </ReactFlow>
     </div>
   );
@@ -422,21 +410,24 @@ function calculateTotalDescendants(memberId: string, members: MemberNode[]): num
   return total;
 }
 
-function calculatePyramidPosition(member: MemberNode, allMembers: MemberNode[]) {
-  const baseY = 100;
-  const levelSpacing = 180;
-  const siblingSpacing = 250;
+// Layout mais compacto e centralizado
+function calculateCompactPosition(member: MemberNode, allMembers: MemberNode[]) {
+  const baseY = 40;
+  const levelSpacing = 120; // Menor espaçamento vertical
+  const siblingSpacing = 200; // Menor espaçamento horizontal
   
   // Membros do mesmo nível e mesmo pai
   const siblings = allMembers.filter(m => m.referredBy === member.referredBy && m.level === member.level);
   const siblingIndex = siblings.findIndex(s => s.id === member.id);
   
-  // Posição X baseada na pirâmide - mais centralizada nos níveis superiores
+  // Posição X mais centralizada
   const levelWidth = Math.max(1, siblings.length);
   const centerOffset = (siblingIndex - (levelWidth - 1) / 2) * siblingSpacing;
-  const levelIndent = member.level * 50; // Indentação crescente por nível
   
-  const x = 400 + centerOffset - levelIndent;
+  // Reduzir indentação por nível
+  const levelIndent = member.level * 20;
+  
+  const x = 300 + centerOffset - levelIndent;
   const y = baseY + member.level * levelSpacing;
   
   return { x, y };
