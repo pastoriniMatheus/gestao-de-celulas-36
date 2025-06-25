@@ -1,26 +1,10 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  ReactFlow,
-  MiniMap,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Connection,
-  Edge,
-  Node,
-  Position,
-  BackgroundVariant,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { Users, Network, Eye, EyeOff, UserPlus } from 'lucide-react';
-import { PyramidLevelControls } from './genealogy/PyramidLevelControls';
-import { NetworkMetrics } from './genealogy/NetworkMetrics';
-import { CompactGenealogyNode } from './genealogy/CompactGenealogyNode';
+import { Users, Network, Eye, EyeOff, UserPlus, TreePine, List } from 'lucide-react';
+import { HierarchicalGenealogyNode } from './genealogy/HierarchicalGenealogyNode';
 import { StandbyPanel } from './genealogy/StandbyPanel';
+import { NetworkMetrics } from './genealogy/NetworkMetrics';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
 
@@ -41,30 +25,18 @@ interface MemberNode {
   photo_url: string | null;
 }
 
-interface CustomNodeData extends Record<string, unknown> {
-  member: MemberNode;
-  isExpanded: boolean;
-  onToggleExpansion: (nodeId: string) => void;
-}
-
-const nodeTypes = {
-  compactGenealogyNode: CompactGenealogyNode,
-};
-
 export const GenealogyNetwork = () => {
-  const [showMiniMap, setShowMiniMap] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [visibleLevels, setVisibleLevels] = useState<Set<number>>(new Set([0, 1, 2, 3, 4]));
-  const [focusedLevel, setFocusedLevel] = useState<number | null>(null);
   const [showStandby, setShowStandby] = useState(false);
+  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
   
   const { contacts, loading: contactsLoading } = useContacts();
   const { cells, loading: cellsLoading } = useCells();
 
   // Processar dados dos contatos em estrutura hierárquica
-  const { connectedMembers, standbyMembers } = useMemo(() => {
+  const { connectedMembers, standbyMembers, hierarchicalData } = useMemo(() => {
     if (contactsLoading || cellsLoading || !contacts.length) {
-      return { connectedMembers: [], standbyMembers: [] };
+      return { connectedMembers: [], standbyMembers: [], hierarchicalData: [] };
     }
 
     const cellsMap = new Map(cells.map(cell => [cell.id, cell]));
@@ -110,23 +82,23 @@ export const GenealogyNetwork = () => {
       !member.referredBy && member.referrals.length === 0
     );
 
-    return { connectedMembers: connected, standbyMembers: standby };
+    // Criar estrutura hierárquica
+    const hierarchical = buildHierarchicalStructure(connected);
+
+    return { connectedMembers: connected, standbyMembers: standby, hierarchicalData: hierarchical };
   }, [contacts, cells, contactsLoading, cellsLoading]);
 
-  const toggleNodeExpansionCallback = useCallback((nodeId: string) => {
-    const member = connectedMembers.find(m => m.id === nodeId);
-    if (member && member.referrals.length > 0) {
-      setExpandedNodes(prev => {
-        const newSet = new Set(prev);
-        if (prev.has(nodeId)) {
-          newSet.delete(nodeId);
-        } else {
-          newSet.add(nodeId);
-        }
-        return newSet;
-      });
-    }
-  }, [connectedMembers]);
+  const toggleNodeExpansion = useCallback((nodeId: string) => {
+    setExpandedNodes(prev => {
+      const newSet = new Set(prev);
+      if (prev.has(nodeId)) {
+        newSet.delete(nodeId);
+      } else {
+        newSet.add(nodeId);
+      }
+      return newSet;
+    });
+  }, []);
 
   // Inicializar com nós raiz expandidos
   useEffect(() => {
@@ -152,111 +124,14 @@ export const GenealogyNetwork = () => {
     return metrics;
   }, [connectedMembers]);
 
-  // Gerar nós e arestas da rede - Layout mais compacto
-  const { nodes, edges } = useMemo(() => {
-    if (!connectedMembers.length) return { nodes: [], edges: [] };
-
-    // Filtrar membros por níveis visíveis e nós expandidos
-    const visibleMembers = connectedMembers.filter(member => {
-      const shouldShowByLevel = visibleLevels.has(member.level);
-      const shouldShowByExpansion = member.level === 0 || 
-        expandedNodes.has(member.id) || 
-        (member.referredBy && expandedNodes.has(member.referredBy));
-      
-      if (focusedLevel !== null) {
-        return member.level === focusedLevel;
-      }
-      
-      return shouldShowByLevel && shouldShowByExpansion;
-    });
-
-    const nodes: Node[] = visibleMembers.map((member) => {
-      const position = calculateCompactPosition(member, visibleMembers);
-      const isExpanded = expandedNodes.has(member.id);
-      
-      return {
-        id: member.id,
-        type: 'compactGenealogyNode',
-        position,
-        data: {
-          member,
-          isExpanded,
-          onToggleExpansion: toggleNodeExpansionCallback
-        } satisfies CustomNodeData,
-        sourcePosition: Position.Bottom,
-        targetPosition: Position.Top,
-        style: {
-          zIndex: 1000 - member.level,
-        }
-      };
-    });
-
-    const edges: Edge[] = [];
-    visibleMembers.forEach(member => {
-      if (member.referredBy && visibleMembers.find(m => m.id === member.referredBy)) {
-        edges.push({
-          id: `${member.referredBy}-${member.id}`,
-          source: member.referredBy,
-          target: member.id,
-          type: 'smoothstep',
-          animated: false,
-          style: { 
-            strokeWidth: 2, 
-            stroke: getLevelColor(member.level),
-            opacity: focusedLevel !== null ? (member.level === focusedLevel ? 1 : 0.3) : 1
-          },
-        });
-      }
-    });
-
-    return { nodes, edges };
-  }, [connectedMembers, expandedNodes, visibleLevels, focusedLevel, toggleNodeExpansionCallback]);
-
-  const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
-  const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
-
-  const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
-
-  const toggleLevel = (level: number) => {
-    setVisibleLevels(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(level)) {
-        newSet.delete(level);
-      } else {
-        newSet.add(level);
-      }
-      return newSet;
-    });
+  const expandAll = () => {
+    setExpandedNodes(new Set(connectedMembers.map(m => m.id)));
   };
 
-  const focusOnLevel = (level: number | null) => {
-    setFocusedLevel(level);
-    if (level !== null) {
-      const levelMembers = connectedMembers.filter(m => m.level === level);
-      setExpandedNodes(prev => {
-        const newSet = new Set(prev);
-        levelMembers.forEach(member => {
-          newSet.add(member.id);
-          if (member.referredBy) newSet.add(member.referredBy);
-        });
-        return newSet;
-      });
-    }
+  const collapseAll = () => {
+    const rootMembers = connectedMembers.filter(m => !m.referredBy);
+    setExpandedNodes(new Set(rootMembers.map(m => m.id)));
   };
-
-  React.useEffect(() => {
-    setNodes(nodes);
-    setEdges(edges);
-  }, [nodes, edges, setNodes, setEdges]);
-
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    event.preventDefault();
-    const nodeData = node.data as CustomNodeData;
-    nodeData.onToggleExpansion(node.id);
-  }, []);
 
   if (contactsLoading || cellsLoading) {
     return (
@@ -284,65 +159,73 @@ export const GenealogyNetwork = () => {
   }
 
   return (
-    <div className="w-full h-[600px] relative border rounded-lg overflow-hidden">
-      {/* Controles superiores compactos */}
-      <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowMiniMap(!showMiniMap)}
-          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
-        >
-          {showMiniMap ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
-          Mapa
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setExpandedNodes(new Set(connectedMembers.map(m => m.id)))}
-          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
-        >
-          <Network className="w-3 h-3 mr-1" />
-          Expandir
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const rootMembers = connectedMembers.filter(m => !m.referredBy);
-            setExpandedNodes(new Set(rootMembers.map(m => m.id)));
-          }}
-          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
-        >
-          <Users className="w-3 h-3 mr-1" />
-          Colapsar
-        </Button>
+    <div className="w-full h-[600px] relative border rounded-lg overflow-hidden bg-white">
+      {/* Header com controles */}
+      <div className="absolute top-0 left-0 right-0 z-10 bg-white border-b p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="text-xs h-8"
+            >
+              <List className="w-4 h-4 mr-1" />
+              Lista
+            </Button>
+            
+            {viewMode === 'list' && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={expandAll}
+                  className="text-xs h-8"
+                >
+                  <Network className="w-4 h-4 mr-1" />
+                  Expandir
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={collapseAll}
+                  className="text-xs h-8"
+                >
+                  <Users className="w-4 h-4 mr-1" />
+                  Colapsar
+                </Button>
+              </>
+            )}
+          </div>
 
-        <Button
-          variant={showStandby ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowStandby(!showStandby)}
-          className="bg-white/95 backdrop-blur-sm shadow-sm text-xs h-7"
-        >
-          <UserPlus className="w-3 h-3 mr-1" />
-          Standby ({standbyMembers.length})
-        </Button>
+          <Button
+            variant={showStandby ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowStandby(!showStandby)}
+            className="text-xs h-8"
+          >
+            <UserPlus className="w-4 h-4 mr-1" />
+            Standby ({standbyMembers.length})
+          </Button>
+        </div>
       </div>
 
-      {/* Controles de Pirâmide compactos */}
-      <div className="absolute top-2 right-2 z-10">
-        <PyramidLevelControls
-          levelMetrics={levelMetrics}
-          visibleLevels={visibleLevels}
-          focusedLevel={focusedLevel}
-          onToggleLevel={toggleLevel}
-          onFocusLevel={focusOnLevel}
-        />
+      {/* Conteúdo principal */}
+      <div className="pt-16 pb-2 h-full overflow-y-auto">
+        {hierarchicalData.map(rootMember => (
+          <HierarchicalTreeView 
+            key={rootMember.id}
+            member={rootMember}
+            allMembers={connectedMembers}
+            expandedNodes={expandedNodes}
+            onToggleExpansion={toggleNodeExpansion}
+            level={0}
+          />
+        ))}
       </div>
 
-      {/* Métricas da Rede compactas */}
+      {/* Métricas da Rede */}
       <div className="absolute bottom-2 left-2 z-10">
         <NetworkMetrics 
           levelMetrics={levelMetrics}
@@ -357,36 +240,51 @@ export const GenealogyNetwork = () => {
           <StandbyPanel members={standbyMembers} />
         </div>
       )}
+    </div>
+  );
+};
 
-      <ReactFlow
-        nodes={flowNodes}
-        edges={flowEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={handleNodeClick}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.1 }}
-        attributionPosition="bottom-right"
-        className="bg-gradient-to-br from-blue-50 to-purple-50"
-        minZoom={0.3}
-        maxZoom={2}
-      >
-        <Controls className="bg-white/95 backdrop-blur-sm shadow-md rounded-md" />
-        {showMiniMap && (
-          <MiniMap 
-            className="bg-white/95 backdrop-blur-sm shadow-md rounded-md border"
-            nodeStrokeWidth={2}
-            nodeColor={(node) => {
-              const nodeData = node.data as unknown as CustomNodeData;
-              return getLevelColor(nodeData.member.level);
-            }}
-            style={{ width: 120, height: 80 }}
-          />
-        )}
-        <Background variant={BackgroundVariant.Dots} gap={15} size={0.5} />
-      </ReactFlow>
+// Componente para renderizar árvore hierárquica
+interface HierarchicalTreeViewProps {
+  member: MemberNode;
+  allMembers: MemberNode[];
+  expandedNodes: Set<string>;
+  onToggleExpansion: (nodeId: string) => void;
+  level: number;
+}
+
+const HierarchicalTreeView: React.FC<HierarchicalTreeViewProps> = ({
+  member,
+  allMembers,
+  expandedNodes,
+  onToggleExpansion,
+  level
+}) => {
+  // Encontrar filhos diretos
+  const children = allMembers.filter(m => m.referredBy === member.id);
+  const isExpanded = expandedNodes.has(member.id);
+
+  return (
+    <div>
+      <HierarchicalGenealogyNode
+        member={member}
+        children={children}
+        isExpanded={isExpanded}
+        onToggleExpansion={onToggleExpansion}
+        level={level}
+      />
+      
+      {/* Renderizar filhos recursivamente */}
+      {isExpanded && children.map(child => (
+        <HierarchicalTreeView
+          key={child.id}
+          member={child}
+          allMembers={allMembers}
+          expandedNodes={expandedNodes}
+          onToggleExpansion={onToggleExpansion}
+          level={level + 1}
+        />
+      ))}
     </div>
   );
 };
@@ -410,37 +308,7 @@ function calculateTotalDescendants(memberId: string, members: MemberNode[]): num
   return total;
 }
 
-// Layout mais compacto e centralizado
-function calculateCompactPosition(member: MemberNode, allMembers: MemberNode[]) {
-  const baseY = 40;
-  const levelSpacing = 120; // Menor espaçamento vertical
-  const siblingSpacing = 200; // Menor espaçamento horizontal
-  
-  // Membros do mesmo nível e mesmo pai
-  const siblings = allMembers.filter(m => m.referredBy === member.referredBy && m.level === member.level);
-  const siblingIndex = siblings.findIndex(s => s.id === member.id);
-  
-  // Posição X mais centralizada
-  const levelWidth = Math.max(1, siblings.length);
-  const centerOffset = (siblingIndex - (levelWidth - 1) / 2) * siblingSpacing;
-  
-  // Reduzir indentação por nível
-  const levelIndent = member.level * 20;
-  
-  const x = 300 + centerOffset - levelIndent;
-  const y = baseY + member.level * levelSpacing;
-  
-  return { x, y };
-}
-
-function getLevelColor(level: number): string {
-  const colors = [
-    '#8B5CF6', // Nível 0 - Roxo (Pastores)
-    '#3B82F6', // Nível 1 - Azul (Líderes)
-    '#10B981', // Nível 2 - Verde (Discipuladores)
-    '#F59E0B', // Nível 3 - Amarelo (Em Formação)
-    '#EF4444', // Nível 4 - Vermelho (Novos)
-    '#6B7280', // Outros níveis - Cinza
-  ];
-  return colors[level] || colors[colors.length - 1];
+function buildHierarchicalStructure(members: MemberNode[]): MemberNode[] {
+  // Retornar apenas os membros raiz (sem referredBy)
+  return members.filter(member => !member.referredBy);
 }

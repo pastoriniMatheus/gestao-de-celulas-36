@@ -49,21 +49,28 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
       // Create unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `contact-photos/${fileName}`;
+      const filePath = fileName;
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading photo to bucket "photos" with path:', filePath);
+
+      // Upload to Supabase Storage in the photos bucket
+      const { error: uploadError, data } = await supabase.storage
         .from('photos')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
+
+      console.log('Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('photos')
         .getPublicUrl(filePath);
+
+      console.log('Public URL generated:', publicUrl);
 
       onPhotoChange(publicUrl);
       
@@ -83,7 +90,27 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
     }
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
+    if (currentPhotoUrl) {
+      try {
+        // Extract filename from URL to delete from storage
+        const urlParts = currentPhotoUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        
+        if (fileName && fileName !== '') {
+          const { error } = await supabase.storage
+            .from('photos')
+            .remove([fileName]);
+          
+          if (error) {
+            console.error('Error deleting photo:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting photo from storage:', error);
+      }
+    }
+    
     onPhotoChange(null);
   };
 
