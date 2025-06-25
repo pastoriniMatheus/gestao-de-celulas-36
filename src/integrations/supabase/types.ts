@@ -272,6 +272,7 @@ export type Database = {
           name: string
           neighborhood: string
           pipeline_stage_id: string | null
+          referred_by: string | null
           status: string
           updated_at: string
           whatsapp: string | null
@@ -291,6 +292,7 @@ export type Database = {
           name: string
           neighborhood: string
           pipeline_stage_id?: string | null
+          referred_by?: string | null
           status?: string
           updated_at?: string
           whatsapp?: string | null
@@ -310,6 +312,7 @@ export type Database = {
           name?: string
           neighborhood?: string
           pipeline_stage_id?: string | null
+          referred_by?: string | null
           status?: string
           updated_at?: string
           whatsapp?: string | null
@@ -590,6 +593,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referral_channels: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       sent_messages: {
         Row: {
