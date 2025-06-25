@@ -9,6 +9,7 @@ import { useCells } from '@/hooks/useCells';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
 import { BaptizedField } from './contact-form/BaptizedField';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
+import { PhotoUpload } from './PhotoUpload';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { UserCheck, ArrowRightLeft, Calendar } from 'lucide-react';
@@ -39,6 +40,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     status: contact?.status ?? 'pending',
     cell_id: contact?.cell_id ?? '',
     referred_by: contact?.referred_by ?? '',
+    photo_url: contact?.photo_url ?? null,
   });
   const [saving, setSaving] = useState(false);
 
@@ -60,6 +62,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       status: contact?.status ?? 'pending',
       cell_id: contact?.cell_id ?? '',
       referred_by: contact?.referred_by ?? '',
+      photo_url: contact?.photo_url ?? null,
     });
   }, [contact, neighborhoods]);
 
@@ -108,6 +111,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         status: newStatus,
         cell_id: form.cell_id || null,
         referred_by: referredByValue,
+        photo_url: form.photo_url,
       };
 
       console.log('EditContactDialog: Dados de atualização:', updateData);
@@ -225,6 +229,16 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Campo de Foto */}
+          <div>
+            <Label>Foto do Contato</Label>
+            <PhotoUpload
+              currentPhotoUrl={form.photo_url}
+              onPhotoChange={(photoUrl) => setForm(f => ({ ...f, photo_url: photoUrl }))}
+              contactName={form.name || 'Contato'}
+            />
+          </div>
+
           <div>
             <Label htmlFor="edit-contact-name">Nome *</Label>
             <Input

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +18,7 @@ interface Contact {
   birth_date: string | null;
   attendance_code: string | null;
   referred_by: string | null;
+  photo_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +57,7 @@ export const useContacts = () => {
         birth_date: contact.birth_date,
         attendance_code: contact.attendance_code,
         referred_by: (contact as any).referred_by || null,
+        photo_url: contact.photo_url || null,
         created_at: contact.created_at,
         updated_at: contact.updated_at
       }));
@@ -115,6 +116,7 @@ export const useContacts = () => {
         birth_date: data.birth_date,
         attendance_code: data.attendance_code,
         referred_by: (data as any).referred_by || null,
+        photo_url: data.photo_url || null,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -188,6 +190,7 @@ export const useContacts = () => {
         birth_date: data.birth_date,
         attendance_code: data.attendance_code,
         referred_by: (data as any).referred_by || null,
+        photo_url: data.photo_url || null,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -260,6 +263,7 @@ export const useContacts = () => {
               birth_date: payload.new.birth_date,
               attendance_code: payload.new.attendance_code,
               referred_by: (payload.new as any).referred_by || null,
+              photo_url: payload.new.photo_url || null,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
             };
@@ -280,6 +284,7 @@ export const useContacts = () => {
               birth_date: payload.new.birth_date,
               attendance_code: payload.new.attendance_code,
               referred_by: (payload.new as any).referred_by || null,
+              photo_url: payload.new.photo_url || null,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
             };

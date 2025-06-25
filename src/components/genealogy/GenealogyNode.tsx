@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChevronDown, ChevronRight, Users, Crown, Phone, MapPin, Star, Zap } from 'lucide-react';
+import { ContactAvatar } from '@/components/ContactAvatar';
 
 interface MemberNode {
   id: string;
@@ -19,6 +20,7 @@ interface MemberNode {
   encounterWithGod: boolean;
   level: number;
   totalDescendants: number;
+  photo_url?: string | null;
 }
 
 interface CustomNodeData {
@@ -61,7 +63,7 @@ export const GenealogyNode: React.FC<{ data: CustomNodeData }> = ({ data }) => {
         <TooltipTrigger asChild>
           <div 
             className={`
-              relative px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[260px] max-w-[260px]
+              relative px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[280px] max-w-[280px]
               cursor-pointer hover:shadow-xl transition-all duration-200
               ${member.level === 0 ? 'ring-2 ring-purple-200' : ''}
             `}
@@ -115,13 +117,21 @@ export const GenealogyNode: React.FC<{ data: CustomNodeData }> = ({ data }) => {
               )}
             </div>
 
-            {/* Conteúdo do nó */}
-            <div className="text-sm font-semibold text-gray-900 mb-1 truncate">
-              {member.name}
-            </div>
-            
-            <div className="text-xs text-gray-600 mb-1 truncate">
-              <strong>Líder:</strong> {member.leader}
+            {/* Header com foto e nome */}
+            <div className="flex items-center gap-3 mb-3">
+              <ContactAvatar
+                name={member.name}
+                photoUrl={member.photo_url}
+                size="md"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-gray-900 truncate">
+                  {member.name}
+                </div>
+                <div className="text-xs text-gray-600 truncate">
+                  <strong>Líder:</strong> {member.leader}
+                </div>
+              </div>
             </div>
             
             <div className="text-xs text-gray-600 mb-2 truncate">

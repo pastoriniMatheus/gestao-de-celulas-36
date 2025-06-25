@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { UserPlus, Phone, MapPin, Star, Zap } from 'lucide-react';
+import { ContactAvatar } from '@/components/ContactAvatar';
 
 interface MemberNode {
   id: string;
@@ -15,6 +16,7 @@ interface MemberNode {
   neighborhood?: string;
   baptized: boolean;
   encounterWithGod: boolean;
+  photo_url?: string | null;
 }
 
 interface StandbyPanelProps {
@@ -74,8 +76,13 @@ export const StandbyPanel: React.FC<StandbyPanelProps> = ({ members }) => {
                 key={member.id}
                 className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
+                <div className="flex items-start gap-3 mb-2">
+                  <ContactAvatar
+                    name={member.name}
+                    photoUrl={member.photo_url}
+                    size="sm"
+                  />
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-gray-900 truncate">
                       {member.name}
                     </h4>
@@ -83,10 +90,10 @@ export const StandbyPanel: React.FC<StandbyPanelProps> = ({ members }) => {
                       {member.cell} • {member.leader}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 ml-2">
+                  <div className="flex items-center gap-1">
                     {member.baptized && (
                       <div className="relative group">
-                        <Star className="w-3 h-3 text-blue-500" />
+                        <div className="w-3 h-3 bg-blue-500 rounded-full" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                           Batizado
                         </div>
@@ -94,7 +101,7 @@ export const StandbyPanel: React.FC<StandbyPanelProps> = ({ members }) => {
                     )}
                     {member.encounterWithGod && (
                       <div className="relative group">
-                        <Zap className="w-3 h-3 text-yellow-500" />
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full" />
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                           Encontro com Deus
                         </div>

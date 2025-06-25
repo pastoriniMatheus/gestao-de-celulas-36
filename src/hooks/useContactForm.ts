@@ -12,6 +12,7 @@ export interface ContactFormData {
   birth_date: string;
   encounter_with_god: boolean;
   baptized: boolean;
+  photo_url: string | null;
 }
 
 export const useContactForm = () => {
@@ -26,6 +27,7 @@ export const useContactForm = () => {
     birth_date: '',
     encounter_with_god: false,
     baptized: false,
+    photo_url: null,
   });
 
   const updateFormData = (updates: Partial<ContactFormData>) => {
@@ -44,6 +46,7 @@ export const useContactForm = () => {
       birth_date: '',
       encounter_with_god: false,
       baptized: false,
+      photo_url: null,
     });
   };
 

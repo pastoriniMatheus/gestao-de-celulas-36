@@ -12,12 +12,14 @@ import { LocationFields } from './contact-form/LocationFields';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
 import { BaptizedField } from './contact-form/BaptizedField';
+import { PhotoUpload } from './PhotoUpload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export const AddContactDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   
   const { addContact } = useContacts();
   const { toast } = useToast();
@@ -57,6 +59,7 @@ export const AddContactDialog = () => {
         age: null,
         attendance_code: null,
         referred_by: formData.referred_by || null,
+        photo_url: photoUrl,
       };
       await addContact(contactToAdd);
       toast({
@@ -64,6 +67,7 @@ export const AddContactDialog = () => {
         description: "Contato adicionado com sucesso com status pendente!",
       });
       resetForm();
+      setPhotoUrl(null);
       setIsOpen(false);
     } catch (error: any) {
       toast({
@@ -89,6 +93,16 @@ export const AddContactDialog = () => {
           <DialogTitle>Adicionar Novo Contato</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Campo de Foto */}
+          <div>
+            <Label>Foto do Contato</Label>
+            <PhotoUpload
+              currentPhotoUrl={photoUrl}
+              onPhotoChange={setPhotoUrl}
+              contactName={formData.name || 'Novo Contato'}
+            />
+          </div>
+
           <BasicInfoFields
             formData={formData}
             onUpdateFormData={updateFormData}

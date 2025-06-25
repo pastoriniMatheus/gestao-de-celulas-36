@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
@@ -38,6 +37,7 @@ interface MemberNode {
   encounterWithGod: boolean;
   level: number;
   totalDescendants: number;
+  photo_url: string | null;
 }
 
 interface CustomNodeData extends Record<string, unknown> {
@@ -101,7 +101,8 @@ export const GenealogyNetwork = () => {
         baptized: contact.baptized || false,
         encounterWithGod: contact.encounter_with_god || false,
         level: 0,
-        totalDescendants: 0
+        totalDescendants: 0,
+        photo_url: contact.photo_url || null
       };
     });
 
