@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings as SettingsIcon, Palette, MapPin, FileText, Webhook, MessageSquare, Database } from 'lucide-react';
@@ -9,7 +8,6 @@ import { WebhookManager } from './WebhookManager';
 import { MessageTemplateManager } from './MessageTemplateManager';
 import { DatabaseSettings } from './DatabaseSettings';
 import { useSystemConfig } from '@/hooks/useSystemConfig';
-
 export const Settings = () => {
   const {
     config,
@@ -20,18 +18,14 @@ export const Settings = () => {
   const logoUrl = config?.site_logo?.url;
   const logoAlt = config?.site_logo?.alt || 'Logo';
   const churchName = config?.church_name?.text || config?.form_title?.text || 'Sistema de Células';
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-3 text-2xl">
             <SettingsIcon className="h-6 w-6 text-purple-600" />
             Configurações do Sistema
           </CardTitle>
-          <CardDescription className="text-base">
-            Configure as preferências e funcionalidades do sistema - Sistema Matheus Pastorini
-          </CardDescription>
+          <CardDescription className="text-base">Configure as preferências e funcionalidades do sistema.</CardDescription>
         </CardHeader>
       </Card>
 
@@ -87,6 +81,5 @@ export const Settings = () => {
           <DatabaseSettings />
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
