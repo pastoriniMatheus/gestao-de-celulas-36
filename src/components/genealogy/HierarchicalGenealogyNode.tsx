@@ -122,10 +122,10 @@ export const HierarchicalGenealogyNode: React.FC<HierarchicalNodeProps> = ({
                   {/* Indicadores */}
                   <div className="flex items-center gap-1">
                     {member.baptized && (
-                      <Star className="w-3 h-3 text-yellow-500" title="Batizado" />
+                      <Star className="w-3 h-3 text-yellow-500" />
                     )}
                     {member.encounterWithGod && (
-                      <Zap className="w-3 h-3 text-blue-500" title="Encontro com Deus" />
+                      <Zap className="w-3 h-3 text-blue-500" />
                     )}
                   </div>
 
