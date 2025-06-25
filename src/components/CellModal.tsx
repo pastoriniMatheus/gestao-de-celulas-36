@@ -11,6 +11,7 @@ import { Cell } from '@/hooks/useCells';
 import { EditContactDialog } from './EditContactDialog';
 import { ContactNotesDialog } from './ContactNotesDialog';
 import { CellLeaderInfo } from './CellLeaderInfo';
+import { ContactAvatar } from './ContactAvatar';
 import QRCode from 'qrcode.react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -23,6 +24,7 @@ interface Contact {
   cell_id: string | null;
   neighborhood: string;
   attendance_code: string | null;
+  photo_url?: string | null;
 }
 
 interface Attendance {
@@ -447,16 +449,23 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                         >
                           <div className="flex items-center justify-between">
                             <div 
-                              className="flex-1 cursor-pointer"
+                              className="flex items-center gap-3 flex-1 cursor-pointer"
                               onClick={() => togglePresence(contact.id, isPresent)}
                             >
-                              <p className="font-medium">{contact.name}</p>
-                              <p className="text-xs text-gray-500">{contact.neighborhood}</p>
-                              {contact.attendance_code && (
-                                <p className="text-xs text-blue-600 font-mono">
-                                  Código: {contact.attendance_code}
-                                </p>
-                              )}
+                              <ContactAvatar
+                                name={contact.name}
+                                photoUrl={contact.photo_url}
+                                size="sm"
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium">{contact.name}</p>
+                                <p className="text-xs text-gray-500">{contact.neighborhood}</p>
+                                {contact.attendance_code && (
+                                  <p className="text-xs text-blue-600 font-mono">
+                                    Código: {contact.attendance_code}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
@@ -464,7 +473,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                                 size="sm"
                                 onClick={() => handleOpenNotes(contact)}
                                 className="p-1"
-                                title="Anotações"
                               >
                                 <MessageSquare className="h-4 w-4 text-blue-500" />
                               </Button>
@@ -473,7 +481,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                                 size="sm"
                                 onClick={() => handleEditContact(contact)}
                                 className="p-1"
-                                title="Editar"
                               >
                                 <Edit className="h-4 w-4 text-gray-500" />
                               </Button>
@@ -514,13 +521,20 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                       {contacts.filter(c => c.status === 'visitor').map((visitor) => (
                         <div key={visitor.id} className="p-3 rounded bg-orange-50 border border-orange-200">
                           <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <span className="font-medium">{visitor.name}</span>
-                              {visitor.attendance_code && (
-                                <p className="text-xs text-blue-600 font-mono mt-1">
-                                  Código: {visitor.attendance_code}
-                                </p>
-                              )}
+                            <div className="flex items-center gap-3 flex-1">
+                              <ContactAvatar
+                                name={visitor.name}
+                                photoUrl={visitor.photo_url}
+                                size="sm"
+                              />
+                              <div className="flex-1">
+                                <span className="font-medium">{visitor.name}</span>
+                                {visitor.attendance_code && (
+                                  <p className="text-xs text-blue-600 font-mono mt-1">
+                                    Código: {visitor.attendance_code}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
@@ -528,7 +542,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                                 size="sm"
                                 onClick={() => handleOpenNotes(visitor)}
                                 className="p-1"
-                                title="Anotações"
                               >
                                 <MessageSquare className="h-4 w-4 text-blue-500" />
                               </Button>
@@ -537,7 +550,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                                 size="sm"
                                 onClick={() => handleEditContact(visitor)}
                                 className="p-1"
-                                title="Editar"
                               >
                                 <Edit className="h-4 w-4 text-gray-500" />
                               </Button>

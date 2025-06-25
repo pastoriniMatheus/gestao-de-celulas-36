@@ -1,8 +1,9 @@
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, Network, Eye, EyeOff, UserPlus, TreePine, List } from 'lucide-react';
+import { Users, TreePine, List, Triangle } from 'lucide-react';
 import { HierarchicalGenealogyNode } from './genealogy/HierarchicalGenealogyNode';
+import { PyramidGenealogyView } from './genealogy/PyramidGenealogyView';
 import { StandbyPanel } from './genealogy/StandbyPanel';
 import { NetworkMetrics } from './genealogy/NetworkMetrics';
 import { useContacts } from '@/hooks/useContacts';
@@ -28,7 +29,7 @@ interface MemberNode {
 export const GenealogyNetwork = () => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [showStandby, setShowStandby] = useState(false);
-  const [viewMode, setViewMode] = useState<'tree' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'pyramid' | 'list'>('pyramid');
   
   const { contacts, loading: contactsLoading } = useContacts();
   const { cells, loading: cellsLoading } = useCells();
@@ -100,14 +101,6 @@ export const GenealogyNetwork = () => {
     });
   }, []);
 
-  // Inicializar com nós raiz expandidos
-  useEffect(() => {
-    if (connectedMembers.length > 0) {
-      const rootMembers = connectedMembers.filter(m => !m.referredBy);
-      setExpandedNodes(new Set(rootMembers.slice(0, 3).map(m => m.id)));
-    }
-  }, [connectedMembers]);
-
   // Calcular métricas por nível
   const levelMetrics = useMemo(() => {
     const metrics: { [level: number]: { count: number; baptized: number; withEncounter: number } } = {};
@@ -165,6 +158,16 @@ export const GenealogyNetwork = () => {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Button
+              variant={viewMode === 'pyramid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('pyramid')}
+              className="text-xs h-8"
+            >
+              <Triangle className="w-4 h-4 mr-1" />
+              Pirâmide
+            </Button>
+            
+            <Button
               variant={viewMode === 'list' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('list')}
@@ -182,7 +185,7 @@ export const GenealogyNetwork = () => {
                   onClick={expandAll}
                   className="text-xs h-8"
                 >
-                  <Network className="w-4 h-4 mr-1" />
+                  <TreePine className="w-4 h-4 mr-1" />
                   Expandir
                 </Button>
                 
@@ -205,34 +208,42 @@ export const GenealogyNetwork = () => {
             onClick={() => setShowStandby(!showStandby)}
             className="text-xs h-8"
           >
-            <UserPlus className="w-4 h-4 mr-1" />
+            <Users className="w-4 h-4 mr-1" />
             Standby ({standbyMembers.length})
           </Button>
         </div>
       </div>
 
       {/* Conteúdo principal */}
-      <div className="pt-16 pb-2 h-full overflow-y-auto">
-        {hierarchicalData.map(rootMember => (
-          <HierarchicalTreeView 
-            key={rootMember.id}
-            member={rootMember}
-            allMembers={connectedMembers}
-            expandedNodes={expandedNodes}
-            onToggleExpansion={toggleNodeExpansion}
-            level={0}
-          />
-        ))}
+      <div className="pt-16 pb-2 h-full overflow-hidden">
+        {viewMode === 'pyramid' ? (
+          <PyramidGenealogyView members={connectedMembers} />
+        ) : (
+          <div className="h-full overflow-y-auto">
+            {hierarchicalData.map(rootMember => (
+              <HierarchicalTreeView 
+                key={rootMember.id}
+                member={rootMember}
+                allMembers={connectedMembers}
+                expandedNodes={expandedNodes}
+                onToggleExpansion={toggleNodeExpansion}
+                level={0}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Métricas da Rede */}
-      <div className="absolute bottom-2 left-2 z-10">
-        <NetworkMetrics 
-          levelMetrics={levelMetrics}
-          totalConnected={connectedMembers.length}
-          totalStandby={standbyMembers.length}
-        />
-      </div>
+      {viewMode === 'list' && (
+        <div className="absolute bottom-2 left-2 z-10">
+          <NetworkMetrics 
+            levelMetrics={levelMetrics}
+            totalConnected={connectedMembers.length}
+            totalStandby={standbyMembers.length}
+          />
+        </div>
+      )}
 
       {/* Painel de Standby */}
       {showStandby && (
