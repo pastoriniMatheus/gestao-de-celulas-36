@@ -85,10 +85,20 @@ export const StandbyPanel: React.FC<StandbyPanelProps> = ({ members }) => {
                   </div>
                   <div className="flex items-center gap-1 ml-2">
                     {member.baptized && (
-                      <Star className="w-3 h-3 text-blue-500" title="Batizado" />
+                      <div className="relative group">
+                        <Star className="w-3 h-3 text-blue-500" />
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          Batizado
+                        </div>
+                      </div>
                     )}
                     {member.encounterWithGod && (
-                      <Zap className="w-3 h-3 text-yellow-500" title="Encontro com Deus" />
+                      <div className="relative group">
+                        <Zap className="w-3 h-3 text-yellow-500" />
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          Encontro com Deus
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
