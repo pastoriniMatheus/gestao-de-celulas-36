@@ -60,6 +60,22 @@ export const GenealogyNetwork = () => {
   const { contacts, loading: contactsLoading } = useContacts();
   const { cells, loading: cellsLoading } = useCells();
 
+  // Define toggleNodeExpansion BEFORE it's used in useMemo
+  const toggleNodeExpansion = useCallback((nodeId: string) => {
+    const member = connectedMembers.find(m => m.id === nodeId);
+    if (member && member.referrals.length > 0) {
+      setExpandedNodes(prev => {
+        const newSet = new Set(prev);
+        if (prev.has(nodeId)) {
+          newSet.delete(nodeId);
+        } else {
+          newSet.add(nodeId);
+        }
+        return newSet;
+      });
+    }
+  }, []);
+
   // Processar dados dos contatos em estrutura hierárquica
   const { connectedMembers, standbyMembers } = useMemo(() => {
     if (contactsLoading || cellsLoading || !contacts.length) {
@@ -110,6 +126,22 @@ export const GenealogyNetwork = () => {
 
     return { connectedMembers: connected, standbyMembers: standby };
   }, [contacts, cells, contactsLoading, cellsLoading]);
+
+  // Update the toggleNodeExpansion to use the processed data
+  const toggleNodeExpansionCallback = useCallback((nodeId: string) => {
+    const member = connectedMembers.find(m => m.id === nodeId);
+    if (member && member.referrals.length > 0) {
+      setExpandedNodes(prev => {
+        const newSet = new Set(prev);
+        if (prev.has(nodeId)) {
+          newSet.delete(nodeId);
+        } else {
+          newSet.add(nodeId);
+        }
+        return newSet;
+      });
+    }
+  }, [connectedMembers]);
 
   // Inicializar com nós raiz expandidos
   useEffect(() => {
@@ -164,7 +196,7 @@ export const GenealogyNetwork = () => {
         data: {
           member,
           isExpanded,
-          onToggleExpansion: toggleNodeExpansion
+          onToggleExpansion: toggleNodeExpansionCallback
         } satisfies CustomNodeData,
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
@@ -193,7 +225,7 @@ export const GenealogyNetwork = () => {
     });
 
     return { nodes, edges };
-  }, [connectedMembers, expandedNodes, visibleLevels, focusedLevel]);
+  }, [connectedMembers, expandedNodes, visibleLevels, focusedLevel, toggleNodeExpansionCallback]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -202,21 +234,6 @@ export const GenealogyNetwork = () => {
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
-
-  const toggleNodeExpansion = useCallback((nodeId: string) => {
-    const member = connectedMembers.find(m => m.id === nodeId);
-    if (member && member.referrals.length > 0) {
-      setExpandedNodes(prev => {
-        const newSet = new Set(prev);
-        if (prev.has(nodeId)) {
-          newSet.delete(nodeId);
-        } else {
-          newSet.add(nodeId);
-        }
-        return newSet;
-      });
-    }
-  }, [connectedMembers]);
 
   const toggleLevel = (level: number) => {
     setVisibleLevels(prev => {
