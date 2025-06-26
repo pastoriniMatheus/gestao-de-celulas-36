@@ -28,6 +28,7 @@ interface Profile {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 export const useContactDialogData = (isOpen: boolean) => {
@@ -50,7 +51,7 @@ export const useContactDialogData = (isOpen: boolean) => {
         supabase.from('cities').select('id, name, state').eq('active', true).order('name'),
         supabase.from('neighborhoods').select('id, name, city_id').eq('active', true).order('name'),
         supabase.from('contacts').select('id, name').order('name'),
-        supabase.from('profiles').select('id, name, email').eq('active', true).order('name')
+        supabase.from('profiles').select('id, name, email, role').eq('active', true).order('name')
       ]);
 
       setCells(cellsData.data || []);
