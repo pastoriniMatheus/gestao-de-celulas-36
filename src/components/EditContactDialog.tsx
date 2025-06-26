@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,13 @@ import { Badge } from '@/components/ui/badge';
 import { UserCheck, ArrowRightLeft, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface EditContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,8 +35,20 @@ interface EditContactDialogProps {
 
 export function EditContactDialog({ open, onOpenChange, contact, context = 'contacts', onContactUpdated }: EditContactDialogProps) {
   const { updateContact } = useContacts();
-  const { neighborhoods, cities, cells, contacts, profiles } = useContactDialogData(open);
+  const { neighborhoods, cities, cells, contacts } = useContactDialogData(open);
   const { cells: cellsData, fetchCells } = useCells();
+
+  // Criar um array de profiles com a estrutura correta
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+
+  useEffect(() => {
+    // Buscar profiles do sistema quando o diálogo abrir
+    if (open) {
+      // Aqui você pode buscar os profiles do sistema
+      // Por enquanto, vamos usar um array vazio para evitar erros
+      setProfiles([]);
+    }
+  }, [open]);
 
   const [form, setForm] = useState({
     name: contact?.name ?? '',

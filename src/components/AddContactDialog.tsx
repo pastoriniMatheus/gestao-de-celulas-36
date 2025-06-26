@@ -12,6 +12,8 @@ import { LocationFields } from './contact-form/LocationFields';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
 import { BaptizedField } from './contact-form/BaptizedField';
+import { FounderField } from './contact-form/FounderField';
+import { LeaderField } from './contact-form/LeaderField';
 import { PhotoUpload } from './PhotoUpload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +62,8 @@ export const AddContactDialog = () => {
         attendance_code: null,
         referred_by: formData.referred_by || null,
         photo_url: photoUrl,
+        founder: !!formData.founder,
+        leader_id: formData.leader_id || null,
       };
       await addContact(contactToAdd);
       toast({
@@ -127,6 +131,17 @@ export const AddContactDialog = () => {
               onChange={checked => updateFormData({ baptized: checked })}
             />
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FounderField
+              checked={!!formData.founder}
+              onChange={checked => updateFormData({ founder: checked })}
+            />
+          </div>
+          <LeaderField
+            value={formData.leader_id}
+            onChange={value => updateFormData({ leader_id: value })}
+            profiles={profiles}
+          />
           <LocationFields
             formData={formData}
             onUpdateFormData={updateFormData}
