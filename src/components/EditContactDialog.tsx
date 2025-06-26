@@ -49,28 +49,31 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    let city_id = contact?.city_id;
-    if (!city_id && contact?.neighborhood && neighborhoods.length > 0) {
-      const nb = neighborhoods.find(nb => nb.name === contact.neighborhood);
-      city_id = nb?.city_id ?? '';
+    if (contact && open) {
+      let city_id = contact?.city_id;
+      if (!city_id && contact?.neighborhood && neighborhoods.length > 0) {
+        const nb = neighborhoods.find(nb => nb.name === contact.neighborhood);
+        city_id = nb?.city_id ?? '';
+      }
+      
+      setForm({
+        name: contact?.name || '',
+        whatsapp: contact?.whatsapp || '',
+        email: contact?.email || '',
+        neighborhood: contact?.neighborhood || '',
+        city_id: city_id || '',
+        birth_date: contact?.birth_date || '',
+        encounter_with_god: contact?.encounter_with_god || false,
+        baptized: contact?.baptized || false,
+        status: contact?.status || 'pending',
+        cell_id: contact?.cell_id || '',
+        referred_by: contact?.referred_by || '',
+        photo_url: contact?.photo_url || null,
+        founder: contact?.founder || false,
+        leader_id: contact?.leader_id || '',
+      });
     }
-    setForm({
-      name: contact?.name ?? '',
-      whatsapp: contact?.whatsapp ?? '',
-      email: contact?.email ?? '',
-      neighborhood: contact?.neighborhood ?? '',
-      city_id: city_id ?? '',
-      birth_date: contact?.birth_date ?? '',
-      encounter_with_god: contact?.encounter_with_god ?? false,
-      baptized: contact?.baptized ?? false,
-      status: contact?.status ?? 'pending',
-      cell_id: contact?.cell_id ?? '',
-      referred_by: contact?.referred_by ?? '',
-      photo_url: contact?.photo_url ?? null,
-      founder: contact?.founder ?? false,
-      leader_id: contact?.leader_id ?? '',
-    });
-  }, [contact, neighborhoods]);
+  }, [contact, neighborhoods, open]);
 
   const filteredNeighborhoods = form.city_id
     ? neighborhoods.filter(nb => nb.city_id === form.city_id)
@@ -215,6 +218,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     setForm(prev => ({ ...prev, ...updates }));
   };
 
+  // Não renderizar nada se não tiver contato
+  if (!contact) {
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
@@ -340,7 +348,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <LeaderField
             value={form.leader_id}
             onChange={value => setForm(f => ({ ...f, leader_id: value }))}
-            profiles={profiles}
+            profiles={profiles || []}
           />
 
           {showCellField && (
@@ -350,8 +358,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 formData={form}
                 onUpdateFormData={updateFormData}
                 cells={[...cells, ...cellsData]}
-                contacts={contacts}
-                profiles={profiles}
+                contacts={contacts || []}
+                profiles={profiles || []}
               />
               {contact.cell_id && (
                 <p className="text-xs text-gray-500 mt-2">
