@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, Star, Zap } from 'lucide-react';
+import { Crown, Users, Star, Zap, UserCheck } from 'lucide-react';
 import { ContactAvatar } from '@/components/ContactAvatar';
 
 interface MemberNode {
@@ -19,10 +19,13 @@ interface MemberNode {
   level: number;
   totalDescendants: number;
   photo_url: string | null;
+  founder: boolean;
+  leader_id: string | null;
 }
 
 interface PyramidGenealogyViewProps {
   members: MemberNode[];
+  mode: 'evangelism' | 'discipleship';
 }
 
 const getLevelColor = (level: number): string => {
@@ -36,18 +39,29 @@ const getLevelColor = (level: number): string => {
   return colors[level as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-300';
 };
 
-const getLevelName = (level: number): string => {
-  const names = {
-    0: 'Pastores',
-    1: 'Líderes',
-    2: 'Discipuladores',
-    3: 'Em Formação',
-    4: 'Novos Convertidos'
-  };
-  return names[level as keyof typeof names] || `Nível ${level}`;
+const getLevelName = (level: number, mode: 'evangelism' | 'discipleship'): string => {
+  if (mode === 'evangelism') {
+    const names = {
+      0: 'Fundadores',
+      1: 'Primeira Geração',
+      2: 'Segunda Geração',
+      3: 'Terceira Geração',
+      4: 'Quarta Geração'
+    };
+    return names[level as keyof typeof names] || `${level + 1}ª Geração`;
+  } else {
+    const names = {
+      0: 'Pastores/Líderes',
+      1: 'Discipuladores',
+      2: 'Em Formação',
+      3: 'Novos Convertidos',
+      4: 'Visitantes'
+    };
+    return names[level as keyof typeof names] || `Nível ${level}`;
+  }
 };
 
-export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ members }) => {
+export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ members, mode }) => {
   // Agrupar membros por nível
   const membersByLevel = members.reduce((acc, member) => {
     if (!acc[member.level]) {
@@ -60,9 +74,28 @@ export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ memb
   // Ordenar níveis
   const levels = Object.keys(membersByLevel).map(Number).sort();
 
+  const getModeTitle = () => {
+    return mode === 'evangelism' ? 'Rede por Indicação (Quem Ganhou)' : 'Rede de Discipulado (Liderança)';
+  };
+
+  const getModeDescription = () => {
+    return mode === 'evangelism' 
+      ? 'Estrutura baseada em quem ganhou cada pessoa para Jesus'
+      : 'Estrutura baseada na liderança e discipulado';
+  };
+
   return (
     <div className="w-full h-full bg-gradient-to-b from-purple-50 to-blue-50 p-6 overflow-y-auto">
       <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header do modo */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-2">
+            {mode === 'evangelism' ? <UserCheck className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
+            {getModeTitle()}
+          </h2>
+          <p className="text-gray-600">{getModeDescription()}</p>
+        </div>
+
         {levels.map(level => {
           const levelMembers = membersByLevel[level];
           const maxMembersPerRow = Math.max(1, Math.floor(12 / Math.max(1, level + 1)));
@@ -73,14 +106,14 @@ export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ memb
               <div className="text-center">
                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 ${getLevelColor(level)}`}>
                   {level === 0 ? <Crown className="w-5 h-5" /> : <Users className="w-5 h-5" />}
-                  <span className="font-bold text-lg">{getLevelName(level)}</span>
+                  <span className="font-bold text-lg">{getLevelName(level, mode)}</span>
                   <Badge variant="outline" className="ml-2">
                     {levelMembers.length} membros
                   </Badge>
                 </div>
               </div>
 
-              {/* Membros do Nível em Grade Piramidal */}
+              {/* Membros do Nível em Grade */}
               <div 
                 className="grid gap-4 justify-center"
                 style={{
@@ -96,6 +129,7 @@ export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ memb
                       relative p-4 rounded-lg border-2 bg-white shadow-sm
                       hover:shadow-md transition-shadow cursor-pointer
                       ${getLevelColor(level)}
+                      ${member.founder ? 'ring-2 ring-yellow-400' : ''}
                     `}
                   >
                     {/* Conexão visual para o nível superior */}
@@ -107,11 +141,18 @@ export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ memb
 
                     {/* Avatar e Nome */}
                     <div className="flex flex-col items-center space-y-2">
-                      <ContactAvatar
-                        name={member.name}
-                        photoUrl={member.photo_url}
-                        size="md"
-                      />
+                      <div className="relative">
+                        <ContactAvatar
+                          name={member.name}
+                          photoUrl={member.photo_url}
+                          size="md"
+                        />
+                        {member.founder && (
+                          <div className="absolute -top-1 -right-1">
+                            <Crown className="w-4 h-4 text-yellow-500 bg-white rounded-full p-0.5" />
+                          </div>
+                        )}
+                      </div>
                       
                       <div className="text-center">
                         <h3 className="font-semibold text-sm truncate max-w-full">
@@ -120,6 +161,11 @@ export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ memb
                         <p className="text-xs text-gray-600 truncate">
                           {member.cell}
                         </p>
+                        {member.founder && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            Fundador
+                          </Badge>
+                        )}
                       </div>
 
                       {/* Indicadores */}
@@ -183,8 +229,10 @@ export const PyramidGenealogyView: React.FC<PyramidGenealogyViewProps> = ({ memb
               <div className="text-xs text-gray-600">c/ Encontro</div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-2xl text-yellow-600">{levels.length}</div>
-              <div className="text-xs text-gray-600">Níveis</div>
+              <div className="font-bold text-2xl text-yellow-600">
+                {members.filter(m => m.founder).length}
+              </div>
+              <div className="text-xs text-gray-600">Fundadores</div>
             </div>
           </div>
         </div>

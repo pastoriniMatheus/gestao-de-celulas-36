@@ -9,6 +9,8 @@ import { useCells } from '@/hooks/useCells';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
 import { BaptizedField } from './contact-form/BaptizedField';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
+import { FounderField } from './contact-form/FounderField';
+import { LeaderField } from './contact-form/LeaderField';
 import { PhotoUpload } from './PhotoUpload';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +43,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     cell_id: contact?.cell_id ?? '',
     referred_by: contact?.referred_by ?? '',
     photo_url: contact?.photo_url ?? null,
+    founder: contact?.founder ?? false,
+    leader_id: contact?.leader_id ?? '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -63,6 +67,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
       cell_id: contact?.cell_id ?? '',
       referred_by: contact?.referred_by ?? '',
       photo_url: contact?.photo_url ?? null,
+      founder: contact?.founder ?? false,
+      leader_id: contact?.leader_id ?? '',
     });
   }, [contact, neighborhoods]);
 
@@ -100,6 +106,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         referredByValue = form.referred_by;
       }
 
+      // Processar leader_id corretamente
+      let leaderIdValue = null;
+      if (form.leader_id && form.leader_id !== '') {
+        leaderIdValue = form.leader_id;
+      }
+
       const updateData = {
         name: form.name,
         whatsapp: form.whatsapp,
@@ -112,6 +124,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         cell_id: form.cell_id || null,
         referred_by: referredByValue,
         photo_url: form.photo_url,
+        founder: !!form.founder,
+        leader_id: leaderIdValue,
       };
 
       console.log('EditContactDialog: Dados de atualização:', updateData);
@@ -332,7 +346,20 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 setForm(f => ({ ...f, baptized: checked }))
               }
             />
+            <FounderField
+              checked={!!form.founder}
+              onChange={checked =>
+                setForm(f => ({ ...f, founder: checked }))
+              }
+            />
           </div>
+
+          {/* Campo Líder de Discipulado */}
+          <LeaderField
+            value={form.leader_id}
+            onChange={value => setForm(f => ({ ...f, leader_id: value }))}
+            profiles={profiles}
+          />
 
           {/* Seção de Célula e Quem Indicou */}
           {showCellField && (

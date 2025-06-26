@@ -268,7 +268,9 @@ export type Database = {
           created_at: string
           email: string | null
           encounter_with_god: boolean
+          founder: boolean
           id: string
+          leader_id: string | null
           name: string
           neighborhood: string
           photo_url: string | null
@@ -289,7 +291,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           encounter_with_god?: boolean
+          founder?: boolean
           id?: string
+          leader_id?: string | null
           name: string
           neighborhood: string
           photo_url?: string | null
@@ -310,7 +314,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           encounter_with_god?: boolean
+          founder?: boolean
           id?: string
+          leader_id?: string | null
           name?: string
           neighborhood?: string
           photo_url?: string | null
@@ -333,6 +339,13 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

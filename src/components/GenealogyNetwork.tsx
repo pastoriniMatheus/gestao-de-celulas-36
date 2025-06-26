@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, TreePine, List, Triangle } from 'lucide-react';
+import { Users, TreePine, List, Triangle, UserCheck, Crown } from 'lucide-react';
 import { HierarchicalGenealogyNode } from './genealogy/HierarchicalGenealogyNode';
 import { PyramidGenealogyView } from './genealogy/PyramidGenealogyView';
 import { StandbyPanel } from './genealogy/StandbyPanel';
@@ -24,12 +24,17 @@ interface MemberNode {
   level: number;
   totalDescendants: number;
   photo_url: string | null;
+  founder: boolean;
+  leader_id: string | null;
 }
+
+type GenealogyMode = 'evangelism' | 'discipleship';
 
 export const GenealogyNetwork = () => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [showStandby, setShowStandby] = useState(false);
   const [viewMode, setViewMode] = useState<'pyramid' | 'list'>('pyramid');
+  const [genealogyMode, setGenealogyMode] = useState<GenealogyMode>('evangelism');
   
   const { contacts, loading: contactsLoading } = useContacts();
   const { cells, loading: cellsLoading } = useCells();
@@ -52,7 +57,7 @@ export const GenealogyNetwork = () => {
         leader: cell?.leader_name || 'Sem líder',
         cell: cell?.name || 'Sem célula',
         status: contact.status,
-        referredBy: contact.referred_by || null,
+        referredBy: genealogyMode === 'evangelism' ? contact.referred_by : contact.leader_id,
         referrals: [],
         whatsapp: contact.whatsapp,
         neighborhood: contact.neighborhood,
@@ -60,34 +65,41 @@ export const GenealogyNetwork = () => {
         encounterWithGod: contact.encounter_with_god || false,
         level: 0,
         totalDescendants: 0,
-        photo_url: contact.photo_url || null
+        photo_url: contact.photo_url || null,
+        founder: contact.founder || false,
+        leader_id: contact.leader_id || null
       };
     });
 
-    // Preencher referrals e calcular níveis
+    // Preencher referrals e calcular níveis baseado no modo
     allMembers.forEach(member => {
+      const connectionField = genealogyMode === 'evangelism' ? 'referred_by' : 'leader_id';
+      const sourceField = genealogyMode === 'evangelism' ? 'referredBy' : 'leader_id';
+      
       member.referrals = allMembers
-        .filter(m => m.referredBy === member.id)
+        .filter(m => m[sourceField] === member.id)
         .map(m => m.id);
       
-      member.level = calculateMemberLevel(member.id, allMembers);
-      member.totalDescendants = calculateTotalDescendants(member.id, allMembers);
+      member.level = calculateMemberLevel(member.id, allMembers, genealogyMode);
+      member.totalDescendants = calculateTotalDescendants(member.id, allMembers, genealogyMode);
     });
 
     // Separar membros conectados dos em standby
-    const connected = allMembers.filter(member => 
-      member.referredBy || member.referrals.length > 0
-    );
+    const connected = allMembers.filter(member => {
+      const connectionField = genealogyMode === 'evangelism' ? 'referredBy' : 'leader_id';
+      return member[connectionField] || member.referrals.length > 0 || member.founder;
+    });
     
-    const standby = allMembers.filter(member => 
-      !member.referredBy && member.referrals.length === 0
-    );
+    const standby = allMembers.filter(member => {
+      const connectionField = genealogyMode === 'evangelism' ? 'referredBy' : 'leader_id';
+      return !member[connectionField] && member.referrals.length === 0 && !member.founder;
+    });
 
-    // Criar estrutura hierárquica
-    const hierarchical = buildHierarchicalStructure(connected);
+    // Criar estrutura hierárquica - incluir fundadores no topo
+    const hierarchical = buildHierarchicalStructure(connected, genealogyMode);
 
     return { connectedMembers: connected, standbyMembers: standby, hierarchicalData: hierarchical };
-  }, [contacts, cells, contactsLoading, cellsLoading]);
+  }, [contacts, cells, contactsLoading, cellsLoading, genealogyMode]);
 
   const toggleNodeExpansion = useCallback((nodeId: string) => {
     setExpandedNodes(prev => {
@@ -122,7 +134,10 @@ export const GenealogyNetwork = () => {
   };
 
   const collapseAll = () => {
-    const rootMembers = connectedMembers.filter(m => !m.referredBy);
+    const rootMembers = connectedMembers.filter(m => {
+      const connectionField = genealogyMode === 'evangelism' ? 'referredBy' : 'leader_id';
+      return !m[connectionField] || m.founder;
+    });
     setExpandedNodes(new Set(rootMembers.map(m => m.id)));
   };
 
@@ -131,7 +146,7 @@ export const GenealogyNetwork = () => {
       <div className="w-full h-[600px] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando rede de genealogia...</p>
+          <p className="mt-4 text-gray-600">Carregando rede de discipulado...</p>
         </div>
       </div>
     );
@@ -142,7 +157,7 @@ export const GenealogyNetwork = () => {
       <div className="w-full h-[600px] flex items-center justify-center">
         <div className="text-center">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Nenhum membro encontrado para a rede de genealogia.</p>
+          <p className="text-gray-600">Nenhum membro encontrado para a rede de discipulado.</p>
           <p className="text-sm text-gray-500 mt-2">
             Adicione contatos para visualizar a rede de discipulado.
           </p>
@@ -157,6 +172,33 @@ export const GenealogyNetwork = () => {
       <div className="absolute top-0 left-0 right-0 z-10 bg-white border-b p-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
+            {/* Seletor de modo de genealogia */}
+            <div className="flex items-center gap-1 mr-4">
+              <Button
+                variant={genealogyMode === 'evangelism' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setGenealogyMode('evangelism')}
+                className="text-xs h-8"
+              >
+                <UserCheck className="w-4 h-4 mr-1" />
+                Quem Ganhou
+              </Button>
+              
+              <Button
+                variant={genealogyMode === 'discipleship' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setGenealogyMode('discipleship')}
+                className="text-xs h-8"
+              >
+                <Crown className="w-4 h-4 mr-1" />
+                Discipulado
+              </Button>
+            </div>
+
+            {/* Divisor visual */}
+            <div className="w-px h-6 bg-gray-300 mx-2"></div>
+
+            {/* Controles de visualização */}
             <Button
               variant={viewMode === 'pyramid' ? 'default' : 'outline'}
               size="sm"
@@ -164,7 +206,7 @@ export const GenealogyNetwork = () => {
               className="text-xs h-8"
             >
               <Triangle className="w-4 h-4 mr-1" />
-              Pirâmide
+              Discipulado
             </Button>
             
             <Button
@@ -217,7 +259,7 @@ export const GenealogyNetwork = () => {
       {/* Conteúdo principal */}
       <div className="pt-16 pb-2 h-full overflow-hidden">
         {viewMode === 'pyramid' ? (
-          <PyramidGenealogyView members={connectedMembers} />
+          <PyramidGenealogyView members={connectedMembers} mode={genealogyMode} />
         ) : (
           <div className="h-full overflow-y-auto">
             {hierarchicalData.map(rootMember => (
@@ -228,6 +270,7 @@ export const GenealogyNetwork = () => {
                 expandedNodes={expandedNodes}
                 onToggleExpansion={toggleNodeExpansion}
                 level={0}
+                mode={genealogyMode}
               />
             ))}
           </div>
@@ -262,6 +305,7 @@ interface HierarchicalTreeViewProps {
   expandedNodes: Set<string>;
   onToggleExpansion: (nodeId: string) => void;
   level: number;
+  mode: GenealogyMode;
 }
 
 const HierarchicalTreeView: React.FC<HierarchicalTreeViewProps> = ({
@@ -269,10 +313,12 @@ const HierarchicalTreeView: React.FC<HierarchicalTreeViewProps> = ({
   allMembers,
   expandedNodes,
   onToggleExpansion,
-  level
+  level,
+  mode
 }) => {
-  // Encontrar filhos diretos
-  const children = allMembers.filter(m => m.referredBy === member.id);
+  // Encontrar filhos diretos baseado no modo
+  const connectionField = mode === 'evangelism' ? 'referredBy' : 'leader_id';
+  const children = allMembers.filter(m => m[connectionField] === member.id);
   const isExpanded = expandedNodes.has(member.id);
 
   return (
@@ -294,6 +340,7 @@ const HierarchicalTreeView: React.FC<HierarchicalTreeViewProps> = ({
           expandedNodes={expandedNodes}
           onToggleExpansion={onToggleExpansion}
           level={level + 1}
+          mode={mode}
         />
       ))}
     </div>
@@ -301,25 +348,34 @@ const HierarchicalTreeView: React.FC<HierarchicalTreeViewProps> = ({
 };
 
 // Funções auxiliares
-function calculateMemberLevel(memberId: string, members: MemberNode[]): number {
-  const member = members.find(m => m.id === memberId);
-  if (!member || !member.referredBy) return 0;
-  return 1 + calculateMemberLevel(member.referredBy, members);
-}
-
-function calculateTotalDescendants(memberId: string, members: MemberNode[]): number {
+function calculateMemberLevel(memberId: string, members: MemberNode[], mode: GenealogyMode): number {
   const member = members.find(m => m.id === memberId);
   if (!member) return 0;
   
-  let total = member.referrals.length;
-  member.referrals.forEach(childId => {
-    total += calculateTotalDescendants(childId, members);
+  const connectionField = mode === 'evangelism' ? 'referredBy' : 'leader_id';
+  const parentId = member[connectionField];
+  
+  if (!parentId || member.founder) return 0;
+  return 1 + calculateMemberLevel(parentId, members, mode);
+}
+
+function calculateTotalDescendants(memberId: string, members: MemberNode[], mode: GenealogyMode): number {
+  const member = members.find(m => m.id === memberId);
+  if (!member) return 0;
+  
+  const connectionField = mode === 'evangelism' ? 'referredBy' : 'leader_id';
+  const children = members.filter(m => m[connectionField] === memberId);
+  
+  let total = children.length;
+  children.forEach(child => {
+    total += calculateTotalDescendants(child.id, members, mode);
   });
   
   return total;
 }
 
-function buildHierarchicalStructure(members: MemberNode[]): MemberNode[] {
-  // Retornar apenas os membros raiz (sem referredBy)
-  return members.filter(member => !member.referredBy);
+function buildHierarchicalStructure(members: MemberNode[], mode: GenealogyMode): MemberNode[] {
+  const connectionField = mode === 'evangelism' ? 'referredBy' : 'leader_id';
+  // Retornar membros raiz (fundadores ou sem conexão superior)
+  return members.filter(member => !member[connectionField] || member.founder);
 }

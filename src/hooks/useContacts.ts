@@ -19,6 +19,8 @@ interface Contact {
   attendance_code: string | null;
   referred_by: string | null;
   photo_url: string | null;
+  founder: boolean;
+  leader_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,6 +60,8 @@ export const useContacts = () => {
         attendance_code: contact.attendance_code,
         referred_by: (contact as any).referred_by || null,
         photo_url: contact.photo_url || null,
+        founder: contact.founder || false,
+        leader_id: contact.leader_id || null,
         created_at: contact.created_at,
         updated_at: contact.updated_at
       }));
@@ -117,6 +121,8 @@ export const useContacts = () => {
         attendance_code: data.attendance_code,
         referred_by: (data as any).referred_by || null,
         photo_url: data.photo_url || null,
+        founder: data.founder || false,
+        leader_id: data.leader_id || null,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -191,6 +197,8 @@ export const useContacts = () => {
         attendance_code: data.attendance_code,
         referred_by: (data as any).referred_by || null,
         photo_url: data.photo_url || null,
+        founder: data.founder || false,
+        leader_id: data.leader_id || null,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -264,6 +272,8 @@ export const useContacts = () => {
               attendance_code: payload.new.attendance_code,
               referred_by: (payload.new as any).referred_by || null,
               photo_url: payload.new.photo_url || null,
+              founder: payload.new.founder || false,
+              leader_id: payload.new.leader_id || null,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
             };
@@ -285,6 +295,8 @@ export const useContacts = () => {
               attendance_code: payload.new.attendance_code,
               referred_by: (payload.new as any).referred_by || null,
               photo_url: payload.new.photo_url || null,
+              founder: payload.new.founder || false,
+              leader_id: payload.new.leader_id || null,
               created_at: payload.new.created_at,
               updated_at: payload.new.updated_at
             };

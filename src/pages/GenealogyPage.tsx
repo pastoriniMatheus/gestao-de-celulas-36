@@ -2,15 +2,18 @@
 import React from 'react';
 import { GenealogyNetwork } from '@/components/GenealogyNetwork';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Network, Users, TreePine, Target, Triangle, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Network, Users, TreePine, Target, Triangle, UserPlus, ArrowLeft } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import { useCells } from '@/hooks/useCells';
+import { useNavigate } from 'react-router-dom';
 
 const GenealogyPage = () => {
   const { contacts } = useContacts();
   const { cells } = useCells();
+  const navigate = useNavigate();
 
-  // Calcular estatísticas da rede piramidal
+  // Calcular estatísticas da rede de discipulado
   const connectedMembers = contacts.filter(c => c.referred_by || contacts.some(other => other.referred_by === c.id));
   const standbyMembers = contacts.filter(c => !c.referred_by && !contacts.some(other => other.referred_by === c.id));
   
@@ -35,9 +38,25 @@ const GenealogyPage = () => {
     0
   );
 
+  const handleGoBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header com botão voltar */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            onClick={handleGoBack}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar ao Dashboard
+          </Button>
+        </div>
+
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
@@ -45,12 +64,12 @@ const GenealogyPage = () => {
               <Triangle className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Rede Piramidal de Discipulado
+              Rede de Discipulado
             </h1>
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Visualize a estrutura hierárquica de discipulado da igreja em formato piramidal. 
-            Explore as conexões por indicação e acompanhe o crescimento da rede.
+            Visualize a estrutura hierárquica de discipulado da igreja. 
+            Explore as conexões por indicação e por liderança, acompanhe o crescimento da rede.
           </p>
         </div>
 
@@ -77,7 +96,7 @@ const GenealogyPage = () => {
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">{connectedMembers.length}</div>
               <p className="text-xs text-muted-foreground">
-                Na rede piramidal ({connectionRate}%)
+                Na rede de discipulado ({connectionRate}%)
               </p>
             </CardContent>
           </Card>
@@ -90,7 +109,7 @@ const GenealogyPage = () => {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{maxDepth + 1}</div>
               <p className="text-xs text-muted-foreground">
-                Níveis da pirâmide
+                Níveis de discipulado
               </p>
             </CardContent>
           </Card>
@@ -109,15 +128,15 @@ const GenealogyPage = () => {
           </Card>
         </div>
 
-        {/* Rede Piramidal Interativa */}
+        {/* Rede de Discipulado Interativa */}
         <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Triangle className="w-5 h-5 text-purple-600" />
-              Rede Piramidal de Discipulado
+              Rede de Discipulado
             </CardTitle>
             <CardDescription>
-              Explore a estrutura hierárquica por indicação. Use os controles para navegar pelos níveis 
+              Explore a estrutura hierárquica por indicação e liderança. Use os controles para navegar pelos níveis 
               e expandir as conexões. Membros em standby aparecem no painel lateral.
             </CardDescription>
           </CardHeader>

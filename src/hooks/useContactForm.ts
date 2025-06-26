@@ -13,6 +13,8 @@ export interface ContactFormData {
   encounter_with_god: boolean;
   baptized: boolean;
   photo_url: string | null;
+  founder: boolean;
+  leader_id: string;
 }
 
 export const useContactForm = () => {
@@ -28,6 +30,8 @@ export const useContactForm = () => {
     encounter_with_god: false,
     baptized: false,
     photo_url: null,
+    founder: false,
+    leader_id: '',
   });
 
   const updateFormData = (updates: Partial<ContactFormData>) => {
@@ -47,6 +51,8 @@ export const useContactForm = () => {
       encounter_with_god: false,
       baptized: false,
       photo_url: null,
+      founder: false,
+      leader_id: '',
     });
   };
 
