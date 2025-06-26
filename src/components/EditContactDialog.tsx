@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -88,25 +89,18 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
 
     setSaving(true);
     try {
-      console.log('EditContactDialog: Salvando contato com dados:', form);
-      
-      // Determinar o status correto baseado na célula
       let newStatus = contact.status;
       if (form.cell_id && form.cell_id !== contact.cell_id) {
-        // Se está atribuindo uma célula, mudar para membro
         newStatus = 'member';
       } else if (!form.cell_id && contact.cell_id) {
-        // Se está removendo a célula, voltar para pendente
         newStatus = 'pending';
       }
 
-      // Processar referred_by corretamente
       let referredByValue = null;
       if (form.referred_by && form.referred_by !== 'no-referral' && form.referred_by !== '') {
         referredByValue = form.referred_by;
       }
 
-      // Processar leader_id corretamente
       let leaderIdValue = null;
       if (form.leader_id && form.leader_id !== '') {
         leaderIdValue = form.leader_id;
@@ -128,11 +122,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         leader_id: leaderIdValue,
       };
 
-      console.log('EditContactDialog: Dados de atualização:', updateData);
-      
       await updateContact(contact.id, updateData);
       
-      // Call the callback if provided
       if (onContactUpdated) {
         onContactUpdated();
       }
@@ -153,13 +144,10 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const handleTransformToMember = async () => {
     setSaving(true);
     try {
-      console.log('EditContactDialog: Transformando visitante em membro');
-      
       await updateContact(contact.id, {
         status: 'member'
       });
       
-      // Call the callback if provided
       if (onContactUpdated) {
         onContactUpdated();
       }
@@ -180,14 +168,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const handleTransferCell = async () => {
     setSaving(true);
     try {
-      console.log('EditContactDialog: Transferindo membro para nova célula');
-      
       await updateContact(contact.id, {
         cell_id: form.cell_id || null,
-        status: form.cell_id ? 'member' : 'pending' // Ajustar status baseado na célula
+        status: form.cell_id ? 'member' : 'pending'
       });
       
-      // Call the callback if provided
       if (onContactUpdated) {
         onContactUpdated();
       }
@@ -243,7 +228,6 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {/* Campo de Foto */}
           <div>
             <Label>Foto do Contato</Label>
             <PhotoUpload
@@ -276,11 +260,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-city">Cidade</Label>
             <Select
-              value={form.city_id || "placeholder-city"}
+              value={form.city_id || ""}
               onValueChange={value => {
                 setForm(f => ({
                   ...f,
-                  city_id: value === "placeholder-city" ? "" : value,
+                  city_id: value === "" ? "" : value,
                   neighborhood: "",
                 }));
               }}
@@ -289,7 +273,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="placeholder-city">Selecione uma cidade</SelectItem>
+                <SelectItem value="">Selecione uma cidade</SelectItem>
                 {cities.map(city => (
                   <SelectItem key={city.id} value={city.id}>
                     {city.name} - {city.state}
@@ -301,11 +285,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-neighborhood">Bairro *</Label>
             <Select
-              value={form.neighborhood || "placeholder-neighborhood"}
+              value={form.neighborhood || ""}
               onValueChange={value =>
                 setForm(f => ({
                   ...f,
-                  neighborhood: value === "placeholder-neighborhood" ? "" : value,
+                  neighborhood: value === "" ? "" : value,
                 }))
               }
             >
@@ -313,7 +297,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione o bairro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="placeholder-neighborhood">Selecione um bairro</SelectItem>
+                <SelectItem value="">Selecione um bairro</SelectItem>
                 {filteredNeighborhoods.map(nb => (
                   <SelectItem key={nb.id} value={nb.name}>
                     {nb.name}
@@ -354,14 +338,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
             />
           </div>
 
-          {/* Campo Líder de Discipulado */}
           <LeaderField
             value={form.leader_id}
             onChange={value => setForm(f => ({ ...f, leader_id: value }))}
             profiles={profiles}
           />
 
-          {/* Seção de Célula e Quem Indicou */}
           {showCellField && (
             <div className="border-t pt-4">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Células</h4>
