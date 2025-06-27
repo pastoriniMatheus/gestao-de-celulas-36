@@ -29,19 +29,25 @@ export const LocationFields = ({
   cities, 
   getFilteredNeighborhoods 
 }: LocationFieldsProps) => {
+  const safeCityValue = formData.city_id || "no-city";
+  const safeNeighborhoodValue = formData.neighborhood || "no-neighborhood";
+
   return (
     <>
       <div>
         <Label htmlFor="city">Cidade</Label>
         <Select 
-          value={formData.city_id || "none"} 
-          onValueChange={(value) => onUpdateFormData({ city_id: value === "none" ? "" : value, neighborhood: '' })}
+          value={safeCityValue} 
+          onValueChange={(value) => onUpdateFormData({ 
+            city_id: value === "no-city" ? "" : value, 
+            neighborhood: '' 
+          })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione a cidade" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">Selecione uma cidade</SelectItem>
+            <SelectItem value="no-city">Selecione uma cidade</SelectItem>
             {cities.map((city) => (
               <SelectItem key={city.id} value={city.id}>
                 {city.name} - {city.state}
@@ -52,16 +58,18 @@ export const LocationFields = ({
       </div>
       <div>
         <Label htmlFor="neighborhood">Bairro *</Label>
-        {formData.city_id && formData.city_id !== "none" ? (
+        {formData.city_id && formData.city_id !== "no-city" ? (
           <Select 
-            value={formData.neighborhood || "none"} 
-            onValueChange={(value) => onUpdateFormData({ neighborhood: value === "none" ? "" : value })}
+            value={safeNeighborhoodValue} 
+            onValueChange={(value) => onUpdateFormData({ 
+              neighborhood: value === "no-neighborhood" ? "" : value 
+            })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione o bairro" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Selecione um bairro</SelectItem>
+              <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
               {getFilteredNeighborhoods(formData.city_id).map((neighborhood) => (
                 <SelectItem key={neighborhood.id} value={neighborhood.name}>
                   {neighborhood.name}

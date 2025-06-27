@@ -24,24 +24,24 @@ export const useUserProfile = (user: User | null) => {
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('useUserProfile - Erro ao buscar perfil:', error);
-        
-        // Se não encontrar perfil, vamos verificar se é admin baseado no email
-        if (error.code === 'PGRST116') {
-          console.log('useUserProfile - Perfil não encontrado, verificando se é admin pelo email');
-          // Criar perfil temporário para admin
-          const tempProfile = {
-            user_id: userId,
-            name: 'Administrador',
-            role: 'admin',
-            email: user?.email
-          };
-          console.log('useUserProfile - Criando perfil temporário para admin:', tempProfile);
-          setUserProfile(tempProfile);
-        }
+        return;
+      }
+
+      if (!data) {
+        console.log('useUserProfile - Perfil não encontrado, verificando se é admin pelo email');
+        // Criar perfil temporário para admin se não encontrar
+        const tempProfile = {
+          user_id: userId,
+          name: 'Administrador',
+          role: 'admin',
+          email: user?.email
+        };
+        console.log('useUserProfile - Criando perfil temporário para admin:', tempProfile);
+        setUserProfile(tempProfile);
         return;
       }
 

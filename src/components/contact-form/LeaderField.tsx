@@ -1,8 +1,6 @@
 
-import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Profile {
   id: string;
@@ -17,27 +15,29 @@ interface LeaderFieldProps {
   profiles: Profile[];
 }
 
-export const LeaderField: React.FC<LeaderFieldProps> = ({ value, onChange, profiles }) => {
-  // Filtrar apenas líderes do sistema
+export const LeaderField = ({ value, onChange, profiles }: LeaderFieldProps) => {
+  // Filtrar apenas perfis com role de líder
   const leaders = profiles.filter(profile => 
-    profile.role === 'admin' || profile.role === 'leader'
+    profile.role === 'leader' || profile.role === 'admin'
   );
 
+  const safeValue = value || 'no-leader';
+
   return (
-    <div className="space-y-2">
-      <Label htmlFor="leader" className="flex items-center gap-2 text-sm font-medium">
-        <Users className="w-4 h-4 text-blue-600" />
-        Líder de Discipulado
-      </Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger id="leader">
+    <div>
+      <Label htmlFor="leader">Líder Responsável</Label>
+      <Select 
+        value={safeValue} 
+        onValueChange={(selectedValue) => onChange(selectedValue === 'no-leader' ? '' : selectedValue)}
+      >
+        <SelectTrigger>
           <SelectValue placeholder="Selecione um líder" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Nenhum líder</SelectItem>
-          {leaders.map(leader => (
+          <SelectItem value="no-leader">Nenhum líder</SelectItem>
+          {leaders.map((leader) => (
             <SelectItem key={leader.id} value={leader.id}>
-              {leader.name} ({leader.email})
+              {leader.name}
             </SelectItem>
           ))}
         </SelectContent>
