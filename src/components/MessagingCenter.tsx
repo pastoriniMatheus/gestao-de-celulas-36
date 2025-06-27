@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import { MessageSquare, Send, Users, Webhook, Filter } from 'lucide-react';
 import { useMessaging } from '@/hooks/useMessaging';
 import { useWebhookConfigs } from '@/hooks/useWebhookConfigs';
 import { toast } from '@/hooks/use-toast';
-
 export const MessagingCenter = () => {
   const {
     contacts,
@@ -21,9 +19,9 @@ export const MessagingCenter = () => {
     setSelectedContacts,
     applyFilters
   } = useMessaging();
-
-  const { webhooks } = useWebhookConfigs();
-  
+  const {
+    webhooks
+  } = useWebhookConfigs();
   const [message, setMessage] = useState('');
   const [selectedCell, setSelectedCell] = useState<string>('all');
   const [selectedStage, setSelectedStage] = useState<string>('all');
@@ -31,16 +29,20 @@ export const MessagingCenter = () => {
   const [selectedWebhook, setSelectedWebhook] = useState<string>('');
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [sending, setSending] = useState(false);
-
   useEffect(() => {
     const filters = {
-      ...(selectedCell !== 'all' && { cellId: selectedCell }),
-      ...(selectedStage !== 'all' && { pipelineStageId: selectedStage }),
-      ...(selectedStatus !== 'all' && { status: selectedStatus })
+      ...(selectedCell !== 'all' && {
+        cellId: selectedCell
+      }),
+      ...(selectedStage !== 'all' && {
+        pipelineStageId: selectedStage
+      }),
+      ...(selectedStatus !== 'all' && {
+        status: selectedStatus
+      })
     };
     applyFilters(filters);
   }, [selectedCell, selectedStage, selectedStatus, applyFilters]);
-
   const handleSelectAll = (checked: boolean) => {
     setIsSelectAll(checked);
     if (checked) {
@@ -49,7 +51,6 @@ export const MessagingCenter = () => {
       setSelectedContacts([]);
     }
   };
-
   const handleContactSelect = (contactId: string, checked: boolean) => {
     if (checked) {
       setSelectedContacts([...selectedContacts, contactId]);
@@ -58,7 +59,6 @@ export const MessagingCenter = () => {
       setIsSelectAll(false);
     }
   };
-
   const handleSendMessage = async () => {
     if (!message.trim()) {
       toast({
@@ -68,7 +68,6 @@ export const MessagingCenter = () => {
       });
       return;
     }
-
     if (selectedContacts.length === 0) {
       toast({
         title: "Erro",
@@ -77,7 +76,6 @@ export const MessagingCenter = () => {
       });
       return;
     }
-
     if (!selectedWebhook) {
       toast({
         title: "Erro",
@@ -86,17 +84,13 @@ export const MessagingCenter = () => {
       });
       return;
     }
-
     setSending(true);
-    
     try {
       const webhook = webhooks.find(w => w.id === selectedWebhook);
       if (!webhook) {
         throw new Error('Webhook não encontrado');
       }
-
       const selectedContactsData = contacts.filter(c => selectedContacts.includes(c.id));
-      
       const response = await fetch(webhook.webhook_url, {
         method: 'POST',
         headers: {
@@ -118,16 +112,13 @@ export const MessagingCenter = () => {
           webhook_name: webhook.name
         })
       });
-
       if (!response.ok) {
         throw new Error(`Erro HTTP: ${response.status}`);
       }
-
       toast({
         title: "Sucesso",
         description: `Mensagem enviada para ${selectedContactsData.length} contatos via webhook`
       });
-
       setMessage('');
       setSelectedContacts([]);
       setIsSelectAll(false);
@@ -143,20 +134,14 @@ export const MessagingCenter = () => {
       setSending(false);
     }
   };
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
+    return <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <span className="ml-2">Carregando...</span>
-      </div>
-    );
+      </div>;
   }
-
   const messageWebhooks = webhooks.filter(w => w.active && w.event_type === 'custom');
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6 p-6">
+  return <div className="max-w-4xl mx-auto space-y-6 p-6">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Central de Mensagens</h1>
@@ -183,30 +168,20 @@ export const MessagingCenter = () => {
                 <SelectValue placeholder="Selecione o webhook para envio" />
               </SelectTrigger>
               <SelectContent>
-                {messageWebhooks.map((webhook) => (
-                  <SelectItem key={webhook.id} value={webhook.id}>
+                {messageWebhooks.map(webhook => <SelectItem key={webhook.id} value={webhook.id}>
                     {webhook.name}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
-            {messageWebhooks.length === 0 && (
-              <p className="text-sm text-amber-600">
+            {messageWebhooks.length === 0 && <p className="text-sm text-amber-600">
                 Nenhum webhook ativo encontrado. Configure webhooks em Configurações → Webhooks.
-              </p>
-            )}
+              </p>}
           </div>
 
           {/* Message Input */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Mensagem *</label>
-            <Textarea
-              placeholder="Digite sua mensagem..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-              className="resize-none"
-            />
+            <Textarea placeholder="Digite sua mensagem..." value={message} onChange={e => setMessage(e.target.value)} rows={4} className="resize-none" />
           </div>
         </CardContent>
       </Card>
@@ -227,11 +202,9 @@ export const MessagingCenter = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as células</SelectItem>
-                {cells.map((cell) => (
-                  <SelectItem key={cell.id} value={cell.id}>
+                {cells.map(cell => <SelectItem key={cell.id} value={cell.id}>
                     {cell.name}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
 
@@ -241,11 +214,9 @@ export const MessagingCenter = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os estágios</SelectItem>
-                {pipelineStages.map((stage) => (
-                  <SelectItem key={stage.id} value={stage.id}>
+                {pipelineStages.map(stage => <SelectItem key={stage.id} value={stage.id}>
                     {stage.name}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
 
@@ -273,26 +244,18 @@ export const MessagingCenter = () => {
               Contatos ({contacts.length})
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Checkbox
-                id="select-all"
-                checked={isSelectAll}
-                onCheckedChange={handleSelectAll}
-              />
+              <Checkbox id="select-all" checked={isSelectAll} onCheckedChange={handleSelectAll} />
               <label htmlFor="select-all" className="text-sm font-medium">
                 Selecionar todos
               </label>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-0 my-0">
           <div className="max-h-80 overflow-y-auto space-y-2">
-            {contacts.map((contact) => (
-              <div key={contact.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+            {contacts.map(contact => <div key={contact.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={selectedContacts.includes(contact.id)}
-                    onCheckedChange={(checked) => handleContactSelect(contact.id, checked as boolean)}
-                  />
+                  <Checkbox checked={selectedContacts.includes(contact.id)} onCheckedChange={checked => handleContactSelect(contact.id, checked as boolean)} />
                   <div>
                     <p className="font-medium">{contact.name}</p>
                     <p className="text-sm text-gray-600">{contact.whatsapp || 'Sem WhatsApp'}</p>
@@ -300,16 +263,12 @@ export const MessagingCenter = () => {
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  {contact.status === 'member' ? 'Membro' :
-                   contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
+                  {contact.status === 'member' ? 'Membro' : contact.status === 'visitor' ? 'Visitante' : 'Pendente'}
                 </Badge>
-              </div>
-            ))}
-            {contacts.length === 0 && (
-              <p className="text-center text-gray-500 py-8">
+              </div>)}
+            {contacts.length === 0 && <p className="text-center text-gray-500 py-8">
                 Nenhum contato encontrado com os filtros aplicados
-              </p>
-            )}
+              </p>}
           </div>
         </CardContent>
       </Card>
@@ -321,24 +280,14 @@ export const MessagingCenter = () => {
             <div className="text-sm text-gray-600">
               {selectedContacts.length} contato(s) selecionado(s)
             </div>
-            <Button
-              onClick={handleSendMessage}
-              disabled={sending || selectedContacts.length === 0 || !message.trim() || !selectedWebhook}
-              size="lg"
-              className="min-w-32"
-            >
-              {sending ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <>
+            <Button onClick={handleSendMessage} disabled={sending || selectedContacts.length === 0 || !message.trim() || !selectedWebhook} size="lg" className="min-w-32">
+              {sending ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <>
                   <Send className="h-4 w-4 mr-2" />
                   Enviar via Webhook
-                </>
-              )}
+                </>}
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
