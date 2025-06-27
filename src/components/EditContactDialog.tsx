@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -31,27 +32,28 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const { cells: cellsData } = useCells();
 
   const [form, setForm] = useState({
-    name: contact?.name ?? '',
-    whatsapp: contact?.whatsapp ?? '',
-    email: contact?.email ?? '',
-    neighborhood: contact?.neighborhood ?? '',
-    city_id: contact?.city_id ?? '',
-    birth_date: contact?.birth_date ?? '',
-    encounter_with_god: contact?.encounter_with_god ?? false,
-    baptized: contact?.baptized ?? false,
-    status: contact?.status ?? 'pending',
-    cell_id: contact?.cell_id ?? '',
-    referred_by: contact?.referred_by ?? '',
-    photo_url: contact?.photo_url ?? null,
-    founder: contact?.founder ?? false,
-    leader_id: contact?.leader_id ?? '',
+    name: '',
+    whatsapp: '',
+    email: '',
+    neighborhood: '',
+    city_id: '',
+    birth_date: '',
+    encounter_with_god: false,
+    baptized: false,
+    status: 'pending',
+    cell_id: '',
+    referred_by: '',
+    photo_url: null,
+    founder: false,
+    leader_id: '',
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (contact && open) {
+      console.log('EditContactDialog: Carregando dados do contato:', contact);
       let city_id = contact?.city_id;
-      if (!city_id && contact?.neighborhood && neighborhoods.length > 0) {
+      if (!city_id && contact?.neighborhood && neighborhoods && neighborhoods.length > 0) {
         const nb = neighborhoods.find(nb => nb.name === contact.neighborhood);
         city_id = nb?.city_id ?? '';
       }
@@ -75,9 +77,30 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     }
   }, [contact, neighborhoods, open]);
 
-  const filteredNeighborhoods = form.city_id
+  // Não renderizar nada se não tiver contato
+  if (!contact) {
+    console.log('EditContactDialog: Contato não encontrado, não renderizando');
+    return null;
+  }
+
+  // Aguardar dados serem carregados
+  if (!neighborhoods || !cities) {
+    console.log('EditContactDialog: Aguardando dados serem carregados');
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Carregando...</span>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const filteredNeighborhoods = form.city_id && neighborhoods
     ? neighborhoods.filter(nb => nb.city_id === form.city_id)
-    : neighborhoods;
+    : neighborhoods || [];
 
   const handleSave = async () => {
     if (!form.name || !form.whatsapp || !form.neighborhood) {
@@ -193,7 +216,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   };
 
   const getCellName = (cellId: string) => {
-    const allCells = [...cells, ...cellsData];
+    const allCells = [...(cells || []), ...(cellsData || [])];
     const cell = allCells.find(c => c.id === cellId);
     return cell ? cell.name : 'Célula não encontrada';
   };
@@ -217,11 +240,6 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const updateFormData = (updates: any) => {
     setForm(prev => ({ ...prev, ...updates }));
   };
-
-  // Não renderizar nada se não tiver contato
-  if (!contact) {
-    return null;
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,11 +285,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-city">Cidade</Label>
             <Select
-              value={form.city_id || "none"}
+              value={form.city_id || ""}
               onValueChange={value => {
                 setForm(f => ({
                   ...f,
-                  city_id: value === "none" ? "" : value,
+                  city_id: value === "" ? "" : value,
                   neighborhood: "",
                 }));
               }}
@@ -280,8 +298,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Selecione uma cidade</SelectItem>
-                {cities.map(city => (
+                <SelectItem value="">Selecione uma cidade</SelectItem>
+                {(cities || []).map(city => (
                   <SelectItem key={city.id} value={city.id}>
                     {city.name} - {city.state}
                   </SelectItem>
@@ -292,11 +310,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-neighborhood">Bairro *</Label>
             <Select
-              value={form.neighborhood || "none"}
+              value={form.neighborhood || ""}
               onValueChange={value =>
                 setForm(f => ({
                   ...f,
-                  neighborhood: value === "none" ? "" : value,
+                  neighborhood: value === "" ? "" : value,
                 }))
               }
             >
@@ -304,7 +322,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione o bairro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Selecione um bairro</SelectItem>
+                <SelectItem value="">Selecione um bairro</SelectItem>
                 {filteredNeighborhoods.map(nb => (
                   <SelectItem key={nb.id} value={nb.name}>
                     {nb.name}
@@ -357,7 +375,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
               <ReferralAndCellFields
                 formData={form}
                 onUpdateFormData={updateFormData}
-                cells={[...cells, ...cellsData]}
+                cells={[...(cells || []), ...(cellsData || [])]}
                 contacts={contacts || []}
                 profiles={profiles || []}
               />
