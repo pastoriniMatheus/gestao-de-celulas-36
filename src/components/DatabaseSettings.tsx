@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,9 @@ interface DatabaseConfig {
 const BACKUP_TABLES = [
   'contacts', 'cells', 'profiles', 'cities', 'neighborhoods', 
   'pipeline_stages', 'events', 'qr_codes', 'message_templates',
-  'webhook_configs', 'system_settings'
+  'webhook_configs', 'system_settings', 'attendances', 'birthday_notifications',
+  'birthday_webhooks', 'contact_notes', 'qr_scans', 'referral_channels',
+  'sent_messages'
 ] as const;
 
 type BackupTableName = typeof BACKUP_TABLES[number];
@@ -121,32 +122,71 @@ export const DatabaseSettings = () => {
   const downloadDatabase = async () => {
     setDownloading(true);
     try {
-      console.log('DatabaseSettings: Iniciando backup do banco...');
+      console.log('DatabaseSettings: Iniciando dump completo do banco...');
       
       const backup: any = {
         timestamp: new Date().toISOString(),
-        version: '1.0',
-        system: 'Sistema Matheus Pastorini',
-        data: {}
+        version: '2.0',
+        system: 'Sistema Matheus Pastorini - Dump Completo',
+        database_info: {
+          project_url: dbConfig.project_url,
+          project_id: dbConfig.project_id,
+          exported_at: new Date().toISOString()
+        },
+        data: {},
+        metadata: {
+          total_tables: 0,
+          total_records: 0,
+          export_duration: 0
+        }
       };
+
+      const startTime = Date.now();
+      let totalRecords = 0;
 
       // Exportar dados de cada tabela usando type-safe approach
       for (const tableName of BACKUP_TABLES) {
         try {
           console.log(`DatabaseSettings: Exportando tabela ${tableName}...`);
           
-          const { data, error } = await supabase
+          const { data, error, count } = await supabase
             .from(tableName as BackupTableName)
-            .select('*');
+            .select('*', { count: 'exact' });
 
           if (!error && data) {
-            backup.data[tableName] = data;
+            backup.data[tableName] = {
+              records: data,
+              count: data.length,
+              exported_at: new Date().toISOString()
+            };
+            totalRecords += data.length;
             console.log(`DatabaseSettings: Exportados ${data.length} registros da tabela ${tableName}`);
+          } else if (error) {
+            console.warn(`DatabaseSettings: Erro ao exportar tabela ${tableName}:`, error);
+            backup.data[tableName] = {
+              records: [],
+              count: 0,
+              error: error.message,
+              exported_at: new Date().toISOString()
+            };
           }
         } catch (error) {
-          console.warn(`DatabaseSettings: Erro ao exportar tabela ${tableName}:`, error);
+          console.warn(`DatabaseSettings: Erro ao processar tabela ${tableName}:`, error);
+          backup.data[tableName] = {
+            records: [],
+            count: 0,
+            error: error instanceof Error ? error.message : 'Erro desconhecido',
+            exported_at: new Date().toISOString()
+          };
         }
       }
+
+      const endTime = Date.now();
+      backup.metadata = {
+        total_tables: BACKUP_TABLES.length,
+        total_records: totalRecords,
+        export_duration: endTime - startTime
+      };
 
       // Baixar arquivo JSON
       const blob = new Blob([JSON.stringify(backup, null, 2)], { 
@@ -155,7 +195,7 @@ export const DatabaseSettings = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `backup-database-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `dump-completo-${dbConfig.project_id}-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -163,13 +203,13 @@ export const DatabaseSettings = () => {
 
       toast({
         title: "Sucesso",
-        description: "Backup do banco de dados baixado com sucesso! - Sistema Matheus Pastorini"
+        description: `Dump completo baixado! ${totalRecords} registros de ${BACKUP_TABLES.length} tabelas - Sistema Matheus Pastorini`
       });
     } catch (error) {
-      console.error('DatabaseSettings: Erro ao fazer backup:', error);
+      console.error('DatabaseSettings: Erro ao fazer dump completo:', error);
       toast({
         title: "Erro",
-        description: "Erro ao fazer backup do banco de dados",
+        description: "Erro ao fazer dump completo do banco de dados",
         variant: "destructive"
       });
     } finally {
@@ -195,9 +235,17 @@ export const DatabaseSettings = () => {
       let restoredTables = 0;
       let totalRecords = 0;
 
+      // Verificar se é um dump completo (v2.0) ou backup simples (v1.0)
+      const isFullDump = backup.version === '2.0';
+
       // Restaurar dados para cada tabela usando type-safe approach
       for (const tableName of BACKUP_TABLES) {
-        const records = backup.data[tableName];
+        const tableData = backup.data[tableName];
+        
+        // Para dump completo, os dados estão em tableData.records
+        // Para backup simples, os dados estão diretamente em tableData
+        const records = isFullDump ? tableData?.records : tableData;
+        
         if (Array.isArray(records) && records.length > 0) {
           try {
             console.log(`DatabaseSettings: Restaurando tabela ${tableName} com ${records.length} registros...`);
@@ -212,27 +260,33 @@ export const DatabaseSettings = () => {
               console.warn(`DatabaseSettings: Aviso ao limpar tabela ${tableName}:`, deleteError);
             }
 
-            // Inserir novos dados
-            const { error: insertError } = await supabase
-              .from(tableName as BackupTableName)
-              .insert(records);
+            // Inserir novos dados em lotes para evitar timeout
+            const batchSize = 100;
+            for (let i = 0; i < records.length; i += batchSize) {
+              const batch = records.slice(i, i + batchSize);
+              const { error: insertError } = await supabase
+                .from(tableName as BackupTableName)
+                .insert(batch);
 
-            if (!insertError) {
-              restoredTables++;
-              totalRecords += records.length;
-              console.log(`DatabaseSettings: Restaurados ${records.length} registros na tabela ${tableName}`);
-            } else {
-              console.error(`DatabaseSettings: Erro ao restaurar tabela ${tableName}:`, insertError);
+              if (insertError) {
+                console.error(`DatabaseSettings: Erro ao restaurar lote da tabela ${tableName}:`, insertError);
+                throw insertError;
+              }
             }
+
+            restoredTables++;
+            totalRecords += records.length;
+            console.log(`DatabaseSettings: Restaurados ${records.length} registros na tabela ${tableName}`);
           } catch (error) {
-            console.warn(`DatabaseSettings: Erro ao processar tabela ${tableName}:`, error);
+            console.error(`DatabaseSettings: Erro ao processar tabela ${tableName}:`, error);
+            throw error;
           }
         }
       }
 
       toast({
         title: "Sucesso",
-        description: `Banco restaurado! ${restoredTables} tabelas e ${totalRecords} registros - Sistema Matheus Pastorini`
+        description: `${isFullDump ? 'Dump completo' : 'Backup'} restaurado! ${restoredTables} tabelas e ${totalRecords} registros - Sistema Matheus Pastorini`
       });
     } catch (error) {
       console.error('DatabaseSettings: Erro ao restaurar backup:', error);
@@ -395,10 +449,10 @@ export const DatabaseSettings = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Download className="h-5 w-5 text-green-600" />
-                  <h4 className="font-medium">Fazer Backup</h4>
+                  <h4 className="font-medium">Dump Completo</h4>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Baixa um arquivo JSON com todos os dados do banco
+                  Baixa todas as tabelas do banco com metadados detalhados
                 </p>
                 <Button 
                   onClick={downloadDatabase} 
@@ -407,7 +461,7 @@ export const DatabaseSettings = () => {
                   className="w-full"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {downloading ? 'Baixando...' : 'Baixar Banco'}
+                  {downloading ? 'Baixando...' : 'Baixar Dump Completo'}
                 </Button>
               </div>
             </Card>
@@ -419,7 +473,7 @@ export const DatabaseSettings = () => {
                   <h4 className="font-medium">Restaurar Backup</h4>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Carrega dados de um arquivo de backup
+                  Carrega dados de um arquivo de backup ou dump
                 </p>
                 <div className="relative">
                   <input
@@ -445,7 +499,7 @@ export const DatabaseSettings = () => {
           <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
             <AlertCircle className="h-4 w-4" />
             <span>
-              <strong>Atenção:</strong> Restaurar um backup irá substituir todos os dados atuais do banco de dados.
+              <strong>Atenção:</strong> O dump completo inclui todas as tabelas com metadados. Restaurar um backup irá substituir todos os dados atuais do banco de dados.
             </span>
           </div>
         </div>

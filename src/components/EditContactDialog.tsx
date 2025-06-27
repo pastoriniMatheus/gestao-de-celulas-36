@@ -285,11 +285,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-city">Cidade</Label>
             <Select
-              value={form.city_id || ""}
+              value={form.city_id || "no-city"}
               onValueChange={value => {
                 setForm(f => ({
                   ...f,
-                  city_id: value === "" ? "" : value,
+                  city_id: value === "no-city" ? "" : value,
                   neighborhood: "",
                 }));
               }}
@@ -298,7 +298,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Selecione uma cidade</SelectItem>
+                <SelectItem value="no-city">Selecione uma cidade</SelectItem>
                 {(cities || []).map(city => (
                   <SelectItem key={city.id} value={city.id}>
                     {city.name} - {city.state}
@@ -310,11 +310,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-neighborhood">Bairro *</Label>
             <Select
-              value={form.neighborhood || ""}
+              value={form.neighborhood || "no-neighborhood"}
               onValueChange={value =>
                 setForm(f => ({
                   ...f,
-                  neighborhood: value === "" ? "" : value,
+                  neighborhood: value === "no-neighborhood" ? "" : value,
                 }))
               }
             >
@@ -322,7 +322,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione o bairro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Selecione um bairro</SelectItem>
+                <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
                 {filteredNeighborhoods.map(nb => (
                   <SelectItem key={nb.id} value={nb.name}>
                     {nb.name}
