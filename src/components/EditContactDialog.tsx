@@ -27,6 +27,9 @@ interface EditContactDialogProps {
 }
 
 export function EditContactDialog({ open, onOpenChange, contact, context = 'contacts', onContactUpdated }: EditContactDialogProps) {
+  console.log('EditContactDialog: Renderizando com contact:', contact);
+  console.log('EditContactDialog: Dialog open:', open);
+
   const { updateContact } = useContacts();
   const { neighborhoods, cities, cells, contacts, profiles } = useContactDialogData(open);
   const { cells: cellsData } = useCells();
@@ -50,37 +53,86 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (contact && open) {
+    console.log('EditContactDialog: useEffect executado');
+    console.log('EditContactDialog: contact:', contact);
+    console.log('EditContactDialog: open:', open);
+    console.log('EditContactDialog: neighborhoods:', neighborhoods);
+
+    if (!contact || !open) {
+      console.log('EditContactDialog: Sem contato ou dialog fechado, saindo do useEffect');
+      return;
+    }
+
+    try {
       console.log('EditContactDialog: Carregando dados do contato:', contact);
-      let city_id = contact?.city_id;
+      
+      // Verificar se todos os campos obrigatórios existem
+      const requiredFields = ['id', 'name'];
+      const missingFields = requiredFields.filter(field => !contact[field]);
+      if (missingFields.length > 0) {
+        console.error('EditContactDialog: Campos obrigatórios faltando:', missingFields);
+        toast({
+          title: "Erro",
+          description: `Dados do contato incompletos: ${missingFields.join(', ')}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let city_id = contact?.city_id || '';
       if (!city_id && contact?.neighborhood && neighborhoods && neighborhoods.length > 0) {
         const nb = neighborhoods.find(nb => nb.name === contact.neighborhood);
-        city_id = nb?.city_id ?? '';
+        city_id = nb?.city_id || '';
+        console.log('EditContactDialog: City ID encontrado via bairro:', city_id);
       }
       
-      setForm({
+      const formData = {
         name: contact?.name || '',
         whatsapp: contact?.whatsapp || '',
         email: contact?.email || '',
         neighborhood: contact?.neighborhood || '',
-        city_id: city_id || '',
+        city_id: city_id,
         birth_date: contact?.birth_date || '',
-        encounter_with_god: contact?.encounter_with_god || false,
-        baptized: contact?.baptized || false,
+        encounter_with_god: Boolean(contact?.encounter_with_god),
+        baptized: Boolean(contact?.baptized),
         status: contact?.status || 'pending',
         cell_id: contact?.cell_id || '',
         referred_by: contact?.referred_by || '',
         photo_url: contact?.photo_url || null,
-        founder: contact?.founder || false,
+        founder: Boolean(contact?.founder),
         leader_id: contact?.leader_id || '',
+      };
+
+      console.log('EditContactDialog: Dados do formulário preparados:', formData);
+      setForm(formData);
+    } catch (error) {
+      console.error('EditContactDialog: Erro ao processar dados do contato:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do contato",
+        variant: "destructive",
       });
     }
   }, [contact, neighborhoods, open]);
 
-  // Não renderizar nada se não tiver contato
+  // Verificação de segurança - não renderizar se não tiver contato
   if (!contact) {
     console.log('EditContactDialog: Contato não encontrado, não renderizando');
     return null;
+  }
+
+  // Verificação de campos obrigatórios do contato
+  if (!contact.id || !contact.name) {
+    console.error('EditContactDialog: Contato com dados obrigatórios faltando:', contact);
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center justify-center py-8 text-red-600">
+            <span>Erro: Dados do contato incompletos</span>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   // Aguardar dados serem carregados
@@ -103,6 +155,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     : neighborhoods || [];
 
   const handleSave = async () => {
+    console.log('EditContactDialog: Iniciando salvamento');
+    
     if (!form.name || !form.whatsapp || !form.neighborhood) {
       toast({
         title: "Erro",
@@ -147,6 +201,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
         leader_id: leaderIdValue,
       };
 
+      console.log('EditContactDialog: Dados para atualização:', updateData);
       await updateContact(contact.id, updateData);
       
       if (onContactUpdated) {
@@ -241,6 +296,14 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
     setForm(prev => ({ ...prev, ...updates }));
   };
 
+  // Preparar valores seguros para os Select components
+  const safeValues = {
+    city: form.city_id || 'empty-city',
+    neighborhood: form.neighborhood || 'empty-neighborhood'
+  };
+
+  console.log('EditContactDialog: Renderizando dialog completo');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
@@ -285,11 +348,12 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-city">Cidade</Label>
             <Select
-              value={form.city_id || "no-city"}
+              value={safeValues.city}
               onValueChange={value => {
+                const newCityId = value === "empty-city" ? "" : value;
                 setForm(f => ({
                   ...f,
-                  city_id: value === "no-city" ? "" : value,
+                  city_id: newCityId,
                   neighborhood: "",
                 }));
               }}
@@ -298,7 +362,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione a cidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-city">Selecione uma cidade</SelectItem>
+                <SelectItem value="empty-city">Selecione uma cidade</SelectItem>
                 {(cities || []).map(city => (
                   <SelectItem key={city.id} value={city.id}>
                     {city.name} - {city.state}
@@ -310,11 +374,11 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
           <div>
             <Label htmlFor="edit-contact-neighborhood">Bairro *</Label>
             <Select
-              value={form.neighborhood || "no-neighborhood"}
+              value={safeValues.neighborhood}
               onValueChange={value =>
                 setForm(f => ({
                   ...f,
-                  neighborhood: value === "no-neighborhood" ? "" : value,
+                  neighborhood: value === "empty-neighborhood" ? "" : value,
                 }))
               }
             >
@@ -322,7 +386,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
                 <SelectValue placeholder="Selecione o bairro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-neighborhood">Selecione um bairro</SelectItem>
+                <SelectItem value="empty-neighborhood">Selecione um bairro</SelectItem>
                 {filteredNeighborhoods.map(nb => (
                   <SelectItem key={nb.id} value={nb.name}>
                     {nb.name}
