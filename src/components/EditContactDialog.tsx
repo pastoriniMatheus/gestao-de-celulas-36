@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useContacts } from '@/hooks/useContacts';
 import { useContactDialogData } from '@/hooks/useContactDialogData';
-import { useCells } from '@/hooks/useCells';
 import { EncounterWithGodField } from './contact-form/EncounterWithGodField';
 import { BaptizedField } from './contact-form/BaptizedField';
 import { ReferralAndCellFields } from './contact-form/ReferralAndCellFields';
@@ -31,8 +30,8 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   console.log('EditContactDialog: Dialog open:', open);
 
   const { updateContact } = useContacts();
+  // Usando apenas useContactDialogData para evitar duplicação
   const { neighborhoods, cities, cells, contacts, profiles } = useContactDialogData(open);
-  const { cells: cellsData } = useCells();
 
   const [form, setForm] = useState({
     name: '',
@@ -271,8 +270,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
   };
 
   const getCellName = (cellId: string) => {
-    const allCells = [...(cells || []), ...(cellsData || [])];
-    const cell = allCells.find(c => c.id === cellId);
+    const cell = cells?.find(c => c.id === cellId);
     return cell ? cell.name : 'Célula não encontrada';
   };
 
@@ -439,7 +437,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
               <ReferralAndCellFields
                 formData={form}
                 onUpdateFormData={updateFormData}
-                cells={[...(cells || []), ...(cellsData || [])]}
+                cells={cells || []}
                 contacts={contacts || []}
                 profiles={profiles || []}
               />
@@ -481,7 +479,7 @@ export function EditContactDialog({ open, onOpenChange, contact, context = 'cont
             <Button onClick={handleSave} disabled={saving} className="flex-1">
               {saving ? "Salvando..." : "Salvar"}
             </Button>
-          </div>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
