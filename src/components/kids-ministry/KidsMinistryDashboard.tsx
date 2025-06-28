@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -134,9 +133,8 @@ export const KidsMinistryDashboard = () => {
     }
   };
 
-  const getModuleDescription = (id: ActiveModule) => {
-    const descriptions: Record<ActiveModule, string> = {
-      'overview': 'Visão geral do sistema',
+  const getModuleDescription = (id: Exclude<ActiveModule, 'overview'>) => {
+    const descriptions: Record<Exclude<ActiveModule, 'overview'>, string> = {
       'children': 'Cadastro e gerenciamento de crianças',
       'lessons': 'Biblioteca de lições por categoria',
       'schedules': 'Organização das escalas dominicais',
