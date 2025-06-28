@@ -31,7 +31,6 @@ export const KanbanPipeline = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCellFilter, setSelectedCellFilter] = useState<string>('all');
-  const [editingContact, setEditingContact] = useState<any>(null);
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,8 +64,15 @@ export const KanbanPipeline = () => {
   };
 
   const handleContactDoubleClick = (contact: any) => {
-    setEditingContact(contact);
+    console.log('Abrindo edição do contato:', contact);
+    setSelectedContact(contact);
     setEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    console.log('Fechando diálogo de edição');
+    setEditDialogOpen(false);
+    setSelectedContact(null);
   };
 
   if (stagesLoading || contactsLoading) {
@@ -258,14 +264,12 @@ export const KanbanPipeline = () => {
         </DragDropContext>
       </div>
 
-      {editingContact && (
+      {/* Dialog de Edição */}
+      {selectedContact && (
         <EditContactDialog
-          contact={editingContact}
+          contact={selectedContact}
           isOpen={editDialogOpen}
-          onClose={() => {
-            setEditDialogOpen(false);
-            setEditingContact(null);
-          }}
+          onClose={handleCloseEditDialog}
         />
       )}
     </div>
