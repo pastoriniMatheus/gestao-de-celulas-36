@@ -35,16 +35,16 @@ type ActiveModule =
   | 'materials';
 
 const MODULES = [
-  { id: 'overview', label: 'Visão Geral', icon: Baby, color: 'bg-blue-500' },
-  { id: 'children', label: 'Cadastro de Crianças', icon: Users, color: 'bg-green-500' },
-  { id: 'lessons', label: 'Lições', icon: BookOpen, color: 'bg-purple-500' },
-  { id: 'schedules', label: 'Escala de Professoras', icon: Calendar, color: 'bg-orange-500' },
-  { id: 'record', label: 'Registro de Aula', icon: ClipboardCheck, color: 'bg-pink-500' },
-  { id: 'history', label: 'Histórico de Aulas', icon: History, color: 'bg-indigo-500' },
-  { id: 'chart', label: 'Gráfico de Presença', icon: BarChart3, color: 'bg-cyan-500' },
-  { id: 'notifications', label: 'Notificações', icon: MessageSquare, color: 'bg-yellow-500' },
-  { id: 'materials', label: 'Materiais', icon: FolderOpen, color: 'bg-red-500' },
-] as const;
+  { id: 'overview' as const, label: 'Visão Geral', icon: Baby, color: 'bg-blue-500' },
+  { id: 'children' as const, label: 'Cadastro de Crianças', icon: Users, color: 'bg-green-500' },
+  { id: 'lessons' as const, label: 'Lições', icon: BookOpen, color: 'bg-purple-500' },
+  { id: 'schedules' as const, label: 'Escala de Professoras', icon: Calendar, color: 'bg-orange-500' },
+  { id: 'record' as const, label: 'Registro de Aula', icon: ClipboardCheck, color: 'bg-pink-500' },
+  { id: 'history' as const, label: 'Histórico de Aulas', icon: History, color: 'bg-indigo-500' },
+  { id: 'chart' as const, label: 'Gráfico de Presença', icon: BarChart3, color: 'bg-cyan-500' },
+  { id: 'notifications' as const, label: 'Notificações', icon: MessageSquare, color: 'bg-yellow-500' },
+  { id: 'materials' as const, label: 'Materiais', icon: FolderOpen, color: 'bg-red-500' },
+];
 
 export const KidsMinistryDashboard = () => {
   const [activeModule, setActiveModule] = useState<ActiveModule>('overview');
@@ -88,7 +88,7 @@ export const KidsMinistryDashboard = () => {
                   <Card 
                     key={module.id} 
                     className="cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => setActiveModule(module.id as ActiveModule)}
+                    onClick={() => setActiveModule(module.id)}
                   >
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4">
@@ -134,8 +134,8 @@ export const KidsMinistryDashboard = () => {
     }
   };
 
-  const getModuleDescription = (id: string) => {
-    const descriptions: Record<string, string> = {
+  const getModuleDescription = (id: ActiveModule) => {
+    const descriptions: Record<ActiveModule, string> = {
       'overview': 'Visão geral do sistema',
       'children': 'Cadastro e gerenciamento de crianças',
       'lessons': 'Biblioteca de lições por categoria',
@@ -172,7 +172,7 @@ export const KidsMinistryDashboard = () => {
                     key={module.id}
                     variant={activeModule === module.id ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setActiveModule(module.id as ActiveModule)}
+                    onClick={() => setActiveModule(module.id)}
                   >
                     <IconComponent className="h-4 w-4 mr-2" />
                     {module.label}
