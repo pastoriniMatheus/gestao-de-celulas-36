@@ -30,9 +30,23 @@ export const EditContactDialog = ({
 }: EditContactDialogProps) => {
   const { cells } = useCells();
   const { cities } = useCities();
-  const { updateContact } = useContacts();
+  const { contacts, updateContact } = useContacts();
   const { ministries } = useMinistries();
   const { toast } = useToast();
+
+  // Buscar líderes (profiles) para o campo "Indicado por"
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email, role')
+        .eq('active', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
 
   const { data: pipelineStages = [] } = useQuery({
     queryKey: ['pipeline-stages'],
@@ -98,7 +112,19 @@ export const EditContactDialog = ({
     e.preventDefault();
     try {
       console.log('Enviando dados do formulário:', formData);
-      const updatedContact = await updateContact(contact.id, formData);
+      
+      // Preparar dados para envio, convertendo valores especiais para null
+      const dataToUpdate = {
+        ...formData,
+        city_id: formData.city_id === 'no-city' ? null : formData.city_id || null,
+        cell_id: formData.cell_id === 'no-cell' ? null : formData.cell_id || null,
+        ministry_id: formData.ministry_id === 'no-ministry' ? null : formData.ministry_id || null,
+        pipeline_stage_id: formData.pipeline_stage_id === 'no-stage' ? null : formData.pipeline_stage_id || null,
+        referred_by: formData.referred_by === 'no-referral' ? null : formData.referred_by || null,
+        leader_id: formData.leader_id === 'no-leader' ? null : formData.leader_id || null,
+      };
+
+      const updatedContact = await updateContact(contact.id, dataToUpdate);
       if (onUpdate) {
         onUpdate(updatedContact);
       }
@@ -247,6 +273,11 @@ export const EditContactDialog = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="no-leader">Nenhum líder</SelectItem>
+                  {profiles.map(profile => (
+                    <SelectItem key={profile.id} value={profile.id}>
+                      {profile.name} ({profile.role})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -284,10 +315,20 @@ export const EditContactDialog = ({
                 }))}
               >
                 <SelectTrigger id="edit-referred">
-                  <SelectValue placeholder="Ninguém" />
+                  <SelectValue placeholder="Selecione quem indicou" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="no-referral">Nenhuma indicação</SelectItem>
+                  {contacts.map((contact) => (
+                    <SelectItem key={contact.id} value={contact.id}>
+                      {contact.name}
+                    </SelectItem>
+                  ))}
+                  {profiles.map((profile) => (
+                    <SelectItem key={`profile-${profile.id}`} value={profile.id}>
+                      {profile.name} (Líder)
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
