@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,12 +10,9 @@ import { ClassHistory } from './kids/ClassHistory';
 import { AttendanceChart } from './kids/AttendanceChart';
 import { KidsNotificationsManager } from './kids/KidsNotificationsManager';
 import { MaterialsManager } from './kids/MaterialsManager';
-
 export function KidsManager() {
   const [activeTab, setActiveTab] = useState('children');
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+  return <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <div className="space-y-3 px-2 sm:px-4 py-4">
         <div className="text-center mb-4 px-2">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-pink-600 mb-2 flex items-center justify-center gap-2 flex-wrap">
@@ -177,6 +173,5 @@ export function KidsManager() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
