@@ -8,12 +8,6 @@ import { CellsManager } from '@/components/CellsManager';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
 import { UsersManager } from '@/components/UsersManager';
-import { KidsManager } from '@/components/KidsManager';
-import { AuthProvider } from '@/components/AuthProvider';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Header } from '@/components/Header';
-import { AppSidebar } from '@/components/AppSidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 const Index = () => {
   const location = useLocation();
@@ -29,8 +23,7 @@ const Index = () => {
     '/pipeline': 'pipeline',
     '/events': 'events',
     '/settings': 'settings',
-    '/users': 'users',
-    '/kids': 'kids'
+    '/users': 'users'
   };
 
   // Atualizar a seção ativa baseada na URL
@@ -57,8 +50,6 @@ const Index = () => {
         return <Settings />;
       case 'users':
         return <UsersManager />;
-      case 'kids':
-        return <KidsManager />;
       default:
         console.log('Seção não encontrada, retornando Dashboard');
         return <Dashboard />;
@@ -66,23 +57,11 @@ const Index = () => {
   };
 
   return (
-    <AuthProvider>
-      <ProtectedRoute>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full">
-            <AppSidebar />
-            <SidebarInset className="flex flex-1 flex-col">
-              <Header />
-              <main className="flex-1 p-6 overflow-auto">
-                <div className="max-w-7xl mx-auto">
-                  {renderContent()}
-                </div>
-              </main>
-            </SidebarInset>
-          </div>
-        </SidebarProvider>
-      </ProtectedRoute>
-    </AuthProvider>
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
+        {renderContent()}
+      </div>
+    </div>
   );
 };
 

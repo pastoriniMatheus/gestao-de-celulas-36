@@ -3,7 +3,7 @@ import { KidsManager } from '@/components/KidsManager';
 
 const KidsPage = () => {
   return (
-    <div className="w-full h-full">
+    <div className="p-6">
       <KidsManager />
     </div>
   );

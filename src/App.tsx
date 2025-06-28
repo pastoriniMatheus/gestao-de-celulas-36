@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import FormPage from "./pages/FormPage";
@@ -44,22 +45,33 @@ const App = () => (
                 <SidebarProvider>
                   <div className="min-h-screen flex w-full">
                     <AppSidebar />
-                    <main className="flex-1">
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/contacts" element={<Index />} />
-                        <Route path="/pipeline" element={<Index />} />
-                        <Route path="/cells" element={<Index />} />
-                        <Route path="/ministries" element={<MinistriesPage />} />
-                        <Route path="/genealogia" element={<GenealogyPage />} />
-                        <Route path="/kids" element={<KidsPage />} />
-                        <Route path="/messages" element={<MessagesPage />} />
-                        <Route path="/events" element={<Index />} />
-                        <Route path="/users" element={<Index />} />
-                        <Route path="/settings" element={<Index />} />
-                        <Route path="/notifications" element={<NotificationsPage />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
+                    <main className="flex-1 flex flex-col">
+                      {/* Header com botão recolher sempre visível */}
+                      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                        <div className="flex h-14 items-center px-4">
+                          <SidebarTrigger className="-ml-1" />
+                          <div className="flex-1" />
+                        </div>
+                      </header>
+                      
+                      {/* Conteúdo das páginas */}
+                      <div className="flex-1 overflow-auto">
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/contacts" element={<Index />} />
+                          <Route path="/pipeline" element={<Index />} />
+                          <Route path="/cells" element={<Index />} />
+                          <Route path="/ministries" element={<MinistriesPage />} />
+                          <Route path="/genealogia" element={<GenealogyPage />} />
+                          <Route path="/kids" element={<KidsPage />} />
+                          <Route path="/messages" element={<MessagesPage />} />
+                          <Route path="/events" element={<Index />} />
+                          <Route path="/users" element={<Index />} />
+                          <Route path="/settings" element={<Index />} />
+                          <Route path="/notifications" element={<NotificationsPage />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </div>
                     </main>
                   </div>
                 </SidebarProvider>
