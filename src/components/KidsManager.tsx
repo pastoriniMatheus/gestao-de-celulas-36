@@ -146,11 +146,8 @@ export function KidsManager() {
 
           <TabsContent value="notifications" className="mt-2">
             <Card className="bg-white/90 backdrop-blur-sm border-rose-200 shadow-lg">
-              <CardHeader className="pb-3 px-3 sm:px-6">
-                <CardTitle className="flex items-center gap-2 text-rose-700 text-sm sm:text-lg">
-                  <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Enviar Notificações
-                </CardTitle>
+              <CardHeader className="pb-0 px-3 sm:px-6">
+                
               </CardHeader>
               <CardContent className="px-2 sm:px-6">
                 <KidsNotificationsManager />
