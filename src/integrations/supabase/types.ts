@@ -679,6 +679,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_system_ministry: boolean | null
           leader_id: string | null
           name: string
           updated_at: string
@@ -688,6 +689,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_system_ministry?: boolean | null
           leader_id?: string | null
           name: string
           updated_at?: string
@@ -697,6 +699,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_system_ministry?: boolean | null
           leader_id?: string | null
           name?: string
           updated_at?: string
@@ -743,6 +746,51 @@ export type Database = {
           },
           {
             foreignKeyName: "ministry_members_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ministry_teachers: {
+        Row: {
+          active: boolean
+          contact_id: string
+          created_at: string
+          id: string
+          ministry_id: string
+          teacher_type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          contact_id: string
+          created_at?: string
+          id?: string
+          ministry_id: string
+          teacher_type: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          contact_id?: string
+          created_at?: string
+          id?: string
+          ministry_id?: string
+          teacher_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ministry_teachers_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ministry_teachers_ministry_id_fkey"
             columns: ["ministry_id"]
             isOneToOne: false
             referencedRelation: "ministries"

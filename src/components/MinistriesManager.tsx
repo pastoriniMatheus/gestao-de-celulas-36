@@ -11,12 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { Users, Plus, Edit2, Trash2, UserPlus } from 'lucide-react';
 import { useMinistries } from '@/hooks/useMinistries';
 import { useContacts } from '@/hooks/useContacts';
+import { MinistryMembersDialog } from './MinistryMembersDialog';
 
 export const MinistriesManager = () => {
   const { ministries, loading, createMinistry, updateMinistry, deleteMinistry } = useMinistries();
   const { contacts } = useContacts();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
   const [selectedMinistry, setSelectedMinistry] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -74,6 +76,11 @@ export const MinistriesManager = () => {
       description: ministry.description || ''
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openMembersDialog = (ministry: any) => {
+    setSelectedMinistry(ministry);
+    setIsMembersDialogOpen(true);
   };
 
   if (loading) {
@@ -156,7 +163,12 @@ export const MinistriesManager = () => {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{ministry.name}</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {ministry.name}
+                    {ministry.is_system_ministry && (
+                      <Badge variant="secondary" className="text-xs">Sistema</Badge>
+                    )}
+                  </CardTitle>
                   {ministry.leader && (
                     <CardDescription>
                       Líder: {ministry.leader.name}
@@ -171,13 +183,15 @@ export const MinistriesManager = () => {
                   >
                     <Edit2 className="w-3 h-3" />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDelete(ministry.id)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
+                  {!ministry.is_system_ministry && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(ministry.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -192,9 +206,13 @@ export const MinistriesManager = () => {
                   {ministry.member_count || 0} membros
                 </Badge>
                 
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => openMembersDialog(ministry)}
+                >
                   <UserPlus className="w-3 h-3 mr-1" />
-                  Ver Membros
+                  Gerenciar
                 </Button>
               </div>
             </CardContent>
@@ -267,6 +285,16 @@ export const MinistriesManager = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Gestão de Membros */}
+      <MinistryMembersDialog
+        ministry={selectedMinistry}
+        isOpen={isMembersDialogOpen}
+        onClose={() => {
+          setIsMembersDialogOpen(false);
+          setSelectedMinistry(null);
+        }}
+      />
     </div>
   );
 };

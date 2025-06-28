@@ -11,6 +11,7 @@ import { useCells } from '@/hooks/useCells';
 import { useCities } from '@/hooks/useCities';
 import { useContacts } from '@/hooks/useContacts';
 import { useMinistries } from '@/hooks/useMinistries';
+import { useNeighborhoodsByCity } from '@/hooks/useNeighborhoodsByCity';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoUpload } from './PhotoUpload';
@@ -79,6 +80,9 @@ export const EditContactDialog = ({
     founder: false,
     leader_id: ''
   });
+
+  // Hook para buscar bairros baseado na cidade selecionada
+  const { neighborhoods } = useNeighborhoodsByCity(formData.city_id);
 
   useEffect(() => {
     if (contact && isOpen) {
@@ -193,7 +197,8 @@ export const EditContactDialog = ({
                 value={formData.city_id || 'no-city'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
-                  city_id: value === 'no-city' ? '' : value 
+                  city_id: value === 'no-city' ? '' : value,
+                  neighborhood: '' // Resetar bairro quando cidade muda
                 }))}
               >
                 <SelectTrigger id="edit-city">
@@ -212,13 +217,25 @@ export const EditContactDialog = ({
 
             <div>
               <Label htmlFor="edit-neighborhood">Bairro *</Label>
-              <Input
-                id="edit-neighborhood"
-                name="neighborhood"
-                value={formData.neighborhood}
-                onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-                required
-              />
+              <Select 
+                value={formData.neighborhood || 'no-neighborhood'} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  neighborhood: value === 'no-neighborhood' ? '' : value 
+                }))}
+              >
+                <SelectTrigger id="edit-neighborhood">
+                  <SelectValue placeholder="Selecione um bairro" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-neighborhood">Nenhum bairro</SelectItem>
+                  {neighborhoods.map(neighborhood => (
+                    <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                      {neighborhood.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
