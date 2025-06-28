@@ -150,13 +150,17 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-city">Cidade</Label>
               <Select 
-                value={formData.city_id || ''} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value }))}
+                value={formData.city_id || 'no-city'} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  city_id: value === 'no-city' ? '' : value 
+                }))}
               >
                 <SelectTrigger id="edit-city">
                   <SelectValue placeholder="Selecione uma cidade" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="no-city">Nenhuma cidade</SelectItem>
                   {cities.map(city => (
                     <SelectItem key={city.id} value={city.id}>
                       {city.name}
@@ -218,15 +222,17 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-leader">Líder Responsável</Label>
               <Select 
-                value={formData.leader_id || ''} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, leader_id: value }))}
+                value={formData.leader_id || 'no-leader'} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  leader_id: value === 'no-leader' ? '' : value 
+                }))}
               >
                 <SelectTrigger id="edit-leader">
-                  <SelectValue placeholder="Pastor Jonathan" />
+                  <SelectValue placeholder="Selecione um líder" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Aqui você pode adicionar os líderes disponíveis */}
-                  <SelectItem value="">Nenhum líder</SelectItem>
+                  <SelectItem value="no-leader">Nenhum líder</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -234,13 +240,17 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-cell">Célula</Label>
               <Select 
-                value={formData.cell_id || ''} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, cell_id: value }))}
+                value={formData.cell_id || 'no-cell'} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  cell_id: value === 'no-cell' ? '' : value 
+                }))}
               >
                 <SelectTrigger id="edit-cell">
                   <SelectValue placeholder="Selecione uma célula" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="no-cell">Nenhuma célula</SelectItem>
                   {cells.map(cell => (
                     <SelectItem key={cell.id} value={cell.id}>
                       {cell.name}
@@ -253,15 +263,17 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-referred">Indicado por</Label>
               <Select 
-                value={formData.referred_by || ''} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, referred_by: value }))}
+                value={formData.referred_by || 'no-referral'} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  referred_by: value === 'no-referral' ? '' : value 
+                }))}
               >
                 <SelectTrigger id="edit-referred">
-                  <SelectValue placeholder="Pastor Jonathan (Líder)" />
+                  <SelectValue placeholder="Ninguém" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma indicação</SelectItem>
-                  {/* Aqui você pode adicionar os contatos disponíveis */}
+                  <SelectItem value="no-referral">Nenhuma indicação</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -269,13 +281,17 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-pipeline">Estágio Discípulo</Label>
               <Select 
-                value={formData.pipeline_stage_id || ''} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, pipeline_stage_id: value }))}
+                value={formData.pipeline_stage_id || 'no-stage'} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  pipeline_stage_id: value === 'no-stage' ? '' : value 
+                }))}
               >
                 <SelectTrigger id="edit-pipeline">
                   <SelectValue placeholder="Selecione uma etapa" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="no-stage">Nenhuma etapa</SelectItem>
                   {pipelineStages.map(stage => (
                     <SelectItem key={stage.id} value={stage.id}>
                       {stage.name}
