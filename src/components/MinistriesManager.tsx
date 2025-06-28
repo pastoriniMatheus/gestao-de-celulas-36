@@ -101,9 +101,10 @@ export const MinistriesManager = () => {
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <Label htmlFor="name">Nome do Ministério *</Label>
+                <Label htmlFor="ministry-name">Nome do Ministério *</Label>
                 <Input
-                  id="name"
+                  id="ministry-name"
+                  name="ministry-name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -111,12 +112,13 @@ export const MinistriesManager = () => {
               </div>
               
               <div>
-                <Label htmlFor="leader">Líder Responsável</Label>
+                <Label htmlFor="ministry-leader">Líder Responsável</Label>
                 <Select value={formData.leader_id} onValueChange={(value) => setFormData({ ...formData, leader_id: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger id="ministry-leader">
                     <SelectValue placeholder="Selecione um líder..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Nenhum líder</SelectItem>
                     {cellMembers.map(contact => (
                       <SelectItem key={contact.id} value={contact.id}>
                         {contact.name}
@@ -127,9 +129,10 @@ export const MinistriesManager = () => {
               </div>
               
               <div>
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="ministry-description">Descrição</Label>
                 <Textarea
-                  id="description"
+                  id="ministry-description"
+                  name="ministry-description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
@@ -217,9 +220,10 @@ export const MinistriesManager = () => {
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
             <div>
-              <Label htmlFor="edit-name">Nome do Ministério *</Label>
+              <Label htmlFor="edit-ministry-name">Nome do Ministério *</Label>
               <Input
-                id="edit-name"
+                id="edit-ministry-name"
+                name="edit-ministry-name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -227,12 +231,13 @@ export const MinistriesManager = () => {
             </div>
             
             <div>
-              <Label htmlFor="edit-leader">Líder Responsável</Label>
+              <Label htmlFor="edit-ministry-leader">Líder Responsável</Label>
               <Select value={formData.leader_id} onValueChange={(value) => setFormData({ ...formData, leader_id: value })}>
-                <SelectTrigger>
+                <SelectTrigger id="edit-ministry-leader">
                   <SelectValue placeholder="Selecione um líder..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Nenhum líder</SelectItem>
                   {cellMembers.map(contact => (
                     <SelectItem key={contact.id} value={contact.id}>
                       {contact.name}
@@ -243,9 +248,10 @@ export const MinistriesManager = () => {
             </div>
             
             <div>
-              <Label htmlFor="edit-description">Descrição</Label>
+              <Label htmlFor="edit-ministry-description">Descrição</Label>
               <Textarea
-                id="edit-description"
+                id="edit-ministry-description"
+                name="edit-ministry-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}

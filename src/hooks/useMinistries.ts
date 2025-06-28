@@ -48,9 +48,10 @@ export const useMinistries = () => {
         .select(`
           *,
           leader:contacts!ministries_leader_id_fkey(id, name),
-          ministry_members!inner(
+          ministry_members(
             id,
-            contact:contacts!ministry_members_contact_id_fkey(id, name)
+            contact:contacts!ministry_members_contact_id_fkey(id, name),
+            joined_at
           )
         `)
         .eq('active', true)
@@ -96,15 +97,20 @@ export const useMinistries = () => {
       
       const dataToInsert = {
         name: ministryData.name,
-        leader_id: ministryData.leader_id || null,
-        description: ministryData.description || null,
+        leader_id: ministryData.leader_id && ministryData.leader_id !== '' ? ministryData.leader_id : null,
+        description: ministryData.description && ministryData.description !== '' ? ministryData.description : null,
         active: true
       };
+
+      console.log('Dados para inserir:', dataToInsert);
 
       const { data, error } = await supabase
         .from('ministries')
         .insert([dataToInsert])
-        .select()
+        .select(`
+          *,
+          leader:contacts!ministries_leader_id_fkey(id, name)
+        `)
         .single();
 
       if (error) {

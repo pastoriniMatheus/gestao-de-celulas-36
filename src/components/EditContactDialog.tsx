@@ -127,18 +127,20 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="edit-contact-name">Nome</Label>
               <Input
-                id="name"
+                id="edit-contact-name"
+                name="contact-name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </div>
             <div>
-              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Label htmlFor="edit-contact-whatsapp">WhatsApp</Label>
               <Input
-                id="whatsapp"
+                id="edit-contact-whatsapp"
+                name="contact-whatsapp"
                 type="tel"
                 value={formData.whatsapp}
                 onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
@@ -148,22 +150,23 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="neighborhood">Bairro</Label>
+              <Label htmlFor="edit-contact-neighborhood">Bairro</Label>
               <Input
-                id="neighborhood"
+                id="edit-contact-neighborhood"
+                name="contact-neighborhood"
                 value={formData.neighborhood}
                 onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
                 required
               />
             </div>
             <div>
-              <Label htmlFor="city_id">Cidade</Label>
-              <Select value={formData.city_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value }))}>
-                <SelectTrigger>
+              <Label htmlFor="edit-contact-city">Cidade</Label>
+              <Select value={formData.city_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, city_id: value === 'none' ? '' : value }))}>
+                <SelectTrigger id="edit-contact-city">
                   <SelectValue placeholder="Selecione uma cidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma cidade</SelectItem>
+                  <SelectItem value="none">Nenhuma cidade</SelectItem>
                   {cities.map(city => (
                     <SelectItem key={city.id} value={city.id}>
                       {city.name}
@@ -176,13 +179,13 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="cell_id">Célula</Label>
-              <Select value={formData.cell_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, cell_id: value || null }))}>
-                <SelectTrigger>
+              <Label htmlFor="edit-contact-cell">Célula</Label>
+              <Select value={formData.cell_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, cell_id: value === 'none' ? '' : value }))}>
+                <SelectTrigger id="edit-contact-cell">
                   <SelectValue placeholder="Selecione uma célula" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma célula</SelectItem>
+                  <SelectItem value="none">Nenhuma célula</SelectItem>
                   {cells.map(cell => (
                     <SelectItem key={cell.id} value={cell.id}>
                       {cell.name}
@@ -193,13 +196,13 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
             </div>
 
             <div>
-              <Label htmlFor="ministry_id">Ministério</Label>
-              <Select value={formData.ministry_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, ministry_id: value || null }))}>
-                <SelectTrigger>
+              <Label htmlFor="edit-contact-ministry">Ministério</Label>
+              <Select value={formData.ministry_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, ministry_id: value === 'none' ? '' : value }))}>
+                <SelectTrigger id="edit-contact-ministry">
                   <SelectValue placeholder="Selecione um ministério" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum ministério</SelectItem>
+                  <SelectItem value="none">Nenhum ministério</SelectItem>
                   {ministries.map(ministry => (
                     <SelectItem key={ministry.id} value={ministry.id}>
                       {ministry.name}
@@ -212,13 +215,13 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="pipeline_stage_id">Etapa do Pipeline</Label>
-              <Select value={formData.pipeline_stage_id || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, pipeline_stage_id: value }))}>
-                <SelectTrigger>
+              <Label htmlFor="edit-contact-pipeline">Etapa do Pipeline</Label>
+              <Select value={formData.pipeline_stage_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, pipeline_stage_id: value === 'none' ? '' : value }))}>
+                <SelectTrigger id="edit-contact-pipeline">
                   <SelectValue placeholder="Selecione uma etapa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma etapa</SelectItem>
+                  <SelectItem value="none">Nenhuma etapa</SelectItem>
                   {pipelineStages.map(stage => (
                     <SelectItem key={stage.id} value={stage.id}>
                       {stage.name}
@@ -229,9 +232,10 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
             </div>
 
             <div>
-              <Label htmlFor="referred_by">Indicado Por</Label>
+              <Label htmlFor="edit-contact-referred">Indicado Por</Label>
               <Input
-                id="referred_by"
+                id="edit-contact-referred"
+                name="contact-referred"
                 value={formData.referred_by || ''}
                 onChange={(e) => setFormData({ ...formData, referred_by: e.target.value })}
               />
@@ -240,9 +244,10 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="age">Idade</Label>
+              <Label htmlFor="edit-contact-age">Idade</Label>
               <Input
-                id="age"
+                id="edit-contact-age"
+                name="contact-age"
                 type="number"
                 value={formData.age || ''}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value ? parseInt(e.target.value) : null })}
@@ -250,9 +255,10 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
             </div>
 
             <div>
-              <Label htmlFor="birth_date">Data de Nascimento</Label>
+              <Label htmlFor="edit-contact-birth">Data de Nascimento</Label>
                <Input
-                id="birth_date"
+                id="edit-contact-birth"
+                name="contact-birth"
                 type="date"
                 value={formData.birth_date || ''}
                 onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
@@ -263,20 +269,20 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center space-x-2">
               <Switch
-                id="encounter_with_god"
+                id="edit-contact-encounter"
                 checked={formData.encounter_with_god || false}
                 onCheckedChange={(checked) => setFormData({ ...formData, encounter_with_god: checked })}
               />
-              <Label htmlFor="encounter_with_god">Encontro com Deus</Label>
+              <Label htmlFor="edit-contact-encounter">Encontro com Deus</Label>
             </div>
 
             <div className="flex items-center space-x-2">
               <Switch
-                id="baptized"
+                id="edit-contact-baptized"
                 checked={formData.baptized || false}
                 onCheckedChange={(checked) => setFormData({ ...formData, baptized: checked })}
               />
-              <Label htmlFor="baptized">Batizado</Label>
+              <Label htmlFor="edit-contact-baptized">Batizado</Label>
             </div>
           </div>
 
