@@ -8,6 +8,7 @@ import { CellsManager } from '@/components/CellsManager';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
 import { UsersManager } from '@/components/UsersManager';
+import { KidsManager } from '@/components/KidsManager';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Header } from '@/components/Header';
@@ -28,7 +29,8 @@ const Index = () => {
     '/pipeline': 'pipeline',
     '/events': 'events',
     '/settings': 'settings',
-    '/users': 'users'
+    '/users': 'users',
+    '/kids': 'kids'
   };
 
   // Atualizar a seção ativa baseada na URL
@@ -55,6 +57,8 @@ const Index = () => {
         return <Settings />;
       case 'users':
         return <UsersManager />;
+      case 'kids':
+        return <KidsManager />;
       default:
         console.log('Seção não encontrada, retornando Dashboard');
         return <Dashboard />;
