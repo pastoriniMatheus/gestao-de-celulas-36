@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Header } from "@/components/Header";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import FormPage from "./pages/FormPage";
@@ -46,13 +47,8 @@ const App = () => (
                   <div className="min-h-screen flex w-full">
                     <AppSidebar />
                     <main className="flex-1 flex flex-col">
-                      {/* Header com botão recolher sempre visível */}
-                      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                        <div className="flex h-14 items-center px-4">
-                          <SidebarTrigger className="-ml-1" />
-                          <div className="flex-1" />
-                        </div>
-                      </header>
+                      {/* Header sempre visível */}
+                      <Header />
                       
                       {/* Conteúdo das páginas */}
                       <div className="flex-1 overflow-auto">
