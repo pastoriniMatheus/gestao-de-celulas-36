@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -135,24 +134,25 @@ export function ClassRecord() {
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-orange-700">Registro de Aula</h3>
+    <div className="space-y-4 sm:space-y-6">
+      <h3 className="text-base sm:text-lg font-semibold text-orange-700">Registro de Aula</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="date">Data do Culto</Label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="date" className="text-sm">Data do Culto</Label>
           <Input
             id="date"
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-full"
           />
         </div>
         
-        <div>
-          <Label htmlFor="class">Turma</Label>
+        <div className="space-y-2">
+          <Label htmlFor="class" className="text-sm">Turma</Label>
           <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione a turma" />
             </SelectTrigger>
             <SelectContent>
@@ -167,24 +167,33 @@ export function ClassRecord() {
 
       {schedule && (
         <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700">
-              <Calendar className="w-5 h-5" />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-blue-700 text-sm sm:text-base">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
               Informações da Escala
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span><strong>Professora 1:</strong> {schedule.teacher_1 || 'Não definida'}</span>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex items-start gap-2">
+              <Users className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="font-medium">Professora 1:</span>
+                <span className="ml-1">{schedule.teacher_1 || 'Não definida'}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span><strong>Professora 2:</strong> {schedule.teacher_2 || 'Não definida'}</span>
+            <div className="flex items-start gap-2">
+              <Users className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="font-medium">Professora 2:</span>
+                <span className="ml-1">{schedule.teacher_2 || 'Não definida'}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-gray-500" />
-              <span><strong>Lição:</strong> {schedule.lesson?.title || 'Não definida'}</span>
+            <div className="flex items-start gap-2">
+              <BookOpen className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="font-medium">Lição:</span>
+                <span className="ml-1">{schedule.lesson?.title || 'Não definida'}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -192,24 +201,25 @@ export function ClassRecord() {
 
       {selectedDate && selectedClass && children.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               Lista de Presença - {selectedClass}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
               {children.map((child) => (
-                <div key={child.id} className="flex items-center justify-between border-b pb-2">
-                  <div className="flex items-center gap-3">
+                <div key={child.id} className="flex items-center justify-between border-b pb-3 gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <Checkbox
                       checked={attendance[child.id]?.present || false}
                       onCheckedChange={(checked) => 
                         handleAttendanceChange(child.id, 'present', checked as boolean)
                       }
+                      className="flex-shrink-0"
                     />
-                    <span className="font-medium">{child.name}</span>
+                    <span className="font-medium text-sm truncate">{child.name}</span>
                   </div>
                   
                   {attendance[child.id]?.present && (
@@ -217,7 +227,7 @@ export function ClassRecord() {
                       value={attendance[child.id]?.type || 'Membro'}
                       onValueChange={(value) => handleAttendanceChange(child.id, 'type', value)}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-24 sm:w-32 flex-shrink-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -230,25 +240,25 @@ export function ClassRecord() {
               ))}
             </div>
             
-            <div className="mt-6 pt-4 border-t">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+            <div className="mt-6 pt-4 border-t space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center bg-green-50 p-3 rounded-lg">
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
                     {Object.values(attendance).filter(a => a.present && a.type === 'Membro').length}
                   </div>
-                  <div className="text-sm text-gray-600">Membros Presentes</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Membros Presentes</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                <div className="text-center bg-blue-50 p-3 rounded-lg">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600">
                     {Object.values(attendance).filter(a => a.present && a.type === 'Visitante').length}
                   </div>
-                  <div className="text-sm text-gray-600">Visitantes Presentes</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Visitantes Presentes</div>
                 </div>
               </div>
               
               <Button 
                 onClick={handleSaveClass} 
-                className="w-full bg-orange-600 hover:bg-orange-700"
+                className="w-full bg-orange-600 hover:bg-orange-700 text-sm sm:text-base py-2 sm:py-3"
                 disabled={saveClassRecordMutation.isPending}
               >
                 <Save className="w-4 h-4 mr-2" />
