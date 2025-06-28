@@ -13,6 +13,7 @@ import { useContacts } from '@/hooks/useContacts';
 import { useMinistries } from '@/hooks/useMinistries';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { PhotoUpload } from './PhotoUpload';
 
 interface EditContactDialogProps {
   contact: any;
@@ -89,6 +90,10 @@ export const EditContactDialog = ({
     }
   }, [contact, isOpen]);
 
+  const handlePhotoChange = (photoUrl: string | null) => {
+    setFormData(prev => ({ ...prev, photo_url: photoUrl || '' }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -125,6 +130,15 @@ export const EditContactDialog = ({
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
+            <div>
+              <Label>Foto do Contato</Label>
+              <PhotoUpload
+                currentPhotoUrl={formData.photo_url}
+                onPhotoChange={handlePhotoChange}
+                contactName={formData.name}
+              />
+            </div>
+
             <div>
               <Label htmlFor="edit-name">Nome *</Label>
               <Input
