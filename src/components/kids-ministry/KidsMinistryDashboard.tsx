@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -155,7 +156,7 @@ export const KidsMinistryDashboard = () => {
           <CardContent className="p-4">
             <div className="flex flex-wrap gap-2">
               <Button
-                variant={activeModule === 'overview' ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 onClick={() => setActiveModule('overview')}
               >
