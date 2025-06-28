@@ -27,10 +27,10 @@ export const AddContactDialog = () => {
   const { toast } = useToast();
   const { formData, updateFormData, resetForm } = useContactForm();
   const { 
-    cells, 
-    cities, 
-    contacts, 
-    profiles, 
+    cells,
+    cities,
+    contacts,
+    profiles,
     neighborhoods,
     getFilteredNeighborhoods 
   } = useContactDialogData(isOpen);
@@ -53,6 +53,7 @@ export const AddContactDialog = () => {
         neighborhood: formData.neighborhood,
         city_id: formData.city_id || null,
         cell_id: formData.cell_id === 'none' ? null : formData.cell_id || null,
+        ministry_id: null,
         status: 'pending',
         birth_date: formData.birth_date || null,
         encounter_with_god: !!formData.encounter_with_god,

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -337,9 +338,9 @@ export const ContactsList = () => {
         {/* Dialog de editar */}
         {contactToEdit && (
           <EditContactDialog
-            open={!!contactToEdit}
-            onOpenChange={(open) => { if (!open) setContactToEdit(null); }}
             contact={contactToEdit}
+            isOpen={!!contactToEdit}
+            onClose={() => setContactToEdit(null)}
           />
         )}
       </CardContent>

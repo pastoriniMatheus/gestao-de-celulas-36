@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { useCells } from '@/hooks/useCells';
 import { useCities } from '@/hooks/useCities';
 import { useNeighborhoods } from '@/hooks/useNeighborhoods';
 import { useContacts } from '@/hooks/useContacts';
+import { useMinistries } from '@/hooks/useMinistries';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar } from 'lucide-react';
@@ -19,14 +21,14 @@ interface EditContactDialogProps {
   contact: any;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (updatedContact: any) => void;
+  onUpdate?: (updatedContact: any) => void;
 }
 
 export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditContactDialogProps) => {
   const { cells } = useCells();
   const { cities } = useCities();
   const { neighborhoods } = useNeighborhoods();
-  const { contacts } = useContacts();
+  const { updateContact } = useContacts();
   const { ministries } = useMinistries();
   const { data: pipelineStages = [] } = useQuery({
     queryKey: ['pipeline-stages'],
@@ -89,8 +91,10 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const updatedContact = await contacts.updateContact(contact.id, formData);
-      onUpdate(updatedContact);
+      const updatedContact = await updateContact(contact.id, formData);
+      if (onUpdate) {
+        onUpdate(updatedContact);
+      }
       toast({
         title: "Sucesso",
         description: "Contato atualizado com sucesso!",
