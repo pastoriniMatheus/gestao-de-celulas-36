@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Edit, Trash2, Calendar, AlertTriangle, Utensils } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +22,10 @@ export function ChildrenManager() {
     birth_date: '',
     class: '',
     type: '',
-    parent_contact_id: ''
+    parent_contact_id: '',
+    is_autistic: false,
+    has_food_restriction: false,
+    food_restriction_details: ''
   });
 
   const queryClient = useQueryClient();
@@ -121,7 +126,10 @@ export function ChildrenManager() {
       birth_date: '',
       class: '',
       type: '',
-      parent_contact_id: ''
+      parent_contact_id: '',
+      is_autistic: false,
+      has_food_restriction: false,
+      food_restriction_details: ''
     });
     setEditingChild(null);
   };
@@ -143,7 +151,10 @@ export function ChildrenManager() {
       birth_date: child.birth_date,
       class: child.class,
       type: child.type,
-      parent_contact_id: child.parent_contact_id || ''
+      parent_contact_id: child.parent_contact_id || '',
+      is_autistic: child.is_autistic || false,
+      has_food_restriction: child.has_food_restriction || false,
+      food_restriction_details: child.food_restriction_details || ''
     });
     setIsDialogOpen(true);
   };
@@ -165,7 +176,7 @@ export function ChildrenManager() {
               Nova Criança
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingChild ? 'Editar Criança' : 'Nova Criança'}
@@ -236,6 +247,49 @@ export function ChildrenManager() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Checkbox para autismo */}
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="is_autistic"
+                  checked={formData.is_autistic}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_autistic: checked === true })}
+                />
+                <Label htmlFor="is_autistic" className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                  É autista
+                </Label>
+              </div>
+
+              {/* Checkbox para restrição alimentar */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="has_food_restriction"
+                    checked={formData.has_food_restriction}
+                    onCheckedChange={(checked) => setFormData({ ...formData, has_food_restriction: checked === true })}
+                  />
+                  <Label htmlFor="has_food_restriction" className="flex items-center gap-2">
+                    <Utensils className="w-4 h-4 text-orange-600" />
+                    Restrição alimentar
+                  </Label>
+                </div>
+                
+                {/* Campo de texto que aparece quando checkbox é marcado */}
+                {formData.has_food_restriction && (
+                  <div>
+                    <Label htmlFor="food_restriction_details">Detalhes da restrição alimentar</Label>
+                    <Textarea
+                      id="food_restriction_details"
+                      value={formData.food_restriction_details}
+                      onChange={(e) => setFormData({ ...formData, food_restriction_details: e.target.value })}
+                      placeholder="Descreva as restrições alimentares..."
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
+                )}
+              </div>
               
               <div className="flex gap-2 pt-4">
                 <Button type="submit" className="flex-1 bg-pink-600 hover:bg-pink-700">
@@ -260,19 +314,20 @@ export function ChildrenManager() {
                 <TableHead>Turma</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Pais</TableHead>
+                <TableHead>Observações</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : children.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                     Nenhuma criança cadastrada
                   </TableCell>
                 </TableRow>
@@ -301,6 +356,25 @@ export function ChildrenManager() {
                       </span>
                     </TableCell>
                     <TableCell>{child.parent_contact?.name || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {child.is_autistic && (
+                          <span className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                            <AlertTriangle className="w-3 h-3" />
+                            Autista
+                          </span>
+                        )}
+                        {child.has_food_restriction && (
+                          <span 
+                            className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs cursor-help"
+                            title={child.food_restriction_details || 'Restrição alimentar'}
+                          >
+                            <Utensils className="w-3 h-3" />
+                            Restrição
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button

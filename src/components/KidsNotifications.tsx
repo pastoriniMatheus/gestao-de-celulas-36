@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Baby, Users, X } from 'lucide-react';
+import { Bell, Baby, Users, X, Heart } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -194,19 +194,16 @@ export function KidsNotifications() {
         )}
       </div>
 
-      {/* Modal de notificação expandida */}
+      {/* Modal de notificação expandida - Versão para Datashow */}
       {expandedNotification && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-800">Notificação</h2>
-              <button
-                onClick={() => setExpandedNotification(null)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-white via-pink-50 to-purple-50 rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto border-4 border-pink-200 relative">
+            <button
+              onClick={() => setExpandedNotification(null)}
+              className="absolute top-6 right-6 p-3 hover:bg-white/50 rounded-full transition-all duration-300 z-10 shadow-lg border border-pink-200"
+            >
+              <X className="w-8 h-8 text-pink-600" />
+            </button>
             
             {(() => {
               const notification = notifications.find(n => n.id === expandedNotification);
@@ -215,41 +212,77 @@ export function KidsNotifications() {
               const isKids = notification.category === 'Kids';
               
               return (
-                <div className="p-6">
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4 ${
-                    isKids 
-                      ? 'bg-pink-100 text-pink-800' 
-                      : 'bg-purple-100 text-purple-800'
-                  }`}>
-                    {isKids ? <Baby className="w-4 h-4" /> : <Users className="w-4 h-4" />}
-                    {notification.category}
+                <div className="p-12 text-center">
+                  {/* Header com ícone animado */}
+                  <div className="mb-8">
+                    <div className="flex justify-center mb-6">
+                      <div className={`p-6 rounded-full ${
+                        isKids 
+                          ? 'bg-gradient-to-br from-pink-100 to-pink-200' 
+                          : 'bg-gradient-to-br from-purple-100 to-purple-200'
+                      } shadow-lg animate-bounce`}>
+                        {isKids ? (
+                          <Baby className="w-16 h-16 text-pink-600" />
+                        ) : (
+                          <Users className="w-16 h-16 text-purple-600" />
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full text-xl font-bold mb-4 shadow-lg ${
+                      isKids 
+                        ? 'bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border-2 border-pink-400' 
+                        : 'bg-gradient-to-r from-purple-200 to-purple-300 text-purple-800 border-2 border-purple-400'
+                    }`}>
+                      <Heart className="w-6 h-6" />
+                      {notification.category}
+                    </div>
                   </div>
                   
-                  <div className="mb-4">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  {/* Nome da criança */}
+                  <div className="mb-8">
+                    <h1 className="text-6xl font-black text-gray-800 mb-4 tracking-wide">
                       {notification.child?.name}
-                    </h3>
-                    <div className="text-sm text-gray-500">
+                    </h1>
+                    <div className="text-2xl text-gray-600 font-medium">
                       {new Date(notification.created_at).toLocaleString('pt-BR', {
-                        dateStyle: 'full',
-                        timeStyle: 'short'
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })}
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {/* Mensagem principal */}
+                  <div className={`bg-gradient-to-br ${
+                    isKids 
+                      ? 'from-pink-50 to-pink-100 border-pink-300' 
+                      : 'from-purple-50 to-purple-100 border-purple-300'
+                  } rounded-2xl p-12 mb-8 border-4 shadow-inner`}>
+                    <p className="text-4xl text-gray-800 leading-relaxed font-medium">
                       {notification.message}
                     </p>
                   </div>
                   
-                  <div className="mt-6 text-center">
+                  {/* Botão de fechar */}
+                  <div className="mt-12">
                     <button
                       onClick={() => setExpandedNotification(null)}
-                      className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                      className="px-12 py-4 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-700 rounded-2xl transition-all duration-300 text-2xl font-bold shadow-lg border-2 border-gray-400 hover:shadow-xl transform hover:scale-105"
                     >
                       Fechar (ESC)
                     </button>
+                  </div>
+                  
+                  {/* Decoração */}
+                  <div className="absolute top-4 left-4 opacity-20">
+                    <Bell className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <div className="absolute bottom-4 right-4 opacity-20">
+                    <Heart className="w-12 h-12 text-gray-400" />
                   </div>
                 </div>
               );
