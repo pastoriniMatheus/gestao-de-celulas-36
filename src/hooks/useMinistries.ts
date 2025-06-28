@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -42,6 +41,8 @@ export const useMinistries = () => {
   const fetchMinistries = async () => {
     try {
       setLoading(true);
+      console.log('Buscando ministérios...');
+      
       const { data, error } = await supabase
         .from('ministries')
         .select(`
@@ -55,7 +56,12 @@ export const useMinistries = () => {
         .eq('active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar ministérios:', error);
+        throw error;
+      }
+
+      console.log('Ministérios encontrados:', data);
 
       const transformedData = (data || []).map(ministry => ({
         ...ministry,
@@ -70,6 +76,11 @@ export const useMinistries = () => {
       setMinistries(transformedData);
     } catch (error) {
       console.error('Erro ao buscar ministérios:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar ministérios",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -81,13 +92,27 @@ export const useMinistries = () => {
     description?: string;
   }) => {
     try {
+      console.log('Criando ministério:', ministryData);
+      
+      const dataToInsert = {
+        name: ministryData.name,
+        leader_id: ministryData.leader_id || null,
+        description: ministryData.description || null,
+        active: true
+      };
+
       const { data, error } = await supabase
         .from('ministries')
-        .insert([ministryData])
+        .insert([dataToInsert])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar ministério:', error);
+        throw error;
+      }
+
+      console.log('Ministério criado:', data);
 
       toast({
         title: "Sucesso",
@@ -109,12 +134,26 @@ export const useMinistries = () => {
 
   const updateMinistry = async (id: string, updates: Partial<Ministry>) => {
     try {
+      console.log('Atualizando ministério:', { id, updates });
+      
+      const dataToUpdate = {
+        name: updates.name,
+        leader_id: updates.leader_id || null,
+        description: updates.description || null,
+        updated_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('ministries')
-        .update(updates)
+        .update(dataToUpdate)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar ministério:', error);
+        throw error;
+      }
+
+      console.log('Ministério atualizado com sucesso');
 
       toast({
         title: "Sucesso",

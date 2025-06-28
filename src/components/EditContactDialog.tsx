@@ -10,12 +10,10 @@ import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import { useCells } from '@/hooks/useCells';
 import { useCities } from '@/hooks/useCities';
-import { useNeighborhoods } from '@/hooks/useNeighborhoods';
 import { useContacts } from '@/hooks/useContacts';
 import { useMinistries } from '@/hooks/useMinistries';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar } from 'lucide-react';
 
 interface EditContactDialogProps {
   contact: any;
@@ -27,9 +25,10 @@ interface EditContactDialogProps {
 export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditContactDialogProps) => {
   const { cells } = useCells();
   const { cities } = useCities();
-  const { neighborhoods } = useNeighborhoods();
   const { updateContact } = useContacts();
   const { ministries } = useMinistries();
+  const { toast } = useToast();
+
   const { data: pipelineStages = [] } = useQuery({
     queryKey: ['pipeline-stages'],
     queryFn: async () => {
@@ -45,28 +44,27 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
   });
 
   const [formData, setFormData] = useState({
-    name: contact.name || '',
-    whatsapp: contact.whatsapp || '',
-    neighborhood: contact.neighborhood || '',
-    city_id: contact.city_id || '',
-    cell_id: contact.cell_id || '',
-    ministry_id: contact.ministry_id || '',
-    status: contact.status || 'pending',
-    encounter_with_god: contact.encounter_with_god || false,
-    baptized: contact.baptized || false,
-    pipeline_stage_id: contact.pipeline_stage_id || '',
-    age: contact.age || null,
-    birth_date: contact.birth_date || null,
-    referred_by: contact.referred_by || null,
-    photo_url: contact.photo_url || null,
-    founder: contact.founder || false,
-    leader_id: contact.leader_id || null,
+    name: '',
+    whatsapp: '',
+    neighborhood: '',
+    city_id: '',
+    cell_id: '',
+    ministry_id: '',
+    status: 'pending',
+    encounter_with_god: false,
+    baptized: false,
+    pipeline_stage_id: '',
+    age: null as number | null,
+    birth_date: '',
+    referred_by: '',
+    photo_url: '',
+    founder: false,
+    leader_id: '',
   });
 
-  const { toast } = useToast();
-
   useEffect(() => {
-    if (contact) {
+    if (contact && isOpen) {
+      console.log('Carregando dados do contato para edição:', contact);
       setFormData({
         name: contact.name || '',
         whatsapp: contact.whatsapp || '',
@@ -79,26 +77,31 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
         baptized: contact.baptized || false,
         pipeline_stage_id: contact.pipeline_stage_id || '',
         age: contact.age || null,
-        birth_date: contact.birth_date || null,
-        referred_by: contact.referred_by || null,
-        photo_url: contact.photo_url || null,
+        birth_date: contact.birth_date || '',
+        referred_by: contact.referred_by || '',
+        photo_url: contact.photo_url || '',
         founder: contact.founder || false,
-        leader_id: contact.leader_id || null,
+        leader_id: contact.leader_id || '',
       });
     }
-  }, [contact]);
+  }, [contact, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Enviando dados do formulário:', formData);
+      
       const updatedContact = await updateContact(contact.id, formData);
+      
       if (onUpdate) {
         onUpdate(updatedContact);
       }
+      
       toast({
         title: "Sucesso",
         description: "Contato atualizado com sucesso!",
-      })
+      });
+      
       onClose();
     } catch (error) {
       console.error("Erro ao atualizar contato:", error);
@@ -106,9 +109,13 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
         title: "Erro",
         description: "Erro ao atualizar contato!",
         variant: "destructive"
-      })
+      });
     }
   };
+
+  if (!isOpen || !contact) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -125,6 +132,7 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
               />
             </div>
             <div>
@@ -145,6 +153,7 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
                 id="neighborhood"
                 value={formData.neighborhood}
                 onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                required
               />
             </div>
             <div>
@@ -154,6 +163,7 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
                   <SelectValue placeholder="Selecione uma cidade" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Nenhuma cidade</SelectItem>
                   {cities.map(city => (
                     <SelectItem key={city.id} value={city.id}>
                       {city.name}
@@ -208,6 +218,7 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
                   <SelectValue placeholder="Selecione uma etapa" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Nenhuma etapa</SelectItem>
                   {pipelineStages.map(stage => (
                     <SelectItem key={stage.id} value={stage.id}>
                       {stage.name}
@@ -250,30 +261,31 @@ export const EditContactDialog = ({ contact, isOpen, onClose, onUpdate }: EditCo
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>
-                <Switch
-                  id="encounter_with_god"
-                  checked={formData.encounter_with_god || false}
-                  onCheckedChange={(checked) => setFormData({ ...formData, encounter_with_god: checked })}
-                />
-                <span className="ml-2">Encontro com Deus</span>
-              </Label>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="encounter_with_god"
+                checked={formData.encounter_with_god || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, encounter_with_god: checked })}
+              />
+              <Label htmlFor="encounter_with_god">Encontro com Deus</Label>
             </div>
 
-            <div>
-              <Label>
-                <Switch
-                  id="baptized"
-                  checked={formData.baptized || false}
-                  onCheckedChange={(checked) => setFormData({ ...formData, baptized: checked })}
-                />
-                <span className="ml-2">Batizado</span>
-              </Label>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="baptized"
+                checked={formData.baptized || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, baptized: checked })}
+              />
+              <Label htmlFor="baptized">Batizado</Label>
             </div>
           </div>
 
-          <Button type="submit">Salvar Alterações</Button>
+          <div className="flex gap-2 pt-4">
+            <Button type="submit">Salvar Alterações</Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
