@@ -67,6 +67,7 @@ export const KidsMinistryDashboard = () => {
         return <NotificationManager />;
       case 'materials':
         return <MaterialsManager />;
+      case 'overview':
       default:
         return (
           <div className="space-y-6">
