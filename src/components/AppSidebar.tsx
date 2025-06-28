@@ -1,5 +1,5 @@
 
-import { Home, Users, Building2, MessageSquare, Settings, Calendar, UserCheck, TreePine, Baby } from "lucide-react";
+import { Home, Users, Building2, MessageSquare, Settings, Calendar, UserCheck, TreePine, Baby, Heart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -41,6 +41,13 @@ const adminItems = [
     icon: Building2,
     color: "text-orange-600 hover:text-orange-700",
     bgColor: "hover:bg-orange-50",
+  },
+  {
+    title: "Ministérios",
+    url: "/ministries",
+    icon: Heart,
+    color: "text-rose-600 hover:text-rose-700",
+    bgColor: "hover:bg-rose-50",
   },
   {
     title: "Genealogia da Igreja",
@@ -114,6 +121,13 @@ const leaderItems = [
     icon: Building2,
     color: "text-orange-600 hover:text-orange-700",
     bgColor: "hover:bg-orange-50",
+  },
+  {
+    title: "Ministérios",
+    url: "/ministries",
+    icon: Heart,
+    color: "text-rose-600 hover:text-rose-700",
+    bgColor: "hover:bg-rose-50",
   },
   {
     title: "Genealogia da Igreja",
