@@ -135,7 +135,8 @@ export const KidsMinistryDashboard = () => {
   };
 
   const getModuleDescription = (id: string) => {
-    const descriptions = {
+    const descriptions: Record<string, string> = {
+      'overview': 'Visão geral do sistema',
       'children': 'Cadastro e gerenciamento de crianças',
       'lessons': 'Biblioteca de lições por categoria',
       'schedules': 'Organização das escalas dominicais',
@@ -145,7 +146,7 @@ export const KidsMinistryDashboard = () => {
       'notifications': 'Sistema de notificações',
       'materials': 'Biblioteca de materiais didáticos'
     };
-    return descriptions[id as keyof typeof descriptions] || '';
+    return descriptions[id] || '';
   };
 
   return (
