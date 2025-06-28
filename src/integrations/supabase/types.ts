@@ -433,6 +433,7 @@ export type Database = {
           founder: boolean
           id: string
           leader_id: string | null
+          ministry_id: string | null
           name: string
           neighborhood: string
           photo_url: string | null
@@ -456,6 +457,7 @@ export type Database = {
           founder?: boolean
           id?: string
           leader_id?: string | null
+          ministry_id?: string | null
           name: string
           neighborhood: string
           photo_url?: string | null
@@ -479,6 +481,7 @@ export type Database = {
           founder?: boolean
           id?: string
           leader_id?: string | null
+          ministry_id?: string | null
           name?: string
           neighborhood?: string
           photo_url?: string | null
@@ -508,6 +511,13 @@ export type Database = {
             columns: ["leader_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
             referencedColumns: ["id"]
           },
           {
@@ -653,6 +663,83 @@ export type Database = {
           variables?: Json | null
         }
         Relationships: []
+      }
+      ministries: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          leader_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          leader_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          leader_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ministries_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ministry_members: {
+        Row: {
+          active: boolean
+          contact_id: string
+          id: string
+          joined_at: string
+          ministry_id: string
+        }
+        Insert: {
+          active?: boolean
+          contact_id: string
+          id?: string
+          joined_at?: string
+          ministry_id: string
+        }
+        Update: {
+          active?: boolean
+          contact_id?: string
+          id?: string
+          joined_at?: string
+          ministry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ministry_members_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ministry_members_ministry_id_fkey"
+            columns: ["ministry_id"]
+            isOneToOne: false
+            referencedRelation: "ministries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       neighborhoods: {
         Row: {

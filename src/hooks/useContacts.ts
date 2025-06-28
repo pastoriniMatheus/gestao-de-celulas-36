@@ -10,6 +10,7 @@ interface Contact {
   neighborhood: string;
   city_id: string | null;
   cell_id: string | null;
+  ministry_id: string | null;
   status: string;
   encounter_with_god: boolean;
   baptized: boolean;
@@ -51,6 +52,7 @@ export const useContacts = () => {
         neighborhood: contact.neighborhood,
         city_id: contact.city_id,
         cell_id: contact.cell_id,
+        ministry_id: contact.ministry_id,
         status: contact.status,
         encounter_with_god: contact.encounter_with_god,
         baptized: contact.baptized || false,
@@ -112,6 +114,7 @@ export const useContacts = () => {
         neighborhood: data.neighborhood,
         city_id: data.city_id,
         cell_id: data.cell_id,
+        ministry_id: data.ministry_id,
         status: data.status,
         encounter_with_god: data.encounter_with_god,
         baptized: data.baptized || false,
@@ -188,6 +191,7 @@ export const useContacts = () => {
         neighborhood: data.neighborhood,
         city_id: data.city_id,
         cell_id: data.cell_id,
+        ministry_id: data.ministry_id,
         status: data.status,
         encounter_with_god: data.encounter_with_god,
         baptized: data.baptized || false,
@@ -263,6 +267,7 @@ export const useContacts = () => {
               neighborhood: payload.new.neighborhood,
               city_id: payload.new.city_id,
               cell_id: payload.new.cell_id,
+              ministry_id: payload.new.ministry_id,
               status: payload.new.status,
               encounter_with_god: payload.new.encounter_with_god,
               baptized: payload.new.baptized || false,
@@ -286,6 +291,7 @@ export const useContacts = () => {
               neighborhood: payload.new.neighborhood,
               city_id: payload.new.city_id,
               cell_id: payload.new.cell_id,
+              ministry_id: payload.new.ministry_id,
               status: payload.new.status,
               encounter_with_god: payload.new.encounter_with_god,
               baptized: payload.new.baptized || false,

@@ -5,17 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Calendar, Users } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useMinistries } from '@/hooks/useMinistries';
 
 export function TeacherSchedule() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState<any>(null);
+  const queryClient = useQueryClient();
+  const { ministries } = useMinistries();
   const [formData, setFormData] = useState({
     worship_date: '',
     class: '',
@@ -25,131 +24,87 @@ export function TeacherSchedule() {
     observations: ''
   });
 
-  const queryClient = useQueryClient();
-
-  const { data: schedules = [], isLoading } = useQuery({
-    queryKey: ['teacher_schedules'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('teacher_schedules')
-        .select(`
-          *,
-          lesson:lessons(title)
-        `)
-        .order('worship_date', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
+  // Buscar lições disponíveis
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lessons')
-        .select('id, title, category')
+        .select('*')
         .order('title');
-      
       if (error) throw error;
       return data;
     }
   });
 
+  // Buscar escalas de professoras
+  const { data: schedules = [] } = useQuery({
+    queryKey: ['teacher-schedules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('teacher_schedules')
+        .select(`
+          *,
+          lesson:lessons(*) 
+        `)
+        .order('worship_date', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Criar nova escala
   const createScheduleMutation = useMutation({
     mutationFn: async (scheduleData: any) => {
       const { data, error } = await supabase
         .from('teacher_schedules')
         .insert([scheduleData])
         .select();
-      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher_schedules'] });
-      toast.success('Escala criada com sucesso!');
-      resetForm();
-      setIsDialogOpen(false);
+      toast.success('Escala de professoras criada com sucesso!');
+      setFormData({
+        worship_date: '',
+        class: '',
+        teacher_1: '',
+        teacher_2: '',
+        lesson_id: '',
+        observations: ''
+      });
+      queryClient.invalidateQueries({ queryKey: ['teacher-schedules'] });
     },
     onError: (error) => {
       toast.error('Erro ao criar escala: ' + error.message);
     }
   });
 
-  const updateScheduleMutation = useMutation({
-    mutationFn: async ({ id, ...scheduleData }: any) => {
-      const { data, error } = await supabase
-        .from('teacher_schedules')
-        .update(scheduleData)
-        .eq('id', id)
-        .select();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher_schedules'] });
-      toast.success('Escala atualizada com sucesso!');
-      resetForm();
-      setIsDialogOpen(false);
-    },
-    onError: (error) => {
-      toast.error('Erro ao atualizar escala: ' + error.message);
-    }
-  });
-
+  // Deletar escala
   const deleteScheduleMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('teacher_schedules')
         .delete()
         .eq('id', id);
-      
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher_schedules'] });
       toast.success('Escala removida com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['teacher-schedules'] });
     },
     onError: (error) => {
       toast.error('Erro ao remover escala: ' + error.message);
     }
   });
 
-  const resetForm = () => {
-    setFormData({
-      worship_date: '',
-      class: '',
-      teacher_1: '',
-      teacher_2: '',
-      lesson_id: '',
-      observations: ''
-    });
-    setEditingSchedule(null);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (editingSchedule) {
-      updateScheduleMutation.mutate({ id: editingSchedule.id, ...formData });
-    } else {
-      createScheduleMutation.mutate(formData);
+    if (!formData.worship_date || !formData.class || !formData.teacher_1) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
     }
-  };
-
-  const handleEdit = (schedule: any) => {
-    setEditingSchedule(schedule);
-    setFormData({
-      worship_date: schedule.worship_date,
-      class: schedule.class,
-      teacher_1: schedule.teacher_1 || '',
-      teacher_2: schedule.teacher_2 || '',
-      lesson_id: schedule.lesson_id || '',
-      observations: schedule.observations || ''
-    });
-    setIsDialogOpen(true);
+    createScheduleMutation.mutate(formData);
   };
 
   const handleDelete = (id: string) => {
@@ -158,26 +113,41 @@ export function TeacherSchedule() {
     }
   };
 
+  // Obter membros dos ministérios para seleção de professoras
+  const getMinistryMembers = () => {
+    const allMembers: { id: string; name: string; ministry: string }[] = [];
+    
+    ministries.forEach(ministry => {
+      if (ministry.members) {
+        ministry.members.forEach(member => {
+          allMembers.push({
+            id: member.id,
+            name: member.name,
+            ministry: ministry.name
+          });
+        });
+      }
+    });
+    
+    return allMembers;
+  };
+
+  const ministryMembers = getMinistryMembers();
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-blue-700">Escala de Professoras</h3>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Escala
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {editingSchedule ? 'Editar Escala' : 'Nova Escala'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-700">
+            <Calendar className="w-5 h-5" />
+            Nova Escala de Professoras
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="worship_date">Data do Culto</Label>
+                <Label htmlFor="worship_date">Data do Culto *</Label>
                 <Input
                   id="worship_date"
                   type="date"
@@ -188,50 +158,35 @@ export function TeacherSchedule() {
               </div>
               
               <div>
-                <Label htmlFor="class">Turma</Label>
+                <Label htmlFor="class">Classe *</Label>
                 <Select value={formData.class} onValueChange={(value) => setFormData({ ...formData, class: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a turma" />
+                    <SelectValue placeholder="Selecione a classe..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Berçário">Berçário</SelectItem>
-                    <SelectItem value="Jardim">Jardim</SelectItem>
-                    <SelectItem value="Pré-Adolescentes">Pré-Adolescentes</SelectItem>
-                    <SelectItem value="Adolescentes">Adolescentes</SelectItem>
+                    <SelectItem value="Berçário">Berçário (0-2 anos)</SelectItem>
+                    <SelectItem value="Maternal">Maternal (3-4 anos)</SelectItem>
+                    <SelectItem value="Jardim">Jardim (5-6 anos)</SelectItem>
+                    <SelectItem value="Primários">Primários (7-8 anos)</SelectItem>
+                    <SelectItem value="Juniores">Juniores (9-10 anos)</SelectItem>
+                    <SelectItem value="Pré-Adolescentes">Pré-Adolescentes (11-12 anos)</SelectItem>
+                    <SelectItem value="Adolescentes">Adolescentes (13-17 anos)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="teacher_1">Professora 1</Label>
-                <Input
-                  id="teacher_1"
-                  value={formData.teacher_1}
-                  onChange={(e) => setFormData({ ...formData, teacher_1: e.target.value })}
-                  placeholder="Nome da primeira professora"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="teacher_2">Professora 2</Label>
-                <Input
-                  id="teacher_2"
-                  value={formData.teacher_2}
-                  onChange={(e) => setFormData({ ...formData, teacher_2: e.target.value })}
-                  placeholder="Nome da segunda professora"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="lesson_id">Lição</Label>
-                <Select value={formData.lesson_id} onValueChange={(value) => setFormData({ ...formData, lesson_id: value })}>
+                <Label htmlFor="teacher_1">Professora 1 *</Label>
+                <Select value={formData.teacher_1} onValueChange={(value) => setFormData({ ...formData, teacher_1: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a lição" />
+                    <SelectValue placeholder="Selecione a professora 1..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {lessons.map((lesson) => (
-                      <SelectItem key={lesson.id} value={lesson.id}>
-                        {lesson.title} ({lesson.category})
+                    {ministryMembers.map(member => (
+                      <SelectItem key={`teacher1-${member.id}`} value={member.name}>
+                        {member.name} ({member.ministry})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -239,108 +194,118 @@ export function TeacherSchedule() {
               </div>
               
               <div>
-                <Label htmlFor="observations">Observações</Label>
-                <Textarea
-                  id="observations"
-                  value={formData.observations}
-                  onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                  placeholder="Observações opcionais"
-                  rows={3}
-                />
+                <Label htmlFor="teacher_2">Professora 2</Label>
+                <Select value={formData.teacher_2} onValueChange={(value) => setFormData({ ...formData, teacher_2: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a professora 2..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ministryMembers.map(member => (
+                      <SelectItem key={`teacher2-${member.id}`} value={member.name}>
+                        {member.name} ({member.ministry})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                  {editingSchedule ? 'Atualizar' : 'Criar'}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Turma</TableHead>
-                <TableHead>Professora 1</TableHead>
-                <TableHead>Professora 2</TableHead>
-                <TableHead>Lição</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    Carregando...
-                  </TableCell>
-                </TableRow>
-              ) : schedules.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                    Nenhuma escala cadastrada
-                  </TableCell>
-                </TableRow>
-              ) : (
-                schedules.map((schedule) => (
-                  <TableRow key={schedule.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        {new Date(schedule.worship_date).toLocaleDateString('pt-BR')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                        {schedule.class}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        {schedule.teacher_1 || '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        {schedule.teacher_2 || '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell>{schedule.lesson?.title || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(schedule)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDelete(schedule.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+            </div>
+            
+            <div>
+              <Label htmlFor="lesson_id">Lição</Label>
+              <Select value={formData.lesson_id} onValueChange={(value) => setFormData({ ...formData, lesson_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a lição..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {lessons.map(lesson => (
+                    <SelectItem key={lesson.id} value={lesson.id}>
+                      {lesson.title} - {lesson.category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="observations">Observações</Label>
+              <Textarea
+                id="observations"
+                value={formData.observations}
+                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                placeholder="Observações especiais para esta escala..."
+                rows={3}
+              />
+            </div>
+            
+            <Button type="submit" disabled={createScheduleMutation.isPending}>
+              <Plus className="w-4 h-4 mr-2" />
+              {createScheduleMutation.isPending ? 'Criando...' : 'Criar Escala'}
+            </Button>
+          </form>
         </CardContent>
       </Card>
+
+      {/* Lista de Escalas */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Escalas Programadas</h3>
+        {schedules.map(schedule => (
+          <Card key={schedule.id}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+                  <div>
+                    <p className="text-sm text-gray-600">Data</p>
+                    <p className="font-medium">
+                      {new Date(schedule.worship_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Classe</p>
+                    <p className="font-medium">{schedule.class}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Professoras</p>
+                    <p className="font-medium">{schedule.teacher_1}</p>
+                    {schedule.teacher_2 && (
+                      <p className="text-sm text-gray-600">{schedule.teacher_2}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Lição</p>
+                    <p className="font-medium">{schedule.lesson?.title || 'Não definida'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDelete(schedule.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {schedule.observations && (
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-sm text-gray-600">Observações:</p>
+                  <p className="text-sm">{schedule.observations}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+        
+        {schedules.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">Nenhuma escala programada ainda.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
