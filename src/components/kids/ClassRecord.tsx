@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar2, Users, BookOpen, Save } from 'lucide-react';
+import { Calendar, Users, BookOpen, Save } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -169,7 +169,7 @@ export function ClassRecord() {
         <Card className="bg-blue-50 border-blue-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-700">
-              <Calendar2 className="w-5 h-5" />
+              <Calendar className="w-5 h-5" />
               Informações da Escala
             </CardTitle>
           </CardHeader>
