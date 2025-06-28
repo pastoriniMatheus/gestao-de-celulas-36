@@ -8,26 +8,32 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export function AttendanceChart() {
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedClass, setSelectedClass] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
-  const { data: chartData = [], isLoading } = useQuery({
+  const { data: chartData = [], isLoading, error } = useQuery({
     queryKey: ['attendance_chart', selectedClass, selectedMonth],
     queryFn: async () => {
       try {
+        console.log('Buscando dados do gráfico...', { selectedClass, selectedMonth });
+        
         let query = supabase
           .from('class_records')
           .select('worship_date, class, total_members, total_visitors')
           .order('worship_date');
 
-        if (selectedClass) {
+        if (selectedClass && selectedClass !== 'all') {
           query = query.eq('class', selectedClass);
         }
 
         if (selectedMonth) {
           const [year, month] = selectedMonth.split('-');
+          // Use o último dia real do mês para evitar datas inválidas
+          const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
           const startDate = `${year}-${month}-01`;
-          const endDate = `${year}-${month}-31`;
+          const endDate = `${year}-${month}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+          
+          console.log('Filtrando por período:', { startDate, endDate });
           query = query.gte('worship_date', startDate).lte('worship_date', endDate);
         }
 
@@ -37,6 +43,8 @@ export function AttendanceChart() {
           console.error('Erro ao buscar dados do gráfico:', error);
           return [];
         }
+
+        console.log('Dados retornados:', data);
 
         if (!data || data.length === 0) {
           return [];
@@ -59,9 +67,11 @@ export function AttendanceChart() {
   });
 
   const { data: classes = [] } = useQuery({
-    queryKey: ['distinct_classes'],
+    queryKey: ['distinct_classes_for_chart'],
     queryFn: async () => {
       try {
+        console.log('Buscando turmas disponíveis...');
+        
         const { data, error } = await supabase
           .from('class_records')
           .select('class')
@@ -73,6 +83,7 @@ export function AttendanceChart() {
         }
         
         const uniqueClasses = [...new Set(data?.map(record => record.class) || [])];
+        console.log('Turmas encontradas:', uniqueClasses);
         return uniqueClasses.filter(Boolean);
       } catch (error) {
         console.error('Erro na consulta de turmas:', error);
@@ -80,6 +91,23 @@ export function AttendanceChart() {
       }
     }
   });
+
+  if (error) {
+    console.error('Erro no componente AttendanceChart:', error);
+    return (
+      <div className="space-y-3 sm:space-y-4 px-1">
+        <h3 className="text-sm sm:text-base font-semibold text-teal-700 px-2">Gráfico de Presença</h3>
+        <Card className="mx-1">
+          <CardContent className="p-4">
+            <div className="text-center text-red-600">
+              <p className="text-sm">Erro ao carregar o gráfico</p>
+              <p className="text-xs text-gray-500 mt-1">Tente recarregar a página</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 sm:space-y-4 px-1">
@@ -93,7 +121,7 @@ export function AttendanceChart() {
               <SelectValue placeholder="Todas as turmas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as turmas</SelectItem>
+              <SelectItem value="all">Todas as turmas</SelectItem>
               {classes.map((className) => (
                 <SelectItem key={className} value={className}>
                   {className}
@@ -119,7 +147,7 @@ export function AttendanceChart() {
           <CardTitle className="flex items-center gap-2 text-xs sm:text-sm">
             <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>Presença por Data</span>
-            {selectedClass && (
+            {selectedClass && selectedClass !== 'all' && (
               <span className="text-xs font-normal text-gray-600">
                 - {selectedClass}
               </span>
