@@ -640,11 +640,13 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
       {editingContact && (
         <EditContactDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
           contact={editingContact}
-          context="cell"
-          onContactUpdated={handleContactUpdated}
+          isOpen={editDialogOpen}
+          onClose={() => {
+            setEditDialogOpen(false);
+            setEditingContact(null);
+          }}
+          onUpdate={handleContactUpdated}
         />
       )}
 

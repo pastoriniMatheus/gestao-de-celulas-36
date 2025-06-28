@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +30,7 @@ export const KanbanPipeline = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCellFilter, setSelectedCellFilter] = useState<string>('all');
+  const [editingContact, setEditingContact] = useState<any>(null);
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -257,12 +257,14 @@ export const KanbanPipeline = () => {
         </DragDropContext>
       </div>
 
-      {selectedContact && (
+      {editingContact && (
         <EditContactDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          contact={selectedContact}
-          context="contacts"
+          contact={editingContact}
+          isOpen={editDialogOpen}
+          onClose={() => {
+            setEditDialogOpen(false);
+            setEditingContact(null);
+          }}
         />
       )}
     </div>

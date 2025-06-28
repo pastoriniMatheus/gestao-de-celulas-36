@@ -256,7 +256,10 @@ export type Database = {
           birth_date: string
           class: string
           created_at: string
+          food_restriction_details: string | null
+          has_food_restriction: boolean
           id: string
+          is_autistic: boolean
           name: string
           parent_contact_id: string | null
           type: string
@@ -266,7 +269,10 @@ export type Database = {
           birth_date: string
           class: string
           created_at?: string
+          food_restriction_details?: string | null
+          has_food_restriction?: boolean
           id?: string
+          is_autistic?: boolean
           name: string
           parent_contact_id?: string | null
           type: string
@@ -276,7 +282,10 @@ export type Database = {
           birth_date?: string
           class?: string
           created_at?: string
+          food_restriction_details?: string | null
+          has_food_restriction?: boolean
           id?: string
+          is_autistic?: boolean
           name?: string
           parent_contact_id?: string | null
           type?: string
