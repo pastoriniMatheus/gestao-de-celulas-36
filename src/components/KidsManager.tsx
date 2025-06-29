@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +35,7 @@ export function KidsManager() {
         {/* Header Fixo com Menu Carrossel */}
         <div className="flex-none bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
           {/* Título compacto */}
-          <div className="flex items-center justify-center gap-2 py-4 px-3 pt-6">
+          <div className="flex items-center justify-center gap-2 py-3 px-3 pt-4">
             <div className="w-4 h-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
               <Baby className="w-2.5 h-2.5 text-white" />
             </div>
@@ -43,8 +44,8 @@ export function KidsManager() {
             </h1>
           </div>
           
-          {/* Menu Carrossel Horizontal com mais espaçamento */}
-          <div className="px-2 pb-4 pt-2 overflow-hidden">
+          {/* Menu Carrossel Horizontal */}
+          <div className="px-2 pb-3 overflow-hidden">
             <Carousel 
               opts={{
                 align: "start",
