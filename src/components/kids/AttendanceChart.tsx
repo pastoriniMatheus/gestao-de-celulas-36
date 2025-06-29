@@ -28,7 +28,6 @@ export function AttendanceChart() {
 
         if (selectedMonth) {
           const [year, month] = selectedMonth.split('-');
-          // Use o último dia real do mês para evitar datas inválidas
           const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
           const startDate = `${year}-${month}-01`;
           const endDate = `${year}-${month}-${lastDayOfMonth.toString().padStart(2, '0')}`;
@@ -95,10 +94,10 @@ export function AttendanceChart() {
   if (error) {
     console.error('Erro no componente AttendanceChart:', error);
     return (
-      <div className="space-y-3 sm:space-y-4 px-1">
-        <h3 className="text-sm sm:text-base font-semibold text-teal-700 px-2">Gráfico de Presença</h3>
-        <Card className="mx-1">
-          <CardContent className="p-4">
+      <div className="space-y-2 w-full max-w-full overflow-hidden">
+        <h3 className="text-sm font-semibold text-teal-700 px-3">Gráfico de Presença</h3>
+        <Card className="mx-2">
+          <CardContent className="p-3">
             <div className="text-center text-red-600">
               <p className="text-sm">Erro ao carregar o gráfico</p>
               <p className="text-xs text-gray-500 mt-1">Tente recarregar a página</p>
@@ -110,14 +109,14 @@ export function AttendanceChart() {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4 px-1">
-      <h3 className="text-sm sm:text-base font-semibold text-teal-700 px-2">Gráfico de Presença</h3>
+    <div className="space-y-3 w-full max-w-full overflow-hidden">
+      <h3 className="text-sm font-semibold text-teal-700 px-3">Gráfico de Presença</h3>
       
-      <div className="flex flex-col gap-2 px-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 px-3">
+        <div className="flex items-center gap-2 w-full">
           <Filter className="w-3 h-3 text-gray-500 flex-shrink-0" />
           <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="h-8 text-xs flex-1 min-w-0">
               <SelectValue placeholder="Todas as turmas" />
             </SelectTrigger>
             <SelectContent>
@@ -131,63 +130,66 @@ export function AttendanceChart() {
           </Select>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full">
           <Calendar className="w-3 h-3 text-gray-500 flex-shrink-0" />
           <input
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="h-8 px-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent flex-1"
+            className="h-8 px-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent flex-1 min-w-0"
           />
         </div>
       </div>
 
-      <Card className="mx-1">
+      <Card className="mx-2">
         <CardHeader className="pb-2 px-3">
-          <CardTitle className="flex items-center gap-2 text-xs sm:text-sm">
-            <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span>Presença por Data</span>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Calendar className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">Presença por Data</span>
             {selectedClass && selectedClass !== 'all' && (
-              <span className="text-xs font-normal text-gray-600">
+              <span className="text-xs font-normal text-gray-600 truncate">
                 - {selectedClass}
               </span>
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-2 sm:px-3">
+        <CardContent className="px-3 pb-3">
           {isLoading ? (
-            <div className="h-48 sm:h-64 flex items-center justify-center">
+            <div className="h-48 flex items-center justify-center">
               <div className="text-gray-500 text-xs">Carregando gráfico...</div>
             </div>
           ) : chartData.length === 0 ? (
-            <div className="h-48 sm:h-64 flex items-center justify-center">
-              <div className="text-gray-500 text-xs text-center px-2">
+            <div className="h-48 flex items-center justify-center">
+              <div className="text-gray-500 text-xs text-center">
                 Nenhum dado encontrado para o período selecionado
               </div>
             </div>
           ) : (
-            <div className="w-full h-48 sm:h-64">
+            <div className="w-full h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 8 }}
+                    tick={{ fontSize: 10 }}
                     interval="preserveStartEnd"
                   />
-                  <YAxis tick={{ fontSize: 8 }} />
+                  <YAxis tick={{ fontSize: 10 }} width={30} />
                   <Tooltip 
                     labelFormatter={(value) => `Data: ${value}`}
-                    formatter={(value, name) => [value, name === 'membros' ? 'Membros' : 'Visitantes']}
-                    contentStyle={{ fontSize: '10px' }}
+                    formatter={(value, name) => [
+                      value, 
+                      name === 'membros' ? 'Membros' : 'Visitantes'
+                    ]}
+                    contentStyle={{ fontSize: '11px', padding: '8px' }}
                   />
-                  <Legend wrapperStyle={{ fontSize: '10px' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
                   <Line 
                     type="monotone" 
                     dataKey="membros" 
                     stroke="#10B981" 
                     strokeWidth={2}
-                    dot={{ fill: '#10B981', strokeWidth: 1, r: 2 }}
+                    dot={{ fill: '#10B981', strokeWidth: 1, r: 3 }}
                     name="Membros"
                   />
                   <Line 
@@ -195,7 +197,7 @@ export function AttendanceChart() {
                     dataKey="visitantes" 
                     stroke="#3B82F6" 
                     strokeWidth={2}
-                    dot={{ fill: '#3B82F6', strokeWidth: 1, r: 2 }}
+                    dot={{ fill: '#3B82F6', strokeWidth: 1, r: 3 }}
                     name="Visitantes"
                   />
                 </LineChart>
@@ -206,10 +208,10 @@ export function AttendanceChart() {
       </Card>
 
       {chartData.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 px-1">
+        <div className="grid grid-cols-3 gap-2 px-2">
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
             <CardContent className="p-2 text-center">
-              <div className="text-sm sm:text-lg font-bold text-green-600">
+              <div className="text-lg font-bold text-green-600">
                 {chartData.reduce((sum, record) => sum + record.membros, 0)}
               </div>
               <div className="text-xs text-gray-600">Membros</div>
@@ -218,7 +220,7 @@ export function AttendanceChart() {
           
           <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
             <CardContent className="p-2 text-center">
-              <div className="text-sm sm:text-lg font-bold text-blue-600">
+              <div className="text-lg font-bold text-blue-600">
                 {chartData.reduce((sum, record) => sum + record.visitantes, 0)}
               </div>
               <div className="text-xs text-gray-600">Visitantes</div>
@@ -227,7 +229,7 @@ export function AttendanceChart() {
           
           <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
             <CardContent className="p-2 text-center">
-              <div className="text-sm sm:text-lg font-bold text-purple-600">
+              <div className="text-lg font-bold text-purple-600">
                 {chartData.reduce((sum, record) => sum + record.membros + record.visitantes, 0)}
               </div>
               <div className="text-xs text-gray-600">Total</div>
