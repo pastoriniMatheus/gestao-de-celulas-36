@@ -51,7 +51,7 @@ export function KidsManager() {
                 align: "start",
                 dragFree: true,
                 containScroll: "trimSnaps",
-                slidesToScroll: 0.5
+                slidesToScroll: 1
               }} 
               className="w-full max-w-full"
             >
