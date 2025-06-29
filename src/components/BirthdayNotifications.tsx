@@ -10,11 +10,13 @@ import { useNewContactNotifications } from '@/hooks/useNewContactNotifications';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const BirthdayNotifications = () => {
   const { todayBirthdays, loading: birthdayLoading, markNotificationSent } = useBirthdayNotifications();
   const { newContacts, loading: contactsLoading } = useNewContactNotifications();
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const totalNotifications = todayBirthdays.length + newContacts.length;
   const loading = birthdayLoading || contactsLoading;
@@ -102,7 +104,7 @@ export const BirthdayNotifications = () => {
       </Button>
 
       {isOpen && (
-        <Card className="absolute right-0 top-12 w-80 z-50 shadow-lg border">
+        <Card className={`absolute ${isMobile ? 'right-0 left-0 mx-2 top-12' : 'right-0 top-12 w-80'} z-50 shadow-lg border bg-white`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div>
               <CardTitle className="text-sm flex items-center gap-2">
@@ -121,7 +123,7 @@ export const BirthdayNotifications = () => {
             </Button>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className={`${isMobile ? 'h-[300px]' : 'h-[400px]'}`}>
               <div className="space-y-4 p-6">
                 {/* Seção de Aniversariantes */}
                 {todayBirthdays.length > 0 && (

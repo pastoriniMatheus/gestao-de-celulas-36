@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Calendar, Gift, Phone, X, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,10 +8,12 @@ import { useMonthlyBirthdays } from '@/hooks/useMonthlyBirthdays';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const MonthlyBirthdaysSection = () => {
   const { monthlyBirthdays, loading } = useMonthlyBirthdays();
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const currentMonthName = format(new Date(), 'MMMM', { locale: ptBR });
 
@@ -65,7 +66,7 @@ export const MonthlyBirthdaysSection = () => {
       </Button>
 
       {isOpen && (
-        <Card className="absolute right-0 top-12 w-96 z-50 shadow-lg border">
+        <Card className={`absolute ${isMobile ? 'right-0 left-0 mx-2 top-12' : 'right-0 top-12 w-96'} z-50 shadow-lg border bg-white`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div>
               <CardTitle className="text-sm flex items-center gap-2">
@@ -84,7 +85,7 @@ export const MonthlyBirthdaysSection = () => {
             </Button>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className={`${isMobile ? 'h-[300px]' : 'h-[400px]'}`}>
               <div className="space-y-4 p-6">
                 {monthlyBirthdays.length > 0 ? (
                   <div className="space-y-3">
