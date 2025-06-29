@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,14 +11,11 @@ import { AttendanceChart } from './kids/AttendanceChart';
 import { KidsNotificationsManager } from './kids/KidsNotificationsManager';
 import { MaterialsManager } from './kids/MaterialsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 export function KidsManager() {
   const [activeTab, setActiveTab] = useState('children');
   const isMobile = useIsMobile();
-
   if (isMobile) {
-    return (
-      <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+    return <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
         {/* Header Mobile Super Compacto */}
         <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm flex-shrink-0">
           <div className="px-2 py-1.5">
@@ -37,66 +33,42 @@ export function KidsManager() {
             <div className="overflow-x-auto scrollbar-hide">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="flex gap-0.5 bg-transparent p-0 h-auto w-max min-w-full">
-                  <TabsTrigger 
-                    value="children" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-pink-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="children" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-pink-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <Baby className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Kids</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger 
-                    value="schedule" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-blue-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="schedule" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-blue-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <Calendar className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Escala</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger 
-                    value="lessons" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-green-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="lessons" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-green-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <BookOpen className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Lições</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger 
-                    value="record" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-orange-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="record" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-orange-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <ClipboardList className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Aula</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger 
-                    value="history" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-purple-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="history" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-purple-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <Users className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Hist.</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger 
-                    value="chart" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-teal-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="chart" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-teal-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <BarChart3 className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Graf.</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger 
-                    value="notifications" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-rose-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="notifications" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-rose-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <Bell className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Avisos</span>
                   </TabsTrigger>
                   
-                  <TabsTrigger 
-                    value="materials" 
-                    className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-slate-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-gray-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs"
-                  >
+                  <TabsTrigger value="materials" className="flex flex-col items-center gap-0.5 px-1.5 py-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm border border-slate-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-gray-600 data-[state=active]:text-white transition-all duration-300 min-w-[42px] text-xs">
                     <FileText className="w-2.5 h-2.5" />
                     <span className="text-[8px] font-medium leading-none">Mat.</span>
                   </TabsTrigger>
@@ -238,13 +210,11 @@ export function KidsManager() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Versão Desktop com novo visual aplicado
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       <div className="space-y-4 px-4 py-6">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -260,60 +230,36 @@ export function KidsManager() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="mb-4">
-            <TabsList className="grid grid-cols-4 lg:grid-cols-8 bg-white/90 backdrop-blur-sm rounded-xl p-2 w-full shadow-lg border border-pink-100">
-              <TabsTrigger 
-                value="children" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
-              >
+            <TabsList className="grid grid-cols-4 lg:grid-cols-8 bg-white/90 backdrop-blur-sm rounded-xl p-2 w-full shadow-lg border border-pink-100 py-[73px]">
+              <TabsTrigger value="children" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300">
                 <Baby className="w-4 h-4" />
                 <span className="hidden sm:inline">Crianças</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="schedule" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300"
-              >
+              <TabsTrigger value="schedule" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300">
                 <Calendar className="w-4 h-4" />
                 <span className="hidden sm:inline">Escala</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="lessons" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white transition-all duration-300"
-              >
+              <TabsTrigger value="lessons" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white transition-all duration-300">
                 <BookOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Lições</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="record" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-300"
-              >
+              <TabsTrigger value="record" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-300">
                 <ClipboardList className="w-4 h-4" />
                 <span className="hidden sm:inline">Registro</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="history" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300"
-              >
+              <TabsTrigger value="history" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300">
                 <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Histórico</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="chart" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white transition-all duration-300"
-              >
+              <TabsTrigger value="chart" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white transition-all duration-300">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden sm:inline">Gráficos</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="notifications" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300"
-              >
+              <TabsTrigger value="notifications" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300">
                 <Bell className="w-4 h-4" />
                 <span className="hidden sm:inline">Notificações</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="materials" 
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-gray-600 data-[state=active]:text-white transition-all duration-300"
-              >
+              <TabsTrigger value="materials" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-gray-600 data-[state=active]:text-white transition-all duration-300">
                 <FileText className="w-4 h-4" />
                 <span className="hidden sm:inline">Materiais</span>
               </TabsTrigger>
@@ -449,6 +395,5 @@ export function KidsManager() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
