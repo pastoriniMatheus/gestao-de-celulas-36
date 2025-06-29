@@ -12,11 +12,9 @@ import { KidsNotificationsManager } from './kids/KidsNotificationsManager';
 import { MaterialsManager } from './kids/MaterialsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-
 export function KidsManager() {
   const [activeTab, setActiveTab] = useState('children');
   const isMobile = useIsMobile();
-  
   const menuItems = [{
     value: 'children',
     label: 'Kids',
@@ -58,14 +56,12 @@ export function KidsManager() {
     icon: FileText,
     color: 'from-slate-500 to-gray-600'
   }];
-
   if (isMobile) {
-    return (
-      <div className="h-screen w-screen max-w-full flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+    return <div className="h-screen w-screen max-w-full flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
         {/* Header Fixo com Menu Carrossel */}
         <div className="flex-none bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
           {/* Título compacto */}
-          <div className="flex items-center justify-center gap-2 px-3 py-2">
+          <div className="flex items-center justify-center gap-2 py-2 px-[12px]">
             <div className="w-4 h-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
               <Baby className="w-2.5 h-2.5 text-white" />
             </div>
@@ -77,31 +73,19 @@ export function KidsManager() {
           {/* Menu Carrossel Horizontal */}
           <div className="px-2 pb-2">
             <div className="w-full max-w-full overflow-hidden">
-              <Carousel 
-                opts={{
-                  align: "start",
-                  dragFree: true,
-                  containScroll: "trimSnaps",
-                  slidesToScroll: 1
-                }} 
-                className="w-full max-w-full"
-              >
+              <Carousel opts={{
+              align: "start",
+              dragFree: true,
+              containScroll: "trimSnaps",
+              slidesToScroll: 1
+            }} className="w-full max-w-full">
                 <CarouselContent className="-ml-1 max-w-full">
-                  {menuItems.map(item => (
-                    <CarouselItem key={item.value} className="pl-1 basis-auto flex-shrink-0">
-                      <button 
-                        onClick={() => setActiveTab(item.value)} 
-                        className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-all duration-300 text-xs whitespace-nowrap min-w-[56px] max-w-[64px] ${
-                          activeTab === item.value 
-                            ? `bg-gradient-to-br ${item.color} text-white border-transparent shadow-md` 
-                            : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-sm hover:border-gray-300'
-                        }`}
-                      >
+                  {menuItems.map(item => <CarouselItem key={item.value} className="pl-1 basis-auto flex-shrink-0">
+                      <button onClick={() => setActiveTab(item.value)} className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-all duration-300 text-xs whitespace-nowrap min-w-[56px] max-w-[64px] ${activeTab === item.value ? `bg-gradient-to-br ${item.color} text-white border-transparent shadow-md` : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-sm hover:border-gray-300'}`}>
                         <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="text-[10px] font-medium leading-tight truncate w-full text-center">{item.label}</span>
                       </button>
-                    </CarouselItem>
-                  ))}
+                    </CarouselItem>)}
                 </CarouselContent>
               </Carousel>
             </div>
@@ -120,7 +104,7 @@ export function KidsManager() {
                   </div>
                 </div>
                 <div className="flex-1 min-h-0 w-full max-w-full overflow-hidden">
-                  <div className="h-full w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                  <div className="h-full w-full overflow-y-auto overflow-x-hidden py-2 px-[12px]">
                     <ChildrenManager />
                   </div>
                 </div>
@@ -240,13 +224,11 @@ export function KidsManager() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Versão Desktop com layout otimizado
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+  return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
       <div className="space-y-4 px-4 py-6 max-w-full">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -429,6 +411,5 @@ export function KidsManager() {
           </div>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
