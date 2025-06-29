@@ -1,3 +1,5 @@
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileChildrenManager } from './MobileChildrenManager';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +15,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 export function ChildrenManager() {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileChildrenManager />;
+  }
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingChild, setEditingChild] = useState<any>(null);
   const [formData, setFormData] = useState({
