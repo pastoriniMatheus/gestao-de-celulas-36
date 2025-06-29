@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,11 +31,11 @@ export function KidsManager() {
 
   if (isMobile) {
     return (
-      <div className="h-screen w-screen fixed inset-0 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+      <div className="h-screen w-screen max-w-full fixed inset-0 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
         {/* Header Fixo com Menu Carrossel */}
         <div className="flex-none bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
           {/* Título compacto */}
-          <div className="flex items-center justify-center gap-2 py-2 px-3">
+          <div className="flex items-center justify-center gap-2 py-3 px-3 pt-4">
             <div className="w-4 h-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
               <Baby className="w-2.5 h-2.5 text-white" />
             </div>
@@ -44,7 +45,7 @@ export function KidsManager() {
           </div>
           
           {/* Menu Carrossel Horizontal */}
-          <div className="px-2 pb-2 overflow-hidden">
+          <div className="px-2 pb-3 overflow-hidden">
             <Carousel 
               opts={{
                 align: "start",
@@ -52,7 +53,7 @@ export function KidsManager() {
                 containScroll: "trimSnaps",
                 slidesToScroll: 1
               }} 
-              className="w-full"
+              className="w-full max-w-full"
             >
               <CarouselContent className="-ml-1">
                 {menuItems.map((item) => (
@@ -78,115 +79,115 @@ export function KidsManager() {
         </div>
 
         {/* Conteúdo das Subsessões */}
-        <div className="flex-1 w-full overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full w-full">
-            <TabsContent value="children" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-pink-200 flex flex-col overflow-hidden">
+        <div className="flex-1 w-full max-w-full overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full w-full max-w-full">
+            <TabsContent value="children" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-pink-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Baby className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Crianças</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden px-3 py-2">
                   <ChildrenManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="schedule" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-blue-200 flex flex-col overflow-hidden">
+            <TabsContent value="schedule" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-blue-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Escala de Professoras</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden px-3 py-2">
                   <TeacherSchedule />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="lessons" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-green-200 flex flex-col overflow-hidden">
+            <TabsContent value="lessons" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-green-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-green-500 to-emerald-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Lições</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden px-3 py-2">
                   <LessonsManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="record" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-orange-200 flex flex-col overflow-hidden">
+            <TabsContent value="record" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-orange-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-orange-500 to-red-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <ClipboardList className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Registro de Aula</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden px-3 py-2">
                   <ClassRecord />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="history" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-purple-200 flex flex-col overflow-hidden">
+            <TabsContent value="history" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-purple-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-purple-500 to-pink-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Histórico</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden px-3 py-2">
                   <ClassHistory />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="chart" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-teal-200 flex flex-col overflow-hidden">
+            <TabsContent value="chart" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-teal-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-teal-500 to-cyan-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Gráficos</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden">
                   <AttendanceChart />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="notifications" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-rose-200 flex flex-col overflow-hidden">
+            <TabsContent value="notifications" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-rose-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-rose-500 to-pink-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Avisos</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden px-3 py-2">
                   <KidsNotificationsManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="materials" className="h-full m-0 w-full data-[state=inactive]:hidden">
-              <div className="h-full w-full bg-white/95 backdrop-blur-sm border-t border-slate-200 flex flex-col overflow-hidden">
+            <TabsContent value="materials" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
+              <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-slate-200 flex flex-col overflow-hidden">
                 <div className="flex-none bg-gradient-to-r from-slate-500 to-gray-600 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-white flex-shrink-0" />
                     <h2 className="text-sm font-bold text-white truncate">Materiais</h2>
                   </div>
                 </div>
-                <div className="flex-1 w-full overflow-y-auto overflow-x-hidden px-3 py-2">
+                <div className="flex-1 w-full max-w-full overflow-y-auto overflow-x-hidden px-3 py-2">
                   <MaterialsManager />
                 </div>
               </div>
