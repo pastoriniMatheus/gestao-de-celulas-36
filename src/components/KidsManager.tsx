@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,11 +12,14 @@ import { AttendanceChart } from './kids/AttendanceChart';
 import { KidsNotificationsManager } from './kids/KidsNotificationsManager';
 import { MaterialsManager } from './kids/MaterialsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 export function KidsManager() {
   const [activeTab, setActiveTab] = useState('children');
   const isMobile = useIsMobile();
+
   if (isMobile) {
-    return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
         {/* Header Mobile Compacto */}
         <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-pink-200 shadow-sm">
           <div className="px-3 py-2">
@@ -218,11 +222,13 @@ export function KidsManager() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>;
+      </div>
+    );
   }
 
   // Versão Desktop (mantém o layout original)
-  return <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <div className="space-y-3 px-2 sm:px-4 py-4">
         <div className="text-center mb-4 px-2">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-pink-600 mb-2 flex items-center justify-center gap-2 flex-wrap">
@@ -375,5 +381,6 @@ export function KidsManager() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 }
