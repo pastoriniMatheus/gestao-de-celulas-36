@@ -31,7 +31,7 @@ export function KidsManager() {
 
   if (isMobile) {
     return (
-      <div className="h-screen w-screen max-w-full fixed inset-10 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+      <div className="h-screen w-screen max-w-full fixed inset-1 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
         {/* Header Fixo com Menu Carrossel */}
         <div className="flex-none bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
           {/* Título compacto */}
