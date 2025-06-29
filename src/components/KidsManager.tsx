@@ -19,54 +19,85 @@ export function KidsManager() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
-        {/* Header Mobile Compacto */}
-        <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-pink-200 shadow-sm">
-          <div className="px-3 py-2">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                <Baby className="w-4 h-4 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100">
+        {/* Header Mobile Redesenhado */}
+        <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-pink-300 shadow-lg">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl animate-pulse">
+                <Baby className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                 Kids & Jovens
               </h1>
             </div>
             
-            {/* Tabs Horizontais Mobile */}
-            <div className="overflow-x-auto scrollbar-hide">
+            {/* Menu de Navegação Mobile Otimizado */}
+            <div className="overflow-x-auto pb-2">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-8 gap-1 bg-white/80 backdrop-blur-sm rounded-lg p-1 min-w-max">
-                  <TabsTrigger value="children" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <Baby className="w-3 h-3" />
-                    <span className="text-[10px]">Kids</span>
+                <TabsList className="flex gap-2 bg-transparent p-0 h-auto min-w-max">
+                  <TabsTrigger 
+                    value="children" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-pink-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <Baby className="w-5 h-5" />
+                    <span className="text-xs font-medium">Crianças</span>
                   </TabsTrigger>
-                  <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <Calendar className="w-3 h-3" />
-                    <span className="text-[10px]">Escala</span>
+                  
+                  <TabsTrigger 
+                    value="schedule" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-blue-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <Calendar className="w-5 h-5" />
+                    <span className="text-xs font-medium">Escala</span>
                   </TabsTrigger>
-                  <TabsTrigger value="lessons" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <BookOpen className="w-3 h-3" />
-                    <span className="text-[10px]">Lições</span>
+                  
+                  <TabsTrigger 
+                    value="lessons" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-green-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <BookOpen className="w-5 h-5" />
+                    <span className="text-xs font-medium">Lições</span>
                   </TabsTrigger>
-                  <TabsTrigger value="record" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <ClipboardList className="w-3 h-3" />
-                    <span className="text-[10px]">Registro</span>
+                  
+                  <TabsTrigger 
+                    value="record" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-orange-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <ClipboardList className="w-5 h-5" />
+                    <span className="text-xs font-medium">Registro</span>
                   </TabsTrigger>
-                  <TabsTrigger value="history" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <Users className="w-3 h-3" />
-                    <span className="text-[10px]">Histórico</span>
+                  
+                  <TabsTrigger 
+                    value="history" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-purple-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <Users className="w-5 h-5" />
+                    <span className="text-xs font-medium">Histórico</span>
                   </TabsTrigger>
-                  <TabsTrigger value="chart" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <BarChart3 className="w-3 h-3" />
-                    <span className="text-[10px]">Gráficos</span>
+                  
+                  <TabsTrigger 
+                    value="chart" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-teal-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <BarChart3 className="w-5 h-5" />
+                    <span className="text-xs font-medium">Gráficos</span>
                   </TabsTrigger>
-                  <TabsTrigger value="notifications" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <Bell className="w-3 h-3" />
-                    <span className="text-[10px]">Avisos</span>
+                  
+                  <TabsTrigger 
+                    value="notifications" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-rose-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <Bell className="w-5 h-5" />
+                    <span className="text-xs font-medium">Avisos</span>
                   </TabsTrigger>
-                  <TabsTrigger value="materials" className="flex flex-col items-center gap-1 px-2 py-1.5 text-xs whitespace-nowrap">
-                    <FileText className="w-3 h-3" />
-                    <span className="text-[10px]">Materiais</span>
+                  
+                  <TabsTrigger 
+                    value="materials" 
+                    className="flex flex-col items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-slate-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-gray-600 data-[state=active]:text-white transition-all duration-300"
+                  >
+                    <FileText className="w-5 h-5" />
+                    <span className="text-xs font-medium">Materiais</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -74,149 +105,133 @@ export function KidsManager() {
           </div>
         </div>
 
-        {/* Content Mobile */}
-        <div className="flex-1 overflow-hidden">
+        {/* Conteúdo Mobile Redesenhado */}
+        <div className="flex-1 p-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <TabsContent value="children" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <Baby className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-pink-700">Cadastro de Crianças</h2>
-                      </div>
+            <TabsContent value="children" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-pink-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-pink-500 to-purple-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <Baby className="w-4 h-4 text-white" />
                     </div>
-                    <ChildrenManager />
+                    <h2 className="text-lg font-bold text-white">Cadastro de Crianças</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <ChildrenManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="schedule" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <Calendar className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-blue-700">Escala de Professoras</h2>
-                      </div>
+            <TabsContent value="schedule" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-blue-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-white" />
                     </div>
-                    <TeacherSchedule />
+                    <h2 className="text-lg font-bold text-white">Escala de Professoras</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <TeacherSchedule />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="lessons" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                          <BookOpen className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-green-700">Gerenciar Lições</h2>
-                      </div>
+            <TabsContent value="lessons" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-green-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <BookOpen className="w-4 h-4 text-white" />
                     </div>
-                    <LessonsManager />
+                    <h2 className="text-lg font-bold text-white">Gerenciar Lições</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <LessonsManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="record" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center">
-                          <ClipboardList className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-orange-700">Registro de Aula</h2>
-                      </div>
+            <TabsContent value="record" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-orange-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-500 to-red-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <ClipboardList className="w-4 h-4 text-white" />
                     </div>
-                    <ClassRecord />
+                    <h2 className="text-lg font-bold text-white">Registro de Aula</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <ClassRecord />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="history" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
-                          <Users className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-purple-700">Histórico de Aulas</h2>
-                      </div>
+            <TabsContent value="history" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-purple-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <Users className="w-4 h-4 text-white" />
                     </div>
-                    <ClassHistory />
+                    <h2 className="text-lg font-bold text-white">Histórico de Aulas</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <ClassHistory />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="chart" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-teal-500 to-blue-600 rounded-full flex items-center justify-center">
-                          <BarChart3 className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-teal-700">Gráfico de Presença</h2>
-                      </div>
+            <TabsContent value="chart" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-teal-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-teal-500 to-cyan-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 text-white" />
                     </div>
-                    <AttendanceChart />
+                    <h2 className="text-lg font-bold text-white">Gráfico de Presença</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <AttendanceChart />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="notifications" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center">
-                          <Bell className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-rose-700">Notificações</h2>
-                      </div>
+            <TabsContent value="notifications" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-rose-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-rose-500 to-pink-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <Bell className="w-4 h-4 text-white" />
                     </div>
-                    <KidsNotificationsManager />
+                    <h2 className="text-lg font-bold text-white">Notificações</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <KidsNotificationsManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="materials" className="h-full mt-0 p-0">
-              <div className="h-full bg-white/90 backdrop-blur-sm">
-                <div className="h-full overflow-auto">
-                  <div className="p-3">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-slate-500 to-gray-600 rounded-full flex items-center justify-center">
-                          <FileText className="w-3 h-3 text-white" />
-                        </div>
-                        <h2 className="text-sm font-semibold text-slate-700">Materiais de Apoio</h2>
-                      </div>
+            <TabsContent value="materials" className="mt-0">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-slate-500 to-gray-600 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-white" />
                     </div>
-                    <MaterialsManager />
+                    <h2 className="text-lg font-bold text-white">Materiais de Apoio</h2>
                   </div>
+                </div>
+                <div className="p-4">
+                  <MaterialsManager />
                 </div>
               </div>
             </TabsContent>
