@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -8,6 +9,7 @@ interface Ministry {
   leader_id: string | null;
   description: string | null;
   active: boolean;
+  is_system_ministry?: boolean;
   created_at: string;
   updated_at: string;
   leader?: {
