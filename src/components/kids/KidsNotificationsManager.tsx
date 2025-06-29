@@ -192,7 +192,7 @@ export function KidsNotificationsManager() {
             <div>
               <h4 className="font-medium text-blue-800">Como funciona</h4>
               <p className="text-sm text-blue-700 mt-1">
-                As notificações enviadas aqui aparecerão na página <strong>/notificacoes</strong> do sistema,
+                As notificações enviadas aqui aparecerão na página <a href="/avisos"><strong>/avisos</strong></a> do sistema,
                 organizadas por categoria (Kids ou Jovens) e exibindo o nome da criança junto com a mensagem.
               </p>
             </div>
