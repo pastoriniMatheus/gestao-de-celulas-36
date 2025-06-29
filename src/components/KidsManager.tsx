@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,25 +12,52 @@ import { KidsNotificationsManager } from './kids/KidsNotificationsManager';
 import { MaterialsManager } from './kids/MaterialsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-
 export function KidsManager() {
   const [activeTab, setActiveTab] = useState('children');
   const isMobile = useIsMobile();
-
-  const menuItems = [
-    { value: 'children', label: 'Kids', icon: Baby, color: 'from-pink-500 to-purple-600' },
-    { value: 'schedule', label: 'Escala', icon: Calendar, color: 'from-blue-500 to-indigo-600' },
-    { value: 'lessons', label: 'Lições', icon: BookOpen, color: 'from-green-500 to-emerald-600' },
-    { value: 'record', label: 'Aula', icon: ClipboardList, color: 'from-orange-500 to-red-600' },
-    { value: 'history', label: 'Hist.', icon: Users, color: 'from-purple-500 to-pink-600' },
-    { value: 'chart', label: 'Graf.', icon: BarChart3, color: 'from-teal-500 to-cyan-600' },
-    { value: 'notifications', label: 'Avisos', icon: Bell, color: 'from-rose-500 to-pink-600' },
-    { value: 'materials', label: 'Mat.', icon: FileText, color: 'from-slate-500 to-gray-600' }
-  ];
-
+  const menuItems = [{
+    value: 'children',
+    label: 'Kids',
+    icon: Baby,
+    color: 'from-pink-500 to-purple-600'
+  }, {
+    value: 'schedule',
+    label: 'Escala',
+    icon: Calendar,
+    color: 'from-blue-500 to-indigo-600'
+  }, {
+    value: 'lessons',
+    label: 'Lições',
+    icon: BookOpen,
+    color: 'from-green-500 to-emerald-600'
+  }, {
+    value: 'record',
+    label: 'Aula',
+    icon: ClipboardList,
+    color: 'from-orange-500 to-red-600'
+  }, {
+    value: 'history',
+    label: 'Hist.',
+    icon: Users,
+    color: 'from-purple-500 to-pink-600'
+  }, {
+    value: 'chart',
+    label: 'Graf.',
+    icon: BarChart3,
+    color: 'from-teal-500 to-cyan-600'
+  }, {
+    value: 'notifications',
+    label: 'Avisos',
+    icon: Bell,
+    color: 'from-rose-500 to-pink-600'
+  }, {
+    value: 'materials',
+    label: 'Mat.',
+    icon: FileText,
+    color: 'from-slate-500 to-gray-600'
+  }];
   if (isMobile) {
-    return (
-      <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+    return <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
         {/* Header Mobile Ultra Compacto - Fixo no topo */}
         <div className="flex-shrink-0 bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
           <div className="p-3">
@@ -47,29 +73,17 @@ export function KidsManager() {
             
             {/* Menu Horizontal Deslizante com Carousel */}
             <div className="w-full">
-              <Carousel
-                opts={{
-                  align: "start",
-                  dragFree: true,
-                }}
-                className="w-full"
-              >
+              <Carousel opts={{
+              align: "start",
+              dragFree: true
+            }} className="w-full">
                 <CarouselContent className="-ml-1">
-                  {menuItems.map((item) => (
-                    <CarouselItem key={item.value} className="pl-1 basis-auto">
-                      <button
-                        onClick={() => setActiveTab(item.value)}
-                        className={`flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all duration-300 text-xs whitespace-nowrap ${
-                          activeTab === item.value
-                            ? `bg-gradient-to-r ${item.color} text-white border-transparent shadow-md`
-                            : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-md'
-                        }`}
-                      >
+                  {menuItems.map(item => <CarouselItem key={item.value} className="pl-1 basis-auto">
+                      <button onClick={() => setActiveTab(item.value)} className={`flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all duration-300 text-xs whitespace-nowrap ${activeTab === item.value ? `bg-gradient-to-r ${item.color} text-white border-transparent shadow-md` : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-md'}`}>
                         <item.icon className="w-3 h-3" />
                         <span className="text-[9px] font-medium leading-none">{item.label}</span>
                       </button>
-                    </CarouselItem>
-                  ))}
+                    </CarouselItem>)}
                 </CarouselContent>
               </Carousel>
             </div>
@@ -208,13 +222,11 @@ export function KidsManager() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Versão Desktop com novo visual aplicado
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       <div className="space-y-4 px-4 py-6">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -230,7 +242,7 @@ export function KidsManager() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="mb-4">
-            <TabsList className="grid grid-cols-4 lg:grid-cols-8 bg-white/90 backdrop-blur-sm rounded-xl p-2 w-full shadow-lg border border-pink-100 py-[73px]">
+            <TabsList className="grid grid-cols-4 lg:grid-cols-8 bg-white/90 backdrop-blur-sm rounded-xl p-2 w-full shadow-lg border border-pink-100 py-[9px]">
               <TabsTrigger value="children" className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300">
                 <Baby className="w-4 h-4" />
                 <span className="hidden sm:inline">Crianças</span>
@@ -395,6 +407,5 @@ export function KidsManager() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
