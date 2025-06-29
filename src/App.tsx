@@ -64,7 +64,7 @@ const App = () => (
                           <Route path="/events" element={<Index />} />
                           <Route path="/users" element={<Index />} />
                           <Route path="/settings" element={<Index />} />
-                          <Route path="/notifications" element={<NotificationsPage />} />
+                          <Route path="/avisos" element={<NotificationsPage />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </div>
