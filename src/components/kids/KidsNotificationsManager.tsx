@@ -24,7 +24,7 @@ export function KidsNotificationsManager() {
   );
 
   const { data: children = [] } = useQuery({
-    queryKey: ['children-for-notificacoes'],
+    queryKey: ['children-for-notifications'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('children')
