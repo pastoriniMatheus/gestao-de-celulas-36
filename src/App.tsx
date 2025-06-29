@@ -54,16 +54,16 @@ const App = () => (
                       <div className="flex-1 overflow-auto">
                         <Routes>
                           <Route path="/" element={<Index />} />
-                          <Route path="/contatos" element={<Index />} />
-                          <Route path="/estagio" element={<Index />} />
-                          <Route path="/celulas" element={<Index />} />
-                          <Route path="/ministerios" element={<MinistriesPage />} />
+                          <Route path="/contacts" element={<Index />} />
+                          <Route path="/pipeline" element={<Index />} />
+                          <Route path="/cells" element={<Index />} />
+                          <Route path="/ministries" element={<MinistriesPage />} />
                           <Route path="/genealogia" element={<GenealogyPage />} />
                           <Route path="/kids" element={<KidsPage />} />
-                          <Route path="/mensagens" element={<MessagesPage />} />
-                          <Route path="/eventos" element={<Index />} />
-                          <Route path="/usuarios" element={<Index />} />
-                          <Route path="/configuracoes" element={<Index />} />
+                          <Route path="/messages" element={<MessagesPage />} />
+                          <Route path="/events" element={<Index />} />
+                          <Route path="/users" element={<Index />} />
+                          <Route path="/settings" element={<Index />} />
                           <Route path="/avisos" element={<NotificationsPage />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
