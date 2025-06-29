@@ -79,7 +79,7 @@ export function KidsManager() {
         </div>
 
         {/* Conteúdo das Subsessões */}
-        <div className="flex-1 w-full max-w-full overflow-hidden">
+        <div className="flex-1 w-full max-w-full overflow-hidden pt-16">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full w-full max-w-full">
             <TabsContent value="children" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
               <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-pink-200 flex flex-col overflow-hidden">
