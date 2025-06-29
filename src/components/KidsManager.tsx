@@ -31,7 +31,8 @@ export function KidsManager() {
 
   if (isMobile) {
     return (
-      <div className="h-screen w-screen max-w-full fixed inset-0 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+      <div className="min-h-screen w-full max-w-full flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+
         {/* Header Fixo com Menu Carrossel */}
         <div className="flex-none bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
           {/* Título compacto */}
@@ -79,7 +80,7 @@ export function KidsManager() {
         </div>
 
         {/* Conteúdo das Subsessões */}
-        <div className="flex-1 w-full max-w-full overflow-hidden pt-16">
+        <div className="flex-1 w-full max-w-full overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full w-full max-w-full">
             <TabsContent value="children" className="h-full m-0 w-full max-w-full data-[state=inactive]:hidden">
               <div className="h-full w-full max-w-full bg-white/95 backdrop-blur-sm border-t border-pink-200 flex flex-col overflow-hidden">
