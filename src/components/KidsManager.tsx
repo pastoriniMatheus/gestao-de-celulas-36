@@ -60,7 +60,7 @@ export function KidsManager() {
                   <CarouselItem key={item.value} className="pl-1 basis-auto">
                     <button
                       onClick={() => setActiveTab(item.value)}
-                      className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border-4 transition-all duration-300 text-xs whitespace-nowrap w-104 ${
+                      className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border-4 transition-all duration-300 text-xs whitespace-nowrap w-14 ${
                         activeTab === item.value
                           ? `bg-gradient-to-br ${item.color} text-white border-transparent shadow-md`
                           : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-sm hover:border-gray-300'
