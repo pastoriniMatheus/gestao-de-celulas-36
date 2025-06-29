@@ -44,17 +44,33 @@ export function KidsManager() {
             </h1>
           </div>
           
-          {/* Menu Carrossel Horizontal */}
-          <div className="px-2 pb-3 overflow-hidden">
-            <Carousel 
-              opts={{
-                align: "start",
-                dragFree: true,
-                containScroll: "trimSnaps",
-                slidesToScroll: 1
-              }} 
-              className="w-full max-w-full"
-            >
+        {/* Menu Carrossel Horizontal */}
+<div className="relative px-2 pb-3 overflow-hidden">
+  {/* Indicador de arraste (seta) */}
+  <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+    <div className="bg-gradient-to-l from-white to-transparent pl-2 pr-1 py-1 rounded-full shadow-sm">
+      <svg
+        className="w-4 h-4 text-gray-400 animate-pulse"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
+  </div>
+
+  <Carousel 
+    opts={{
+      align: "start",
+      dragFree: true,
+      containScroll: "trimSnaps",
+      slidesToScroll: 1
+    }} 
+    className="w-full max-w-full"
+  >
+
               <CarouselContent className="-ml-1">
                 {menuItems.map((item) => (
                   <CarouselItem key={item.value} className="pl-1 basis-auto">
