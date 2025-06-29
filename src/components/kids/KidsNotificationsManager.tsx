@@ -86,45 +86,13 @@ export function KidsNotificationsManager() {
   };
   return <div className="space-y-6">
       {/* Seção dos Ministérios Kids e Jovens */}
-      {kidsMinistries.length > 0 && <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-          
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {kidsMinistries.map(ministry => <Card key={ministry.id} className="bg-white">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">{ministry.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600">
-                        Membros: {ministry.member_count || 0}
-                      </p>
-                      
-                      {/* Mostrar professoras do ministério */}
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Professoras:</p>
-                        {ministryTeachers.filter(teacher => teacher.ministry_id === ministry.id).map(teacher => <div key={teacher.id} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {teacher.contact.name} ({teacher.teacher_type === 'teacher_1' ? 'Professora 1' : 'Professora 2'})
-                            </div>)}
-                        {ministryTeachers.filter(teacher => teacher.ministry_id === ministry.id).length === 0 && <p className="text-xs text-gray-500">Nenhuma professora cadastrada</p>}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>)}
-            </div>
-          </CardContent>
-        </Card>}
+      {kidsMinistries.length > 0}
 
       <Card className="bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-rose-700">
-            <Bell className="w-5 h-5" />
-            Nova Notificação
-          </CardTitle>
-        </CardHeader>
+        
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+            <div className="py-[14px]">
               <Label htmlFor="child_id">Selecionar Criança</Label>
               <Select value={formData.child_id} onValueChange={value => setFormData({
               ...formData,
