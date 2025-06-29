@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { AttendanceChart } from './kids/AttendanceChart';
 import { KidsNotificationsManager } from './kids/KidsNotificationsManager';
 import { MaterialsManager } from './kids/MaterialsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 export function KidsManager() {
   const [activeTab, setActiveTab] = useState('children');
@@ -30,168 +31,177 @@ export function KidsManager() {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
-        {/* Header Mobile Ultra Compacto */}
-        <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm flex-shrink-0">
-          <div className="px-4 py-3">
+      <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+        {/* Header Mobile Ultra Compacto - Fixo no topo */}
+        <div className="flex-shrink-0 bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
+          <div className="p-3">
             {/* Título compacto */}
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <div className="w-5 h-5 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Baby className="w-3 h-3 text-white" />
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-4 h-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
+                <Baby className="w-2.5 h-2.5 text-white" />
               </div>
-              <h1 className="text-sm font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-xs font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                 Kids & Jovens
               </h1>
             </div>
             
-            {/* Menu Horizontal Deslizante - Sem setas, apenas scroll */}
-            <ScrollArea className="w-full">
-              <div className="flex gap-2 pb-2">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.value}
-                    onClick={() => setActiveTab(item.value)}
-                    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl shadow-sm border transition-all duration-300 min-w-[60px] text-xs whitespace-nowrap flex-shrink-0 ${
-                      activeTab === item.value
-                        ? `bg-gradient-to-r ${item.color} text-white border-transparent shadow-md`
-                        : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-md'
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="text-[10px] font-medium leading-none">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
+            {/* Menu Horizontal Deslizante com Carousel */}
+            <div className="w-full">
+              <Carousel
+                opts={{
+                  align: "start",
+                  dragFree: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-1">
+                  {menuItems.map((item) => (
+                    <CarouselItem key={item.value} className="pl-1 basis-auto">
+                      <button
+                        onClick={() => setActiveTab(item.value)}
+                        className={`flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all duration-300 text-xs whitespace-nowrap ${
+                          activeTab === item.value
+                            ? `bg-gradient-to-r ${item.color} text-white border-transparent shadow-md`
+                            : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-md'
+                        }`}
+                      >
+                        <item.icon className="w-3 h-3" />
+                        <span className="text-[9px] font-medium leading-none">{item.label}</span>
+                      </button>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            </div>
           </div>
         </div>
 
-        {/* Conteúdo das Tabs - Altura calculada dinamicamente */}
-        <div className="flex-1 overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <TabsContent value="children" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-pink-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-pink-500 to-purple-600 p-3 flex-shrink-0">
+        {/* Conteúdo das Tabs - Ocupa o resto da altura */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+            <TabsContent value="children" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-pink-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-pink-500 to-purple-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <Baby className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <Baby className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Crianças</h2>
+                    <h2 className="text-xs font-bold text-white">Crianças</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <ChildrenManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="schedule" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-blue-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-3 flex-shrink-0">
+            <TabsContent value="schedule" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-blue-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <Calendar className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <Calendar className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Escala de Professoras</h2>
+                    <h2 className="text-xs font-bold text-white">Escala de Professoras</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <TeacherSchedule />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="lessons" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-green-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-3 flex-shrink-0">
+            <TabsContent value="lessons" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-green-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <BookOpen className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <BookOpen className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Lições</h2>
+                    <h2 className="text-xs font-bold text-white">Lições</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <LessonsManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="record" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-orange-500 to-red-600 p-3 flex-shrink-0">
+            <TabsContent value="record" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-orange-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-orange-500 to-red-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <ClipboardList className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <ClipboardList className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Registro de Aula</h2>
+                    <h2 className="text-xs font-bold text-white">Registro de Aula</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <ClassRecord />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="history" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-purple-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-3 flex-shrink-0">
+            <TabsContent value="history" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-purple-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <Users className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <Users className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Histórico</h2>
+                    <h2 className="text-xs font-bold text-white">Histórico</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <ClassHistory />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="chart" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-teal-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-teal-500 to-cyan-600 p-3 flex-shrink-0">
+            <TabsContent value="chart" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-teal-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-teal-500 to-cyan-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <BarChart3 className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <BarChart3 className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Gráficos</h2>
+                    <h2 className="text-xs font-bold text-white">Gráficos</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <AttendanceChart />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="notifications" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-rose-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-rose-500 to-pink-600 p-3 flex-shrink-0">
+            <TabsContent value="notifications" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-rose-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-rose-500 to-pink-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <Bell className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <Bell className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Avisos</h2>
+                    <h2 className="text-xs font-bold text-white">Avisos</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <KidsNotificationsManager />
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="materials" className="mt-0 h-full p-3">
-              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 h-full flex flex-col overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-500 to-gray-600 p-3 flex-shrink-0">
+            <TabsContent value="materials" className="flex-1 m-0 p-2 overflow-hidden">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-slate-500 to-gray-600 p-2 flex-shrink-0 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                      <FileText className="w-2.5 h-2.5 text-white" />
+                    <div className="w-3 h-3 bg-white/30 rounded-full flex items-center justify-center">
+                      <FileText className="w-2 h-2 text-white" />
                     </div>
-                    <h2 className="text-sm font-bold text-white">Materiais</h2>
+                    <h2 className="text-xs font-bold text-white">Materiais</h2>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto p-2">
                   <MaterialsManager />
                 </div>
               </div>
