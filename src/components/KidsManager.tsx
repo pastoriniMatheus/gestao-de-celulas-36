@@ -67,7 +67,7 @@ export function KidsManager() {
                       }`}
                     >
                       <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="text-[100px] font-medium leading-tight truncate text-center">
+                      <span className="text-[15px] font-medium leading-tight truncate text-center">
                         {item.label}
                       </span>
                     </button>
