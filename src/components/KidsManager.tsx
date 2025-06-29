@@ -31,7 +31,7 @@ export function KidsManager() {
 
   if (isMobile) {
     return (
-      <div className="h-screen w-screen max-w-full fixed inset-1 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
+      <div className="h-screen w-screen max-w-full fixed inset-100 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 overflow-hidden">
         {/* Header Fixo com Menu Carrossel */}
         <div className="flex-none bg-white/95 backdrop-blur-lg border-b border-pink-200 shadow-sm">
           {/* Título compacto */}
@@ -39,7 +39,7 @@ export function KidsManager() {
             <div className="w-4 h-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
               <Baby className="w-2.5 h-2.5 text-white" />
             </div>
-            <h1 className="text-xs font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent truncate">
+            <h1 className="text-m font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent truncate">
               Kids & Jovens
             </h1>
           </div>
