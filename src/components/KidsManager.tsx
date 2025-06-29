@@ -66,8 +66,8 @@ export function KidsManager() {
                           : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:shadow-sm hover:border-gray-300'
                       }`}
                     >
-                      <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="text-[15px] font-medium leading-tight truncate text-center">
+                      <item.icon className="w-5.5 h-5.5 flex-shrink-0" />
+                      <span className="text-[13px] font-medium leading-tight truncate text-center">
                         {item.label}
                       </span>
                     </button>
