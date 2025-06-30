@@ -1,10 +1,12 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Users, Calendar } from 'lucide-react';
+import { Bell, Users, Calendar, X } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface Notification {
   id: string;
@@ -17,6 +19,8 @@ interface Notification {
 
 export function KidsNotifications() {
   const queryClient = useQueryClient();
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [newNotifications, setNewNotifications] = useState<Set<string>>(new Set());
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['child-notifications'],
@@ -54,12 +58,14 @@ export function KidsNotifications() {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'child_notifications'
         },
         (payload) => {
           console.log('Nova notificação recebida via realtime:', payload);
+          // Marcar como nova notificação
+          setNewNotifications(prev => new Set([...prev, payload.new.id]));
           // Atualizar as notificações automaticamente
           queryClient.invalidateQueries({ queryKey: ['child-notifications'] });
         }
@@ -74,6 +80,16 @@ export function KidsNotifications() {
     };
   }, [queryClient]);
 
+  const handleNotificationClick = (notification: Notification) => {
+    setSelectedNotification(notification);
+    // Remover da lista de novas notificações
+    setNewNotifications(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(notification.id);
+      return newSet;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -83,101 +99,120 @@ export function KidsNotifications() {
     );
   }
 
-  const kidsNotifications = notifications.filter(n => n.category === 'Kids');
-  const jovensNotifications = notifications.filter(n => n.category === 'Jovens');
-
   return (
     <div className="space-y-6 p-4">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Avisos dos Ministérios</h1>
-        <p className="text-gray-600">Acompanhe as notificações dos ministérios Kids e Jovens</p>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Central de Notificações</h1>
+        <p className="text-gray-600">Acompanhe todas as notificações do sistema</p>
       </div>
 
-      {/* Notificações Kids */}
-      <Card className="bg-gradient-to-br from-pink-50 to-rose-50 border-pink-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-pink-700">
-            <Users className="w-5 h-5" />
-            Ministério Kids ({kidsNotifications.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {kidsNotifications.length === 0 ? (
-            <div className="text-center py-8">
-              <Bell className="w-12 h-12 text-pink-300 mx-auto mb-4" />
-              <p className="text-pink-600">Nenhuma notificação do ministério Kids ainda.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {kidsNotifications.map(notification => (
-                <Card key={notification.id} className="bg-white shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge variant="secondary" className="bg-pink-100 text-pink-700">
-                        {notification.child_name} - {notification.child_class}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(notification.created_at).toLocaleString('pt-BR')}
-                      </div>
-                    </div>
-                    <p className="text-gray-700">{notification.message}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Notificações Jovens */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-700">
-            <Users className="w-5 h-5" />
-            Ministério Jovens ({jovensNotifications.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {jovensNotifications.length === 0 ? (
-            <div className="text-center py-8">
-              <Bell className="w-12 h-12 text-blue-300 mx-auto mb-4" />
-              <p className="text-blue-600">Nenhuma notificação do ministério Jovens ainda.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {jovensNotifications.map(notification => (
-                <Card key={notification.id} className="bg-white shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                        {notification.child_name} - {notification.child_class}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(notification.created_at).toLocaleString('pt-BR')}
-                      </div>
-                    </div>
-                    <p className="text-gray-700">{notification.message}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {notifications.length === 0 && (
+      {notifications.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-600 mb-2">Nenhuma notificação ainda</h3>
             <p className="text-gray-500">
-              As notificações dos ministérios Kids e Jovens aparecerão aqui quando enviadas.
+              As notificações do sistema aparecerão aqui quando enviadas.
             </p>
           </CardContent>
         </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {notifications.map(notification => (
+            <Card 
+              key={notification.id} 
+              className={`cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${
+                newNotifications.has(notification.id) 
+                  ? 'ring-2 ring-blue-500 animate-pulse bg-blue-50' 
+                  : 'bg-white hover:bg-gray-50'
+              }`}
+              onClick={() => handleNotificationClick(notification)}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <Badge 
+                    variant="secondary" 
+                    className={
+                      notification.category === 'Kids' 
+                        ? "bg-pink-100 text-pink-700" 
+                        : "bg-blue-100 text-blue-700"
+                    }
+                  >
+                    {notification.category}
+                  </Badge>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(notification.created_at).toLocaleString('pt-BR')}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="font-medium text-gray-800">
+                    {notification.child_name} - {notification.child_class}
+                  </div>
+                  <p className="text-gray-600 text-sm line-clamp-3">
+                    {notification.message}
+                  </p>
+                </div>
+
+                {newNotifications.has(notification.id) && (
+                  <div className="mt-3 flex items-center gap-2 text-blue-600 text-sm font-medium">
+                    <Bell className="w-4 h-4" />
+                    Nova notificação
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
+
+      {/* Modal de detalhes da notificação */}
+      <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Detalhes da Notificação</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedNotification(null)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedNotification && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant="secondary" 
+                  className={
+                    selectedNotification.category === 'Kids' 
+                      ? "bg-pink-100 text-pink-700" 
+                      : "bg-blue-100 text-blue-700"
+                  }
+                >
+                  {selectedNotification.category}
+                </Badge>
+                <span className="text-sm text-gray-500">
+                  {new Date(selectedNotification.created_at).toLocaleString('pt-BR')}
+                </span>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">
+                  {selectedNotification.child_name} - {selectedNotification.child_class}
+                </h4>
+                <p className="text-gray-700 leading-relaxed">
+                  {selectedNotification.message}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
