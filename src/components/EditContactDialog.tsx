@@ -86,12 +86,14 @@ export const EditContactDialog = ({
   // Hook para buscar bairros baseado na cidade selecionada
   const { neighborhoods } = useNeighborhoodsByCity(formData.city_id);
 
+  // Carregar dados do contato quando o diálogo abrir
   useEffect(() => {
     if (contact && isOpen) {
-      console.log('Carregando dados do contato para edição:', contact);
+      console.log('=== CARREGANDO DADOS DO CONTATO ===');
+      console.log('Contato completo:', contact);
       
       // Garantir que TODOS os campos sejam preenchidos com os dados do contato
-      setFormData({
+      const loadedData = {
         name: contact.name || '',
         whatsapp: contact.whatsapp || '',
         neighborhood: contact.neighborhood || '',
@@ -108,19 +110,36 @@ export const EditContactDialog = ({
         photo_url: contact.photo_url || '',
         founder: Boolean(contact.founder),
         leader_id: contact.leader_id || ''
-      });
-      
-      console.log('Dados carregados no formulário:', {
-        city_id: contact.city_id,
-        cell_id: contact.cell_id,
-        ministry_id: contact.ministry_id,
-        pipeline_stage_id: contact.pipeline_stage_id,
-        referred_by: contact.referred_by,
-        leader_id: contact.leader_id,
-        neighborhood: contact.neighborhood
-      });
+      };
+
+      console.log('Dados carregados no formulário:', loadedData);
+      setFormData(loadedData);
     }
   }, [contact, isOpen]);
+
+  // Resetar formulário quando fechar
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        name: '',
+        whatsapp: '',
+        neighborhood: '',
+        city_id: '',
+        cell_id: '',
+        ministry_id: '',
+        status: 'pending',
+        encounter_with_god: false,
+        baptized: false,
+        pipeline_stage_id: '',
+        age: null,
+        birth_date: '',
+        referred_by: '',
+        photo_url: '',
+        founder: false,
+        leader_id: ''
+      });
+    }
+  }, [isOpen]);
 
   const handlePhotoChange = (photoUrl: string | null) => {
     setFormData(prev => ({ ...prev, photo_url: photoUrl || '' }));
@@ -158,7 +177,8 @@ export const EditContactDialog = ({
     }
 
     try {
-      console.log('Enviando dados do formulário:', formData);
+      console.log('=== ENVIANDO DADOS PARA ATUALIZAÇÃO ===');
+      console.log('Dados do formulário:', formData);
       
       // Preparar dados para envio, convertendo valores especiais para null
       const dataToUpdate = {
@@ -176,6 +196,8 @@ export const EditContactDialog = ({
         dataToUpdate.cell_id = contact.cell_id;
         dataToUpdate.leader_id = contact.leader_id;
       }
+
+      console.log('Dados finais para atualização:', dataToUpdate);
 
       const updatedContact = await updateContact(contact.id, dataToUpdate);
       if (onUpdate) {
@@ -222,7 +244,6 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-name">Nome *</Label>
               <Input
                 id="edit-name"
-                name="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -233,7 +254,6 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-whatsapp">WhatsApp *</Label>
               <Input
                 id="edit-whatsapp"
-                name="whatsapp"
                 type="tel"
                 value={formData.whatsapp}
                 onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
@@ -292,7 +312,6 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-birth-date">Data de Nascimento</Label>
               <Input
                 id="edit-birth-date"
-                name="birth_date"
                 type="date"
                 value={formData.birth_date || ''}
                 onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}

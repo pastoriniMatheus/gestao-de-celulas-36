@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Users, Calendar, X, Sparkles } from 'lucide-react';
+import { Bell, Users, Calendar, X, Sparkles, Heart } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,6 +21,7 @@ export function KidsNotifications() {
   const queryClient = useQueryClient();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [newNotifications, setNewNotifications] = useState<Set<string>>(new Set());
+  const [clickedNotifications, setClickedNotifications] = useState<Set<string>>(new Set());
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['child-notifications'],
@@ -82,6 +83,8 @@ export function KidsNotifications() {
 
   const handleNotificationClick = (notification: Notification) => {
     setSelectedNotification(notification);
+    // Marcar como clicada (para parar de piscar)
+    setClickedNotifications(prev => new Set([...prev, notification.id]));
     // Remover da lista de novas notificações
     setNewNotifications(prev => {
       const newSet = new Set(prev);
@@ -90,89 +93,103 @@ export function KidsNotifications() {
     });
   };
 
+  const isNotificationBlinking = (notificationId: string) => {
+    return newNotifications.has(notificationId) && !clickedNotifications.has(notificationId);
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <span className="text-lg">Carregando notificações...</span>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <span className="text-2xl font-semibold text-gray-700">Carregando avisos...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-3">
-            <Bell className="w-10 h-10 text-blue-600" />
-            Centro de Avisos
-            <Bell className="w-10 h-10 text-blue-600" />
-          </h1>
-          <p className="text-xl text-gray-600">Notificações e avisos importantes</p>
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <Bell className="w-16 h-16 text-blue-600 animate-pulse" />
+            <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Centro de Avisos
+            </h1>
+            <Bell className="w-16 h-16 text-pink-600 animate-pulse" />
+          </div>
+          <p className="text-2xl text-gray-700 font-medium">Informações importantes para toda comunidade</p>
         </div>
 
         {notifications.length === 0 ? (
-          <Card className="max-w-2xl mx-auto shadow-xl">
-            <CardContent className="text-center py-16">
-              <Bell className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-              <h3 className="text-2xl font-medium text-gray-600 mb-4">Nenhuma notificação ainda</h3>
-              <p className="text-lg text-gray-500">
-                As notificações do sistema aparecerão aqui quando enviadas.
+          <Card className="max-w-3xl mx-auto shadow-2xl border-2 border-blue-200">
+            <CardContent className="text-center py-20">
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <Bell className="w-32 h-32 text-gray-300" />
+                <Heart className="w-24 h-24 text-pink-300" />
+              </div>
+              <h3 className="text-4xl font-bold text-gray-600 mb-6">Nenhum aviso no momento</h3>
+              <p className="text-xl text-gray-500">
+                Quando houver informações importantes, elas aparecerão aqui.
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {notifications.map(notification => (
               <Card 
                 key={notification.id} 
-                className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl transform ${
-                  newNotifications.has(notification.id) 
-                    ? 'ring-4 ring-blue-500 animate-pulse bg-gradient-to-br from-blue-50 to-blue-100 shadow-xl' 
-                    : 'bg-white hover:bg-gray-50 shadow-lg'
+                className={`cursor-pointer transition-all duration-500 hover:scale-110 hover:shadow-2xl transform border-2 ${
+                  isNotificationBlinking(notification.id)
+                    ? 'ring-4 ring-blue-500 animate-pulse bg-gradient-to-br from-yellow-100 via-orange-100 to-red-100 shadow-2xl border-orange-400' 
+                    : 'bg-gradient-to-br from-white via-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 shadow-xl border-blue-200'
                 }`}
                 onClick={() => handleNotificationClick(notification)}
+                style={{
+                  animation: isNotificationBlinking(notification.id) 
+                    ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite, bounce 2s infinite' 
+                    : undefined
+                }}
               >
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
+                <CardContent className="p-8">
+                  <div className="flex justify-between items-start mb-6">
                     <Badge 
                       variant="secondary" 
-                      className={`text-sm px-3 py-1 ${
+                      className={`text-lg px-4 py-2 font-bold ${
                         notification.category === 'Kids' 
-                          ? "bg-pink-100 text-pink-700 border-pink-200" 
-                          : "bg-blue-100 text-blue-700 border-blue-200"
+                          ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border-2 border-pink-400" 
+                          : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border-2 border-blue-400"
                       }`}
                     >
                       {notification.category}
                     </Badge>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <Calendar className="w-4 h-4" />
+                    <div className="flex items-center gap-2 text-lg text-gray-600 font-semibold">
+                      <Calendar className="w-6 h-6" />
                       {new Date(notification.created_at).toLocaleDateString('pt-BR')}
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
-                    <div className="text-center py-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border">
-                      <div className="font-bold text-lg text-gray-800">
+                  <div className="space-y-4">
+                    <div className="text-center py-4 bg-gradient-to-r from-gray-100 via-white to-gray-100 rounded-xl border-2 border-gray-200 shadow-inner">
+                      <div className="font-bold text-2xl text-gray-800 mb-2">
                         {notification.child_name}
                       </div>
-                      <div className="text-md text-gray-600 font-medium">
+                      <div className="text-lg text-gray-600 font-semibold">
                         {notification.child_class}
                       </div>
                     </div>
                     
-                    <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
+                    <p className="text-gray-700 text-lg leading-relaxed line-clamp-4 font-medium">
                       {notification.message}
                     </p>
                   </div>
 
-                  {newNotifications.has(notification.id) && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-blue-600 font-bold text-sm bg-blue-50 rounded-lg py-2">
-                      <Sparkles className="w-4 h-4 animate-pulse" />
-                      NOVA NOTIFICAÇÃO
-                      <Sparkles className="w-4 h-4 animate-pulse" />
+                  {isNotificationBlinking(notification.id) && (
+                    <div className="mt-6 flex items-center justify-center gap-3 text-orange-700 font-bold text-lg bg-gradient-to-r from-yellow-200 to-orange-200 rounded-xl py-3 border-2 border-orange-400">
+                      <Sparkles className="w-6 h-6 animate-spin" />
+                      NOVO AVISO
+                      <Sparkles className="w-6 h-6 animate-spin" />
                     </div>
                   )}
                 </CardContent>
@@ -181,43 +198,45 @@ export function KidsNotifications() {
           </div>
         )}
 
-        {/* Modal otimizado para datashow */}
+        {/* Modal harmonioso para datashow */}
         <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
-          <DialogContent className="max-w-6xl max-h-[90vh] bg-gradient-to-br from-white to-blue-50 border-4 border-blue-200 shadow-2xl">
-            <DialogHeader className="pb-8 border-b-2 border-blue-200">
-              <DialogTitle className="flex items-center justify-between text-3xl font-bold text-blue-800">
-                <div className="flex items-center gap-4">
-                  <Bell className="w-8 h-8 text-blue-600" />
-                  <span>Aviso Importante</span>
-                  <Bell className="w-8 h-8 text-blue-600" />
+          <DialogContent className="max-w-7xl max-h-[95vh] bg-gradient-to-br from-white via-blue-50 to-purple-50 border-4 border-blue-300 shadow-2xl rounded-3xl">
+            <DialogHeader className="pb-8 border-b-4 border-blue-300 bg-gradient-to-r from-blue-100 to-purple-100 rounded-t-2xl -m-6 mb-8 p-8">
+              <DialogTitle className="flex items-center justify-between text-4xl font-bold text-blue-800">
+                <div className="flex items-center gap-6">
+                  <Bell className="w-12 h-12 text-blue-600 animate-pulse" />
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Aviso Importante
+                  </span>
+                  <Bell className="w-12 h-12 text-purple-600 animate-pulse" />
                 </div>
                 <Button
                   variant="ghost"
                   size="lg"
                   onClick={() => setSelectedNotification(null)}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-red-50"
+                  className="text-gray-500 hover:text-gray-700 hover:bg-red-100 rounded-full p-3 transition-all duration-300"
                 >
-                  <X className="w-8 h-8" />
+                  <X className="w-10 h-10" />
                 </Button>
               </DialogTitle>
             </DialogHeader>
             
             {selectedNotification && (
-              <div className="space-y-8 p-8">
+              <div className="space-y-10 p-8">
                 {/* Cabeçalho com categoria e data */}
-                <div className="flex items-center justify-between bg-white rounded-xl p-6 border-2 border-blue-200 shadow-lg">
+                <div className="flex items-center justify-between bg-gradient-to-r from-white via-blue-50 to-white rounded-2xl p-8 border-3 border-blue-300 shadow-lg">
                   <Badge 
                     variant="secondary" 
-                    className={`text-2xl px-6 py-3 font-bold ${
+                    className={`text-3xl px-8 py-4 font-bold rounded-xl shadow-lg ${
                       selectedNotification.category === 'Kids' 
-                        ? "bg-pink-200 text-pink-800 border-2 border-pink-300" 
-                        : "bg-blue-200 text-blue-800 border-2 border-blue-300"
+                        ? "bg-gradient-to-r from-pink-300 to-pink-400 text-pink-900 border-3 border-pink-500" 
+                        : "bg-gradient-to-r from-blue-300 to-blue-400 text-blue-900 border-3 border-blue-500"
                     }`}
                   >
                     {selectedNotification.category}
                   </Badge>
-                  <div className="text-2xl text-gray-700 font-bold flex items-center gap-2">
-                    <Calendar className="w-8 h-8 text-blue-600" />
+                  <div className="text-3xl text-gray-700 font-bold flex items-center gap-4 bg-white rounded-xl px-6 py-3 shadow-md border-2 border-gray-200">
+                    <Calendar className="w-10 h-10 text-blue-600" />
                     {new Date(selectedNotification.created_at).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'long',
@@ -229,34 +248,36 @@ export function KidsNotifications() {
                 </div>
                 
                 {/* Nome da criança e classe - destaque principal */}
-                <div className="text-center py-12 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 rounded-2xl border-4 border-blue-300 shadow-xl">
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <Users className="w-12 h-12 text-blue-600" />
-                    <h2 className="text-6xl font-bold text-gray-800">
+                <div className="text-center py-16 bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 rounded-3xl border-4 border-purple-400 shadow-2xl">
+                  <div className="flex items-center justify-center gap-6 mb-8">
+                    <Users className="w-16 h-16 text-blue-700" />
+                    <h2 className="text-8xl font-bold bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
                       {selectedNotification.child_name}
                     </h2>
-                    <Users className="w-12 h-12 text-blue-600" />
+                    <Users className="w-16 h-16 text-pink-700" />
                   </div>
-                  <p className="text-3xl text-gray-700 font-bold bg-white rounded-lg py-3 px-6 inline-block border-2 border-blue-200">
+                  <p className="text-4xl text-gray-800 font-bold bg-white rounded-2xl py-4 px-8 inline-block border-3 border-purple-300 shadow-lg">
                     {selectedNotification.child_class}
                   </p>
                 </div>
                 
                 {/* Mensagem principal */}
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-8 rounded-2xl border-l-8 border-orange-400 shadow-xl">
-                  <div className="flex items-start gap-4">
-                    <Bell className="w-8 h-8 text-orange-500 flex-shrink-0 mt-2" />
-                    <p className="text-2xl leading-relaxed text-gray-800 font-medium">
+                <div className="bg-gradient-to-r from-yellow-100 via-orange-100 to-yellow-100 p-12 rounded-3xl border-l-8 border-orange-500 shadow-2xl">
+                  <div className="flex items-start gap-6">
+                    <Bell className="w-12 h-12 text-orange-600 flex-shrink-0 mt-3" />
+                    <p className="text-3xl leading-relaxed text-gray-800 font-semibold">
                       {selectedNotification.message}
                     </p>
                   </div>
                 </div>
 
-                {/* Rodapé com informações adicionais */}
-                <div className="text-center pt-6 border-t-2 border-gray-200">
-                  <p className="text-lg text-gray-500 bg-gray-50 rounded-lg py-3 px-6 inline-block">
-                    Este aviso foi gerado automaticamente pelo sistema
-                  </p>
+                {/* Rodapé harmonioso */}
+                <div className="text-center pt-8 border-t-4 border-gray-300">
+                  <div className="bg-gradient-to-r from-gray-100 via-white to-gray-100 rounded-2xl py-6 px-8 inline-block shadow-md border-2 border-gray-200">
+                    <p className="text-xl text-gray-600 font-medium">
+                      ✨ Aviso gerado automaticamente pelo sistema ✨
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

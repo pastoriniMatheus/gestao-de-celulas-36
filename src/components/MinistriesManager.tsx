@@ -29,6 +29,10 @@ export const MinistriesManager = () => {
   // Filtrar apenas contatos que são membros de alguma célula
   const cellMembers = contacts.filter(contact => contact.cell_id && contact.status === 'member');
 
+  const resetForm = () => {
+    setFormData({ name: '', leader_id: '', description: '' });
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -37,7 +41,7 @@ export const MinistriesManager = () => {
         leader_id: formData.leader_id || undefined,
         description: formData.description || undefined
       });
-      setFormData({ name: '', leader_id: '', description: '' });
+      resetForm();
       setIsCreateDialogOpen(false);
     } catch (error) {
       console.error('Erro ao criar ministério:', error);
@@ -56,7 +60,7 @@ export const MinistriesManager = () => {
       });
       setIsEditDialogOpen(false);
       setSelectedMinistry(null);
-      setFormData({ name: '', leader_id: '', description: '' });
+      resetForm();
     } catch (error) {
       console.error('Erro ao atualizar ministério:', error);
     }
@@ -94,7 +98,12 @@ export const MinistriesManager = () => {
   const closeEditDialog = () => {
     setIsEditDialogOpen(false);
     setSelectedMinistry(null);
-    setFormData({ name: '', leader_id: '', description: '' });
+    resetForm();
+  };
+
+  const closeCreateDialog = () => {
+    setIsCreateDialogOpen(false);
+    resetForm();
   };
 
   if (loading) {
@@ -109,7 +118,10 @@ export const MinistriesManager = () => {
           <p className="text-gray-600">Gerencie os ministérios e seus membros</p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          if (!open) closeCreateDialog();
+          else setIsCreateDialogOpen(true);
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -125,7 +137,6 @@ export const MinistriesManager = () => {
                 <Label htmlFor="ministry-name">Nome do Ministério *</Label>
                 <Input
                   id="ministry-name"
-                  name="ministry-name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -153,7 +164,6 @@ export const MinistriesManager = () => {
                 <Label htmlFor="ministry-description">Descrição</Label>
                 <Textarea
                   id="ministry-description"
-                  name="ministry-description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
@@ -162,7 +172,7 @@ export const MinistriesManager = () => {
               
               <div className="flex gap-2">
                 <Button type="submit">Criar Ministério</Button>
-                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={closeCreateDialog}>
                   Cancelar
                 </Button>
               </div>
@@ -244,7 +254,7 @@ export const MinistriesManager = () => {
         </Card>
       )}
 
-      {/* Dialog de Edição - Corrigido para garantir carregamento dos dados */}
+      {/* Dialog de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
         if (!open) closeEditDialog();
       }}>
@@ -252,58 +262,54 @@ export const MinistriesManager = () => {
           <DialogHeader>
             <DialogTitle>Editar Ministério</DialogTitle>
           </DialogHeader>
-          {selectedMinistry && (
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div>
-                <Label htmlFor="edit-ministry-name">Nome do Ministério *</Label>
-                <Input
-                  id="edit-ministry-name"
-                  name="edit-ministry-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-ministry-leader">Líder Responsável</Label>
-                <Select 
-                  value={formData.leader_id || ''} 
-                  onValueChange={(value) => setFormData({ ...formData, leader_id: value })}
-                >
-                  <SelectTrigger id="edit-ministry-leader">
-                    <SelectValue placeholder="Selecione um líder..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nenhum líder</SelectItem>
-                    {cellMembers.map(contact => (
-                      <SelectItem key={contact.id} value={contact.id}>
-                        {contact.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-ministry-description">Descrição</Label>
-                <Textarea
-                  id="edit-ministry-description"
-                  name="edit-ministry-description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <Button type="submit">Salvar Alterações</Button>
-                <Button type="button" variant="outline" onClick={closeEditDialog}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          )}
+          <form onSubmit={handleEdit} className="space-y-4">
+            <div>
+              <Label htmlFor="edit-ministry-name">Nome do Ministério *</Label>
+              <Input
+                id="edit-ministry-name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit-ministry-leader">Líder Responsável</Label>
+              <Select 
+                value={formData.leader_id || ''} 
+                onValueChange={(value) => setFormData({ ...formData, leader_id: value })}
+              >
+                <SelectTrigger id="edit-ministry-leader">
+                  <SelectValue placeholder="Selecione um líder..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum líder</SelectItem>
+                  {cellMembers.map(contact => (
+                    <SelectItem key={contact.id} value={contact.id}>
+                      {contact.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="edit-ministry-description">Descrição</Label>
+              <Textarea
+                id="edit-ministry-description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button type="submit">Salvar Alterações</Button>
+              <Button type="button" variant="outline" onClick={closeEditDialog}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
