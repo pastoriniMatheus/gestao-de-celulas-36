@@ -89,8 +89,8 @@ export const EditContactDialog = ({
   // Carregar dados do contato quando o diálogo abrir
   useEffect(() => {
     if (contact && isOpen) {
-      console.log('=== CARREGANDO DADOS DO CONTATO ===');
-      console.log('Contato completo:', contact);
+      console.log('=== EditContactDialog: CARREGANDO DADOS DO CONTATO ===');
+      console.log('EditContactDialog: Contato completo:', contact);
       
       // Garantir que TODOS os campos sejam preenchidos com os dados do contato
       const loadedData = {
@@ -112,7 +112,7 @@ export const EditContactDialog = ({
         leader_id: contact.leader_id || ''
       };
 
-      console.log('Dados carregados no formulário:', loadedData);
+      console.log('EditContactDialog: Dados carregados no formulário:', loadedData);
       setFormData(loadedData);
     }
   }, [contact, isOpen]);
@@ -177,8 +177,8 @@ export const EditContactDialog = ({
     }
 
     try {
-      console.log('=== ENVIANDO DADOS PARA ATUALIZAÇÃO ===');
-      console.log('Dados do formulário:', formData);
+      console.log('=== EditContactDialog: ENVIANDO DADOS PARA ATUALIZAÇÃO ===');
+      console.log('EditContactDialog: Dados do formulário:', formData);
       
       // Preparar dados para envio, convertendo valores especiais para null
       const dataToUpdate = {
@@ -197,7 +197,7 @@ export const EditContactDialog = ({
         dataToUpdate.leader_id = contact.leader_id;
       }
 
-      console.log('Dados finais para atualização:', dataToUpdate);
+      console.log('EditContactDialog: Dados finais para atualização:', dataToUpdate);
 
       const updatedContact = await updateContact(contact.id, dataToUpdate);
       if (onUpdate) {
@@ -209,7 +209,7 @@ export const EditContactDialog = ({
       });
       onClose();
     } catch (error) {
-      console.error("Erro ao atualizar contato:", error);
+      console.error("EditContactDialog: Erro ao atualizar contato:", error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar contato!",

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { EditContactDialog } from './EditContactDialog';
 import { ContactNotesDialog } from './ContactNotesDialog';
 import { CellLeaderInfo } from './CellLeaderInfo';
 import { ContactAvatar } from './ContactAvatar';
+import { CellVisitorActions } from './CellVisitorActions';
 import QRCode from 'qrcode.react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -76,7 +78,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
       if (contactsError) throw contactsError;
       console.log('CellModal: Contatos encontrados:', contactsData?.length || 0);
-      console.log('CellModal: Detalhes dos contatos:', contactsData?.map(c => ({ id: c.id, name: c.name, status: c.status })));
 
       // Buscar presenças
       const { data: attendancesData, error: attendancesError } = await supabase
@@ -87,12 +88,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
       if (attendancesError) throw attendancesError;
       console.log('CellModal: Presenças encontradas:', attendancesData?.length || 0);
-      console.log('CellModal: Detalhes das presenças:', attendancesData?.map(a => ({ 
-        contact_id: a.contact_id, 
-        date: a.attendance_date, 
-        present: a.present, 
-        visitor: a.visitor 
-      })));
 
       if (mountedRef.current) {
         setContacts(contactsData || []);
@@ -115,13 +110,8 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
   const generateWeeklyStats = (contactsData: Contact[], attendancesData: Attendance[]) => {
     console.log('CellModal: ===== GERANDO ESTATÍSTICAS SEMANAIS =====');
-    console.log('CellModal: Total de contatos:', contactsData.length);
-    console.log('CellModal: Total de presenças:', attendancesData.length);
     
-    // Criar mapa de contatos para facilitar lookup
     const contactsMap = new Map(contactsData.map(c => [c.id, c]));
-    console.log('CellModal: Mapa de contatos criado com', contactsMap.size, 'entradas');
-    
     const last8Weeks = [];
     const now = new Date();
     
@@ -133,11 +123,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
       
-      console.log(`CellModal: ===== SEMANA ${i} =====`);
-      console.log(`CellModal: Data início: ${weekStart.toISOString()}`);
-      console.log(`CellModal: Data fim: ${weekEnd.toISOString()}`);
-      
-      // Filtrar presenças da semana que estavam presentes
       const weekAttendances = attendancesData.filter(att => {
         const attDate = new Date(att.attendance_date);
         const isInWeek = attDate >= weekStart && attDate <= weekEnd;
@@ -145,39 +130,25 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
         return isInWeek && isPresent;
       });
       
-      console.log(`CellModal: Presenças presentes na semana ${i}:`, weekAttendances.length);
-      
       let membersCount = 0;
       let visitorsCount = 0;
       
       weekAttendances.forEach(att => {
-        // Primeiro verificar o campo visitor da attendance
         if (att.visitor === true) {
           visitorsCount++;
-          console.log(`CellModal: Visitante encontrado pela attendance: contact_id=${att.contact_id}, visitor=${att.visitor}`);
         } else {
-          // Se visitor=false ou null, verificar se o contato existe e seu status
           const contact = contactsMap.get(att.contact_id);
           if (contact) {
             if (contact.status === 'visitor') {
               visitorsCount++;
-              console.log(`CellModal: Visitante encontrado pelo status do contato: ${contact.name} (${contact.status})`);
             } else {
               membersCount++;
-              console.log(`CellModal: Membro encontrado: ${contact.name} (${contact.status})`);
             }
           } else {
-            // Contato não encontrado, assumir como membro
             membersCount++;
-            console.log(`CellModal: Contato não encontrado, assumindo como membro: contact_id=${att.contact_id}`);
           }
         }
       });
-      
-      console.log(`CellModal: RESULTADO SEMANA ${i}:`);
-      console.log(`CellModal: - Membros: ${membersCount}`);
-      console.log(`CellModal: - Visitantes: ${visitorsCount}`);
-      console.log(`CellModal: - Total: ${membersCount + visitorsCount}`);
       
       last8Weeks.push({
         semana: `${weekStart.getDate()}/${weekStart.getMonth() + 1}`,
@@ -187,8 +158,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
       });
     }
     
-    console.log('CellModal: ===== ESTATÍSTICAS FINAIS =====');
-    console.log('CellModal: Dados do gráfico:', JSON.stringify(last8Weeks, null, 2));
     setWeeklyStats(last8Weeks);
   };
 
@@ -221,7 +190,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
           contact_id: contactData.id,
           attendance_date: selectedDate,
           present: true,
-          visitor: true // Importante: marcar como visitante
+          visitor: true
         });
 
       if (attendanceError) throw attendanceError;
@@ -250,7 +219,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
         att => att.contact_id === contactId && att.attendance_date === selectedDate
       );
 
-      // Verificar se o contato é visitante
       const contact = contacts.find(c => c.id === contactId);
       const isVisitorContact = contact?.status === 'visitor';
 
@@ -269,7 +237,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
             contact_id: contactId,
             attendance_date: selectedDate,
             present: true,
-            visitor: isVisitorContact // Definir visitor baseado no status do contato
+            visitor: isVisitorContact
           });
 
         if (error) throw error;
@@ -302,33 +270,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     setNotesDialogOpen(true);
   };
 
-  const CellVisitorActions = ({ visitor, cellId, onUpdate }) => {
-    return (
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            onUpdate();
-            toast({ title: "Dados atualizados!" });
-          }}
-        >
-          <Edit className="h-4 w-4 text-gray-500" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/cells/${cellId}/attendance`);
-            toast({ title: "Link copiado!" });
-          }}
-        >
-          <QrCode className="h-4 w-4 text-blue-500" />
-        </Button>
-      </div>
-    );
-  };
-
   useEffect(() => {
     if (cell && isOpen) {
       mountedRef.current = true;
@@ -357,7 +298,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                 <Users className="h-6 w-6 text-blue-600" />
                 {cell.name}
               </div>
-              {/* Informações do líder na mesma linha */}
               {cell.leader_id && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-700">Líder:</span>
@@ -489,10 +429,21 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                           <div>
                             <div className="font-medium">{contact.name}</div>
                             <div className="text-sm text-gray-500">{contact.neighborhood}</div>
+                            {contact.attendance_code && (
+                              <div className="text-xs text-blue-600">Código: {contact.attendance_code}</div>
+                            )}
                           </div>
-                          <Badge variant={contact.status === 'visitor' ? 'secondary' : 'default'}>
-                            {contact.status === 'visitor' ? 'Visitante' : 'Membro'}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={contact.status === 'visitor' ? 'secondary' : 'default'}>
+                              {contact.status === 'visitor' ? 'Visitante' : 'Membro'}
+                            </Badge>
+                            {contact.attendance_code && (
+                              <div className="flex items-center gap-1">
+                                <QrCode className="w-4 h-4 text-blue-500" />
+                                <span className="text-xs text-blue-600">QR</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         
                         <div className="flex items-center gap-2">
@@ -525,6 +476,18 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                           >
                             <MessageSquare className="w-4 h-4" />
                           </Button>
+                          {contact.attendance_code && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const qrUrl = `${window.location.origin}/attendance/${contact.attendance_code}`;
+                                window.open(qrUrl, '_blank');
+                              }}
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     );
