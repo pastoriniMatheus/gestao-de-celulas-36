@@ -289,7 +289,9 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
   // URLs para QR codes
   const cellAttendanceUrl = `${window.location.origin}/cells/${cell.id}/attendance`;
-  const memberAttendanceUrl = `${window.location.origin}/cell-attendance/${cell.id}`;
+  const memberAttendanceUrl = `${window.location.origin}/attendance/${cell.id}`;
+
+  console.log('CellModal: URLs geradas:', { cellAttendanceUrl, memberAttendanceUrl });
 
   return (
     <>
@@ -515,7 +517,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                 </CardContent>
               </Card>
 
-              {/* QR Code para Membros */}
+              {/* QR Code para Membros - Corrigido */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -523,7 +525,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                     QR Code - Presença dos Membros
                   </CardTitle>
                   <p className="text-sm text-gray-600">
-                    Membros acessam esta página para marcar presença com código pessoal
+                    Membros escaneiam para marcar presença com código pessoal
                   </p>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
@@ -547,7 +549,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                     Testar Página
                   </Button>
                   <div className="text-xs text-green-600 font-medium bg-green-50 rounded-lg p-2">
-                    🌐 URL aberta - não requer login
+                    🌐 URL pública - não requer login
                   </div>
                 </CardContent>
               </Card>
