@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -290,6 +289,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
 
   // URLs para QR codes
   const cellAttendanceUrl = `${window.location.origin}/cells/${cell.id}/attendance`;
+  const memberAttendanceUrl = `${window.location.origin}/cell-attendance/${cell.id}`;
 
   return (
     <>
@@ -422,7 +422,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                     const isPresent = attendance?.present || false;
                     
                     return (
-                      <div key={contact.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={contact.id} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${isPresent ? 'bg-green-50 border-green-200' : ''}`}>
                         <div className="flex items-center gap-3">
                           <ContactAvatar
                             name={contact.name}
@@ -432,20 +432,11 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                           <div>
                             <div className="font-medium">{contact.name}</div>
                             <div className="text-sm text-gray-500">{contact.neighborhood}</div>
-                            {contact.attendance_code && (
-                              <div className="text-xs text-blue-600">Código: {contact.attendance_code}</div>
-                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant={contact.status === 'visitor' ? 'secondary' : 'default'}>
                               {contact.status === 'visitor' ? 'Visitante' : 'Membro'}
                             </Badge>
-                            {contact.attendance_code && (
-                              <div className="flex items-center gap-1">
-                                <QrCode className="w-4 h-4 text-blue-500" />
-                                <span className="text-xs text-blue-600">QR</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                         
@@ -461,6 +452,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                             variant={isPresent ? "default" : "outline"}
                             size="sm"
                             onClick={() => togglePresence(contact.id, isPresent)}
+                            className={isPresent ? 'bg-green-600 hover:bg-green-700' : ''}
                           >
                             <UserCheck className="w-4 h-4 mr-2" />
                             {isPresent ? 'Presente' : 'Marcar'}
@@ -479,18 +471,6 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                           >
                             <MessageSquare className="w-4 h-4" />
                           </Button>
-                          {contact.attendance_code && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const qrUrl = `${window.location.origin}/attendance/${contact.attendance_code}`;
-                                window.open(qrUrl, '_blank');
-                              }}
-                            >
-                              <QrCode className="w-4 h-4" />
-                            </Button>
-                          )}
                         </div>
                       </div>
                     );
@@ -499,7 +479,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
               </CardContent>
             </Card>
 
-            {/* QR Codes Section - RESTAURADO */}
+            {/* QR Codes Section - RESTAURADO CONFORME ORIGINAL */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* QR Code para Líder */}
               <Card>
@@ -516,7 +496,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                   <div className="flex justify-center">
                     <QRCode
                       value={cellAttendanceUrl}
-                      size={200}
+                      size={180}
                       level="M"
                       includeMargin={true}
                     />
@@ -540,47 +520,35 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-green-600" />
-                    QR Codes - Presença Individual
+                    QR Code - Presença dos Membros
                   </CardTitle>
                   <p className="text-sm text-gray-600">
-                    Cada membro tem seu próprio código para marcar presença
+                    QR code único da célula para membros marcarem presença com código pessoal
                   </p>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {contacts.filter(c => c.attendance_code && c.status !== 'visitor').map(contact => (
-                      <div key={contact.id} className="flex items-center justify-between p-2 border rounded">
-                        <div className="flex items-center gap-2">
-                          <ContactAvatar
-                            name={contact.name}
-                            photoUrl={contact.photo_url}
-                            size="xs"
-                          />
-                          <div>
-                            <div className="text-sm font-medium">{contact.name}</div>
-                            <div className="text-xs text-blue-600">
-                              Código: {contact.attendance_code}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const qrUrl = `${window.location.origin}/attendance/${contact.attendance_code}`;
-                            window.open(qrUrl, '_blank');
-                          }}
-                        >
-                          <QrCode className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+                <CardContent className="text-center space-y-4">
+                  <div className="flex justify-center">
+                    <QRCode
+                      value={memberAttendanceUrl}
+                      size={180}
+                      level="M"
+                      includeMargin={true}
+                    />
                   </div>
-                  {contacts.filter(c => c.attendance_code && c.status !== 'visitor').length === 0 && (
-                    <div className="text-center py-4 text-gray-500">
-                      Nenhum membro com código de presença
-                    </div>
-                  )}
+                  <div className="text-xs text-gray-500 break-all">
+                    {memberAttendanceUrl}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(memberAttendanceUrl, '_blank')}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Testar Página
+                  </Button>
+                  <div className="text-xs text-blue-600 mt-2">
+                    ⚠️ URL aberta - não requer login
+                  </div>
                 </CardContent>
               </Card>
             </div>
