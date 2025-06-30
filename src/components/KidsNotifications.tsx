@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Users, Calendar, X } from 'lucide-react';
+import { Bell, Users, Calendar, X, Sparkles } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -92,150 +92,177 @@ export function KidsNotifications() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">Carregando notificações...</span>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <span className="text-lg">Carregando notificações...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Centro de Avisos</h1>
-        <p className="text-gray-600">Notificações e avisos importantes</p>
-      </div>
+    <div className="min-h-screen w-full p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-3">
+            <Bell className="w-10 h-10 text-blue-600" />
+            Centro de Avisos
+            <Bell className="w-10 h-10 text-blue-600" />
+          </h1>
+          <p className="text-xl text-gray-600">Notificações e avisos importantes</p>
+        </div>
 
-      {notifications.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-600 mb-2">Nenhuma notificação ainda</h3>
-            <p className="text-gray-500">
-              As notificações do sistema aparecerão aqui quando enviadas.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {notifications.map(notification => (
-            <Card 
-              key={notification.id} 
-              className={`cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${
-                newNotifications.has(notification.id) 
-                  ? 'ring-2 ring-blue-500 animate-pulse bg-blue-50' 
-                  : 'bg-white hover:bg-gray-50'
-              }`}
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-3">
+        {notifications.length === 0 ? (
+          <Card className="max-w-2xl mx-auto shadow-xl">
+            <CardContent className="text-center py-16">
+              <Bell className="w-24 h-24 text-gray-300 mx-auto mb-6" />
+              <h3 className="text-2xl font-medium text-gray-600 mb-4">Nenhuma notificação ainda</h3>
+              <p className="text-lg text-gray-500">
+                As notificações do sistema aparecerão aqui quando enviadas.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {notifications.map(notification => (
+              <Card 
+                key={notification.id} 
+                className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl transform ${
+                  newNotifications.has(notification.id) 
+                    ? 'ring-4 ring-blue-500 animate-pulse bg-gradient-to-br from-blue-50 to-blue-100 shadow-xl' 
+                    : 'bg-white hover:bg-gray-50 shadow-lg'
+                }`}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <Badge 
+                      variant="secondary" 
+                      className={`text-sm px-3 py-1 ${
+                        notification.category === 'Kids' 
+                          ? "bg-pink-100 text-pink-700 border-pink-200" 
+                          : "bg-blue-100 text-blue-700 border-blue-200"
+                      }`}
+                    >
+                      {notification.category}
+                    </Badge>
+                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(notification.created_at).toLocaleDateString('pt-BR')}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="text-center py-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border">
+                      <div className="font-bold text-lg text-gray-800">
+                        {notification.child_name}
+                      </div>
+                      <div className="text-md text-gray-600 font-medium">
+                        {notification.child_class}
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
+                      {notification.message}
+                    </p>
+                  </div>
+
+                  {newNotifications.has(notification.id) && (
+                    <div className="mt-4 flex items-center justify-center gap-2 text-blue-600 font-bold text-sm bg-blue-50 rounded-lg py-2">
+                      <Sparkles className="w-4 h-4 animate-pulse" />
+                      NOVA NOTIFICAÇÃO
+                      <Sparkles className="w-4 h-4 animate-pulse" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Modal otimizado para datashow */}
+        <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] bg-gradient-to-br from-white to-blue-50 border-4 border-blue-200 shadow-2xl">
+            <DialogHeader className="pb-8 border-b-2 border-blue-200">
+              <DialogTitle className="flex items-center justify-between text-3xl font-bold text-blue-800">
+                <div className="flex items-center gap-4">
+                  <Bell className="w-8 h-8 text-blue-600" />
+                  <span>Aviso Importante</span>
+                  <Bell className="w-8 h-8 text-blue-600" />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => setSelectedNotification(null)}
+                  className="text-gray-500 hover:text-gray-700 hover:bg-red-50"
+                >
+                  <X className="w-8 h-8" />
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedNotification && (
+              <div className="space-y-8 p-8">
+                {/* Cabeçalho com categoria e data */}
+                <div className="flex items-center justify-between bg-white rounded-xl p-6 border-2 border-blue-200 shadow-lg">
                   <Badge 
                     variant="secondary" 
-                    className={
-                      notification.category === 'Kids' 
-                        ? "bg-pink-100 text-pink-700" 
-                        : "bg-blue-100 text-blue-700"
-                    }
+                    className={`text-2xl px-6 py-3 font-bold ${
+                      selectedNotification.category === 'Kids' 
+                        ? "bg-pink-200 text-pink-800 border-2 border-pink-300" 
+                        : "bg-blue-200 text-blue-800 border-2 border-blue-300"
+                    }`}
                   >
-                    {notification.category}
+                    {selectedNotification.category}
                   </Badge>
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(notification.created_at).toLocaleString('pt-BR')}
+                  <div className="text-2xl text-gray-700 font-bold flex items-center gap-2">
+                    <Calendar className="w-8 h-8 text-blue-600" />
+                    {new Date(selectedNotification.created_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <div className="font-medium text-gray-800">
-                    {notification.child_name} - {notification.child_class}
+                {/* Nome da criança e classe - destaque principal */}
+                <div className="text-center py-12 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 rounded-2xl border-4 border-blue-300 shadow-xl">
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <Users className="w-12 h-12 text-blue-600" />
+                    <h2 className="text-6xl font-bold text-gray-800">
+                      {selectedNotification.child_name}
+                    </h2>
+                    <Users className="w-12 h-12 text-blue-600" />
                   </div>
-                  <p className="text-gray-600 text-sm line-clamp-3">
-                    {notification.message}
+                  <p className="text-3xl text-gray-700 font-bold bg-white rounded-lg py-3 px-6 inline-block border-2 border-blue-200">
+                    {selectedNotification.child_class}
                   </p>
                 </div>
-
-                {newNotifications.has(notification.id) && (
-                  <div className="mt-3 flex items-center gap-2 text-blue-600 text-sm font-medium">
-                    <Bell className="w-4 h-4" />
-                    Nova notificação
+                
+                {/* Mensagem principal */}
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-8 rounded-2xl border-l-8 border-orange-400 shadow-xl">
+                  <div className="flex items-start gap-4">
+                    <Bell className="w-8 h-8 text-orange-500 flex-shrink-0 mt-2" />
+                    <p className="text-2xl leading-relaxed text-gray-800 font-medium">
+                      {selectedNotification.message}
+                    </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                </div>
 
-      {/* Modal otimizado para datashow */}
-      <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] bg-white">
-          <DialogHeader className="pb-6">
-            <DialogTitle className="flex items-center justify-between text-2xl font-bold">
-              <span>Aviso Importante</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedNotification(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedNotification && (
-            <div className="space-y-6 p-6">
-              {/* Cabeçalho com categoria e data */}
-              <div className="flex items-center justify-between border-b pb-4">
-                <Badge 
-                  variant="secondary" 
-                  className={`text-lg px-4 py-2 ${
-                    selectedNotification.category === 'Kids' 
-                      ? "bg-pink-100 text-pink-700" 
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {selectedNotification.category}
-                </Badge>
-                <div className="text-lg text-gray-600 font-medium">
-                  {new Date(selectedNotification.created_at).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                {/* Rodapé com informações adicionais */}
+                <div className="text-center pt-6 border-t-2 border-gray-200">
+                  <p className="text-lg text-gray-500 bg-gray-50 rounded-lg py-3 px-6 inline-block">
+                    Este aviso foi gerado automaticamente pelo sistema
+                  </p>
                 </div>
               </div>
-              
-              {/* Nome da criança e classe - destaque principal */}
-              <div className="text-center py-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                  {selectedNotification.child_name}
-                </h2>
-                <p className="text-xl text-gray-600 font-medium">
-                  {selectedNotification.child_class}
-                </p>
-              </div>
-              
-              {/* Mensagem principal */}
-              <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-500">
-                <p className="text-lg leading-relaxed text-gray-800 font-medium">
-                  {selectedNotification.message}
-                </p>
-              </div>
-
-              {/* Rodapé com informações adicionais */}
-              <div className="text-center pt-4 border-t">
-                <p className="text-gray-500 text-sm">
-                  Este aviso foi gerado automaticamente pelo sistema
-                </p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

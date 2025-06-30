@@ -1,7 +1,12 @@
+
 import { KidsNotifications } from '@/components/KidsNotifications';
+
 const NotificationsPage = () => {
-  return <div className="max-w-7xl mx-auto p-6 px-0 py-0">
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
       <KidsNotifications />
-    </div>;
+    </div>
+  );
 };
+
 export default NotificationsPage;

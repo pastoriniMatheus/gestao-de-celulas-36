@@ -69,9 +69,11 @@ export const MinistriesManager = () => {
   };
 
   const openEditDialog = (ministry: any) => {
+    console.log('Abrindo diálogo de edição para ministério:', ministry);
     setSelectedMinistry(ministry);
+    // Garantir que todos os dados sejam carregados corretamente
     setFormData({
-      name: ministry.name,
+      name: ministry.name || '',
       leader_id: ministry.leader_id || '',
       description: ministry.description || ''
     });
@@ -79,6 +81,7 @@ export const MinistriesManager = () => {
   };
 
   const openMembersDialog = (ministry: any) => {
+    console.log('Abrindo diálogo de membros para ministério:', ministry);
     setSelectedMinistry(ministry);
     setIsMembersDialogOpen(true);
   };
@@ -86,6 +89,12 @@ export const MinistriesManager = () => {
   const closeMembersDialog = () => {
     setIsMembersDialogOpen(false);
     setSelectedMinistry(null);
+  };
+
+  const closeEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setSelectedMinistry(null);
+    setFormData({ name: '', leader_id: '', description: '' });
   };
 
   if (loading) {
@@ -235,59 +244,66 @@ export const MinistriesManager = () => {
         </Card>
       )}
 
-      {/* Dialog de Edição */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      {/* Dialog de Edição - Corrigido para garantir carregamento dos dados */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        if (!open) closeEditDialog();
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Ministério</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
-            <div>
-              <Label htmlFor="edit-ministry-name">Nome do Ministério *</Label>
-              <Input
-                id="edit-ministry-name"
-                name="edit-ministry-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-ministry-leader">Líder Responsável</Label>
-              <Select value={formData.leader_id} onValueChange={(value) => setFormData({ ...formData, leader_id: value })}>
-                <SelectTrigger id="edit-ministry-leader">
-                  <SelectValue placeholder="Selecione um líder..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhum líder</SelectItem>
-                  {cellMembers.map(contact => (
-                    <SelectItem key={contact.id} value={contact.id}>
-                      {contact.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-ministry-description">Descrição</Label>
-              <Textarea
-                id="edit-ministry-description"
-                name="edit-ministry-description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button type="submit">Salvar Alterações</Button>
-              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancelar
-              </Button>
-            </div>
-          </form>
+          {selectedMinistry && (
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-ministry-name">Nome do Ministério *</Label>
+                <Input
+                  id="edit-ministry-name"
+                  name="edit-ministry-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-ministry-leader">Líder Responsável</Label>
+                <Select 
+                  value={formData.leader_id || ''} 
+                  onValueChange={(value) => setFormData({ ...formData, leader_id: value })}
+                >
+                  <SelectTrigger id="edit-ministry-leader">
+                    <SelectValue placeholder="Selecione um líder..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum líder</SelectItem>
+                    {cellMembers.map(contact => (
+                      <SelectItem key={contact.id} value={contact.id}>
+                        {contact.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-ministry-description">Descrição</Label>
+                <Textarea
+                  id="edit-ministry-description"
+                  name="edit-ministry-description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button type="submit">Salvar Alterações</Button>
+                <Button type="button" variant="outline" onClick={closeEditDialog}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 
