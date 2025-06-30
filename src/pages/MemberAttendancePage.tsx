@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { UserCheck, Users, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
+import { UserCheck, Users, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -13,8 +13,6 @@ interface Cell {
   id: string;
   name: string;
   address: string;
-  meeting_day: number;
-  meeting_time: string;
 }
 
 export default function MemberAttendancePage() {
@@ -23,7 +21,6 @@ export default function MemberAttendancePage() {
   const [attendanceCode, setAttendanceCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [memberName, setMemberName] = useState('');
 
   useEffect(() => {
     if (cellId) {
@@ -35,7 +32,7 @@ export default function MemberAttendancePage() {
     try {
       const { data: cellData, error: cellError } = await supabase
         .from('cells')
-        .select('id, name, address, meeting_day, meeting_time')
+        .select('id, name, address')
         .eq('id', cellId)
         .single();
 
@@ -51,19 +48,8 @@ export default function MemberAttendancePage() {
     }
   };
 
-  const getDayName = (dayNumber: number) => {
-    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    return days[dayNumber] || 'Não definido';
-  };
-
-  const isCellMeetingDay = () => {
-    if (!cell) return false;
-    const today = new Date().getDay();
-    return today === cell.meeting_day;
-  };
-
   const markAttendance = async () => {
-    if (!attendanceCode.trim() || !cellId) {
+    if (!attendanceCode.trim()) {
       toast({
         title: "Erro",
         description: "Digite seu código de presença",
@@ -72,30 +58,30 @@ export default function MemberAttendancePage() {
       return;
     }
 
-    // Verificar se é o dia da célula
-    if (!isCellMeetingDay()) {
-      toast({
-        title: "Erro",
-        description: `A presença só pode ser marcada no dia da reunião da célula (${getDayName(cell?.meeting_day || 0)})`,
-        variant: "destructive"
-      });
-      return;
-    }
-
     setLoading(true);
+
     try {
-      // Buscar o contato pelo código de presença
-      const { data: contactData, error: contactError } = await supabase
+      // Buscar contato pelo código
+      const { data: contact, error: contactError } = await supabase
         .from('contacts')
         .select('id, name, cell_id')
-        .eq('attendance_code', attendanceCode.trim())
-        .eq('cell_id', cellId)
+        .eq('attendance_code', attendanceCode.toUpperCase())
         .single();
 
-      if (contactError || !contactData) {
+      if (contactError || !contact) {
         toast({
           title: "Erro",
-          description: "Código inválido ou você não pertence a esta célula",
+          description: "Código de presença não encontrado",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar se o contato pertence à célula
+      if (contact.cell_id !== cellId) {
+        toast({
+          title: "Erro",
+          description: "Este código não pertence a esta célula",
           variant: "destructive"
         });
         return;
@@ -103,62 +89,49 @@ export default function MemberAttendancePage() {
 
       const today = new Date().toISOString().split('T')[0];
 
-      // Verificar se já marcou presença hoje
+      // Verificar se já foi marcada presença hoje
       const { data: existingAttendance } = await supabase
         .from('attendances')
-        .select('id, present')
-        .eq('contact_id', contactData.id)
-        .eq('attendance_date', today)
+        .select('id')
+        .eq('contact_id', contact.id)
         .eq('cell_id', cellId)
-        .single();
+        .eq('attendance_date', today)
+        .maybeSingle();
 
       if (existingAttendance) {
-        if (existingAttendance.present) {
-          toast({
-            title: "Informação",
-            description: "Você já marcou presença hoje!",
-          });
-          setSuccess(true);
-          setMemberName(contactData.name);
-          return;
-        } else {
-          // Atualizar presença existente
-          const { error: updateError } = await supabase
-            .from('attendances')
-            .update({ present: true })
-            .eq('id', existingAttendance.id);
-
-          if (updateError) throw updateError;
-        }
-      } else {
-        // Criar nova presença
-        const { error: insertError } = await supabase
-          .from('attendances')
-          .insert({
-            contact_id: contactData.id,
-            cell_id: cellId,
-            attendance_date: today,
-            present: true,
-            visitor: false
-          });
-
-        if (insertError) throw insertError;
+        toast({
+          title: "Informação",
+          description: "Presença já foi registrada hoje!",
+        });
+        setSuccess(true);
+        return;
       }
 
-      setSuccess(true);
-      setMemberName(contactData.name);
-      setAttendanceCode('');
-      
+      // Marcar presença
+      const { error: attendanceError } = await supabase
+        .from('attendances')
+        .insert({
+          contact_id: contact.id,
+          cell_id: cellId,
+          attendance_date: today,
+          present: true,
+          visitor: false
+        });
+
+      if (attendanceError) throw attendanceError;
+
       toast({
         title: "Sucesso",
-        description: `Presença marcada com sucesso, ${contactData.name}!`
+        description: `Presença registrada para ${contact.name}!`,
       });
 
+      setSuccess(true);
+      setAttendanceCode('');
     } catch (error: any) {
       console.error('Erro ao marcar presença:', error);
       toast({
         title: "Erro",
-        description: "Erro ao marcar presença. Tente novamente.",
+        description: "Erro ao registrar presença",
         variant: "destructive"
       });
     } finally {
@@ -166,10 +139,10 @@ export default function MemberAttendancePage() {
     }
   };
 
-  const resetForm = () => {
-    setSuccess(false);
-    setMemberName('');
-    setAttendanceCode('');
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      markAttendance();
+    }
   };
 
   if (!cell) {
@@ -186,126 +159,84 @@ export default function MemberAttendancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center pb-6">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <UserCheck className="h-8 w-8 text-blue-600" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-800">
-            Marcar Presença
-          </CardTitle>
-          <CardDescription className="text-base">
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              <span className="font-semibold">{cell.name}</span>
-            </div>
-            <p className="text-sm text-gray-500 mt-1">{cell.address}</p>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
-              <span className="text-sm">
-                Reunião: {getDayName(cell.meeting_day)} às {cell.meeting_time}
-              </span>
-            </div>
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {success ? (
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center">
-                <div className="bg-green-100 p-3 rounded-full">
-                  <CheckCircle className="h-12 w-12 text-green-600" />
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-md mx-auto space-y-6">
+        <Card className="shadow-xl">
+          <CardHeader className="text-center pb-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <UserCheck className="h-8 w-8 text-blue-600" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-green-800">
-                  Presença Confirmada!
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-800">
+              Marcar Presença
+            </CardTitle>
+            <CardDescription className="text-base">
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <Users className="h-4 w-4 text-blue-600" />
+                <span className="font-semibold">{cell.name}</span>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">{cell.address}</p>
+              <Badge variant="outline" className="mt-2">
+                {new Date().toLocaleDateString('pt-BR')}
+              </Badge>
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {success ? (
+              <div className="text-center py-8">
+                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-green-700 mb-2">
+                  Presença Registrada!
                 </h3>
-                <p className="text-green-600 mt-2">
-                  Olá, <span className="font-semibold">{memberName}</span>!
-                  <br />
+                <p className="text-gray-600 mb-4">
                   Sua presença foi registrada com sucesso.
                 </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSuccess(false)}
+                  className="mt-4"
+                >
+                  Registrar Outra Presença
+                </Button>
               </div>
-              <Badge variant="default" className="bg-green-500 text-white px-4 py-2">
-                ✓ Presente - {new Date().toLocaleDateString('pt-BR')}
-              </Badge>
-              <Button 
-                onClick={resetForm}
-                variant="outline"
-                className="w-full"
-              >
-                Marcar Outra Presença
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {!isCellMeetingDay() && (
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                    <div className="text-sm text-yellow-800">
-                      <p className="font-semibold mb-1">Atenção:</p>
-                      <p>A presença só pode ser marcada no dia da reunião da célula ({getDayName(cell.meeting_day)}).</p>
-                      <p className="mt-1">Hoje é {getDayName(new Date().getDay())}.</p>
-                    </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-center">
+                      Digite seu código de presença
+                    </label>
+                    <Input
+                      value={attendanceCode}
+                      onChange={(e) => setAttendanceCode(e.target.value.toUpperCase())}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ex: AB1234C"
+                      className="text-center text-lg font-mono"
+                      maxLength={10}
+                    />
                   </div>
+                  
+                  <Button 
+                    onClick={markAttendance} 
+                    disabled={loading || !attendanceCode.trim()}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+                    size="lg"
+                  >
+                    {loading ? 'Registrando...' : 'Marcar Presença'}
+                  </Button>
                 </div>
-              )}
 
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-semibold mb-1">Como marcar presença:</p>
-                    <p>Digite seu código único de 6 dígitos que você recebeu quando se cadastrou na célula.</p>
-                  </div>
+                <div className="text-center text-sm text-gray-500 border-t pt-4">
+                  <p>Digite o código que aparece no seu cadastro</p>
+                  <p className="mt-1">ou solicite ao líder da célula</p>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <label htmlFor="code" className="block text-sm font-medium text-gray-700">
-                  Seu Código de Presença
-                </label>
-                <Input
-                  id="code"
-                  type="text"
-                  placeholder="123456"
-                  value={attendanceCode}
-                  onChange={(e) => setAttendanceCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="text-center text-lg font-mono tracking-wider"
-                  maxLength={6}
-                />
-              </div>
-
-              <Button 
-                onClick={markAttendance}
-                disabled={loading || attendanceCode.length !== 6 || !isCellMeetingDay()}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                size="lg"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Verificando...
-                  </div>
-                ) : (
-                  'Confirmar Presença'
-                )}
-              </Button>
-
-              <div className="text-center">
-                <p className="text-xs text-gray-500">
-                  Não sabe seu código? Procure o líder da sua célula.
-                </p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const useUniqueAttendanceCode = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generateUniqueAttendanceCode = async (): Promise<string> => {
+  const generateUniqueAttendanceCode = async (contactName?: string): Promise<string> => {
     setIsGenerating(true);
     
     try {
@@ -13,8 +13,21 @@ export const useUniqueAttendanceCode = () => {
       const maxAttempts = 10;
       
       while (attempts < maxAttempts) {
-        // Gerar código de 6 dígitos
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        let code = '';
+        
+        if (contactName) {
+          // Nova lógica: primeira letra do nome + primeira letra da segunda palavra + 4 dígitos + 1 letra
+          const nameParts = contactName.trim().split(' ').filter(part => part.length > 0);
+          const firstLetter = nameParts[0]?.charAt(0).toUpperCase() || 'A';
+          const secondLetter = nameParts.length > 1 ? nameParts[1].charAt(0).toUpperCase() : 'B';
+          const fourDigits = Math.floor(1000 + Math.random() * 9000).toString();
+          const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
+          
+          code = firstLetter + secondLetter + fourDigits + randomLetter;
+        } else {
+          // Fallback para código antigo se não tiver nome
+          code = Math.floor(100000 + Math.random() * 900000).toString();
+        }
         
         // Verificar se já existe
         const { data: existingContact } = await supabase

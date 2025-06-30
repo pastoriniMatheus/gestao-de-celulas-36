@@ -80,8 +80,8 @@ export const useContacts = () => {
     try {
       console.log('useContacts: Criando contato com dados:', contactData);
       
-      // Sempre gerar código único para cada novo contato
-      const uniqueCode = await generateUniqueAttendanceCode();
+      // Sempre gerar código único para cada novo contato usando o nome
+      const uniqueCode = await generateUniqueAttendanceCode(contactData.name);
       
       const dataWithCode = {
         ...contactData,
@@ -155,11 +155,11 @@ export const useContacts = () => {
         }
       }
 
-      // Gerar código único se não tiver
+      // Gerar código único se não tiver, usando o nome atual
       if (!updates.attendance_code) {
         const contact = contacts.find(c => c.id === id);
         if (contact && !contact.attendance_code) {
-          updates.attendance_code = await generateUniqueAttendanceCode();
+          updates.attendance_code = await generateUniqueAttendanceCode(contact.name);
           console.log('useContacts: Gerando código único para contato existente:', updates.attendance_code);
         }
       }
