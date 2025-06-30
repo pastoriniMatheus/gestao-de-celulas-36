@@ -31,6 +31,7 @@ export const MinistriesManager = () => {
 
   const resetForm = () => {
     setFormData({ name: '', leader_id: '', description: '' });
+    setSelectedMinistry(null);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -58,9 +59,8 @@ export const MinistriesManager = () => {
         leader_id: formData.leader_id || null,
         description: formData.description || null
       });
-      setIsEditDialogOpen(false);
-      setSelectedMinistry(null);
       resetForm();
+      setIsEditDialogOpen(false);
     } catch (error) {
       console.error('Erro ao atualizar ministério:', error);
     }
@@ -75,7 +75,6 @@ export const MinistriesManager = () => {
   const openEditDialog = (ministry: any) => {
     console.log('Abrindo diálogo de edição para ministério:', ministry);
     setSelectedMinistry(ministry);
-    // Garantir que todos os dados sejam carregados corretamente
     setFormData({
       name: ministry.name || '',
       leader_id: ministry.leader_id || '',
@@ -90,20 +89,19 @@ export const MinistriesManager = () => {
     setIsMembersDialogOpen(true);
   };
 
-  const closeMembersDialog = () => {
-    setIsMembersDialogOpen(false);
-    setSelectedMinistry(null);
+  const closeCreateDialog = () => {
+    setIsCreateDialogOpen(false);
+    resetForm();
   };
 
   const closeEditDialog = () => {
     setIsEditDialogOpen(false);
-    setSelectedMinistry(null);
     resetForm();
   };
 
-  const closeCreateDialog = () => {
-    setIsCreateDialogOpen(false);
-    resetForm();
+  const closeMembersDialog = () => {
+    setIsMembersDialogOpen(false);
+    setSelectedMinistry(null);
   };
 
   if (loading) {
@@ -118,10 +116,7 @@ export const MinistriesManager = () => {
           <p className="text-gray-600">Gerencie os ministérios e seus membros</p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-          if (!open) closeCreateDialog();
-          else setIsCreateDialogOpen(true);
-        }}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -255,9 +250,7 @@ export const MinistriesManager = () => {
       )}
 
       {/* Dialog de Edição */}
-      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
-        if (!open) closeEditDialog();
-      }}>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Ministério</DialogTitle>

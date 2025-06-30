@@ -460,212 +460,78 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <h4 className="font-medium">Membros:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {contacts.filter(c => c.status !== 'visitor').map((contact) => {
-                      const attendance = todayAttendances.find(att => att.contact_id === contact.id);
-                      const isPresent = attendance?.present || false;
-                      
-                      return (
-                        <div
-                          key={contact.id}
-                          className={`p-3 rounded-lg border transition-colors ${
-                            isPresent ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div 
-                              className="flex items-center gap-3 flex-1 cursor-pointer"
-                              onClick={() => togglePresence(contact.id, isPresent)}
-                            >
-                              <ContactAvatar
-                                name={contact.name}
-                                photoUrl={contact.photo_url}
-                                size="sm"
-                              />
-                              <div className="flex-1">
-                                <p className="font-medium">{contact.name}</p>
-                                <p className="text-xs text-gray-500">{contact.neighborhood}</p>
-                                {contact.attendance_code && (
-                                  <p className="text-xs text-blue-600 font-mono">
-                                    Código: {contact.attendance_code}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenNotes(contact)}
-                                className="p-1"
-                              >
-                                <MessageSquare className="h-4 w-4 text-blue-500" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditContact(contact)}
-                                className="p-1"
-                              >
-                                <Edit className="h-4 w-4 text-gray-500" />
-                              </Button>
-                              {contact.encounter_with_god && (
-                                <Badge variant="outline" className="text-xs">Encontro</Badge>
-                              )}
-                              <div className={`w-4 h-4 rounded-full ${
-                                isPresent ? 'bg-green-500' : 'bg-gray-300'
-                              }`} />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="flex items-center gap-4">
+                  <Input
+                    placeholder="Nome do visitante"
+                    value={newVisitorName}
+                    onChange={(e) => setNewVisitorName(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={addVisitor} disabled={!newVisitorName.trim()}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Adicionar Visitante
+                  </Button>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-medium">Adicionar Visitante:</h4>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Nome do visitante"
-                      value={newVisitorName}
-                      onChange={(e) => setNewVisitorName(e.target.value)}
-                    />
-                    <Button onClick={addVisitor} disabled={!newVisitorName.trim()}>
-                      <UserPlus className="h-4 w-4 mr-1" />
-                      Adicionar
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Visitantes da célula */}
-                {contacts.filter(c => c.status === 'visitor').length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Visitantes da Célula:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {contacts.filter(c => c.status === 'visitor').map((visitor) => (
-                        <div key={visitor.id} className="p-3 rounded bg-orange-50 border border-orange-200">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              <ContactAvatar
-                                name={visitor.name}
-                                photoUrl={visitor.photo_url}
-                                size="sm"
-                              />
-                              <div className="flex-1">
-                                <span className="font-medium">{visitor.name}</span>
-                                {visitor.attendance_code && (
-                                  <p className="text-xs text-blue-600 font-mono mt-1">
-                                    Código: {visitor.attendance_code}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CellVisitorActions
-                                visitor={visitor}
-                                cellId={cell.id}
-                                onUpdate={fetchCellData}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenNotes(visitor)}
-                                className="p-1"
-                              >
-                                <MessageSquare className="h-4 w-4 text-blue-500" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditContact(visitor)}
-                                className="p-1"
-                              >
-                                <Edit className="h-4 w-4 text-gray-500" />
-                              </Button>
-                              <Badge variant="secondary" className="text-xs">Visitante</Badge>
-                            </div>
+                  {contacts.map(contact => {
+                    const attendance = todayAttendances.find(att => att.contact_id === contact.id);
+                    const isPresent = attendance?.present || false;
+                    
+                    return (
+                      <div key={contact.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <ContactAvatar
+                            name={contact.name}
+                            photoUrl={contact.photo_url}
+                            size="sm"
+                          />
+                          <div>
+                            <div className="font-medium">{contact.name}</div>
+                            <div className="text-sm text-gray-500">{contact.neighborhood}</div>
                           </div>
+                          <Badge variant={contact.status === 'visitor' ? 'secondary' : 'default'}>
+                            {contact.status === 'visitor' ? 'Visitante' : 'Membro'}
+                          </Badge>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                        
+                        <div className="flex items-center gap-2">
+                          {contact.status === 'visitor' && (
+                            <CellVisitorActions 
+                              visitor={contact} 
+                              cellId={cell.id} 
+                              onUpdate={fetchCellData}
+                            />
+                          )}
+                          <Button
+                            variant={isPresent ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => togglePresence(contact.id, isPresent)}
+                          >
+                            <UserCheck className="w-4 h-4 mr-2" />
+                            {isPresent ? 'Presente' : 'Marcar'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditContact(contact)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenNotes(contact)}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
-
-            {/* QR Codes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* QR Code para Líderes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-700">
-                    <QrCode className="h-5 w-5" />
-                    QR Code - Acesso do Líder
-                  </CardTitle>
-                  <p className="text-sm text-gray-600">Para controle completo da célula</p>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                  <div className="inline-block p-4 bg-white rounded-lg border">
-                    <QRCode 
-                      value={`${window.location.origin}/cells/${cell.id}/attendance`}
-                      size={180}
-                      fgColor="#059669"
-                    />
-                  </div>
-                  <div className="flex justify-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/cells/${cell.id}/attendance`);
-                        toast({ title: "Link copiado!" });
-                      }}
-                    >
-                      Copiar Link
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 break-all">
-                    {window.location.origin}/cells/{cell.id}/attendance
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* QR Code para Membros */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-700">
-                    <UserCheck className="h-5 w-5" />
-                    QR Code - Presença dos Membros
-                  </CardTitle>
-                  <p className="text-sm text-gray-600">Para membros marcarem presença</p>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                  <div className="inline-block p-4 bg-white rounded-lg border">
-                    <QRCode 
-                      value={`${window.location.origin}/member-attendance/${cell.id}`}
-                      size={180}
-                      fgColor="#2563EB"
-                    />
-                  </div>
-                  <div className="flex justify-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/member-attendance/${cell.id}`);
-                        toast({ title: "Link copiado!" });
-                      }}
-                    >
-                      Copiar Link
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 break-all">
-                    {window.location.origin}/member-attendance/{cell.id}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

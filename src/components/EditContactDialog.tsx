@@ -346,60 +346,56 @@ export const EditContactDialog = ({
             </div>
 
             {/* Campo Líder Responsável - apenas admin pode editar */}
-            <div>
-              <Label htmlFor="edit-leader">
-                Líder Responsável
-                {!isAdmin && <span className="text-xs text-gray-500 ml-2">(Apenas admin pode editar)</span>}
-              </Label>
-              <Select 
-                value={formData.leader_id || 'no-leader'} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  leader_id: value === 'no-leader' ? '' : value 
-                }))}
-                disabled={!isAdmin}
-              >
-                <SelectTrigger id="edit-leader">
-                  <SelectValue placeholder="Selecione um líder" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-leader">Nenhum líder</SelectItem>
-                  {profiles.map(profile => (
-                    <SelectItem key={profile.id} value={profile.id}>
-                      {profile.name} ({profile.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isAdmin && (
+              <div>
+                <Label htmlFor="edit-leader">Líder Responsável</Label>
+                <Select 
+                  value={formData.leader_id || 'no-leader'} 
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    leader_id: value === 'no-leader' ? '' : value 
+                  }))}
+                >
+                  <SelectTrigger id="edit-leader">
+                    <SelectValue placeholder="Selecione um líder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-leader">Nenhum líder</SelectItem>
+                    {profiles.map(profile => (
+                      <SelectItem key={profile.id} value={profile.id}>
+                        {profile.name} ({profile.role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Campo Célula - apenas admin pode editar */}
-            <div>
-              <Label htmlFor="edit-cell">
-                Célula
-                {!isAdmin && <span className="text-xs text-gray-500 ml-2">(Apenas admin pode editar)</span>}
-              </Label>
-              <Select 
-                value={formData.cell_id || 'no-cell'} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  cell_id: value === 'no-cell' ? '' : value 
-                }))}
-                disabled={!isAdmin}
-              >
-                <SelectTrigger id="edit-cell">
-                  <SelectValue placeholder="Selecione uma célula" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-cell">Nenhuma célula</SelectItem>
-                  {cells.map(cell => (
-                    <SelectItem key={cell.id} value={cell.id}>
-                      {cell.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isAdmin && (
+              <div>
+                <Label htmlFor="edit-cell">Célula</Label>
+                <Select 
+                  value={formData.cell_id || 'no-cell'} 
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    cell_id: value === 'no-cell' ? '' : value 
+                  }))}
+                >
+                  <SelectTrigger id="edit-cell">
+                    <SelectValue placeholder="Selecione uma célula" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-cell">Nenhuma célula</SelectItem>
+                    {cells.map(cell => (
+                      <SelectItem key={cell.id} value={cell.id}>
+                        {cell.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="edit-referred">Indicado por</Label>
