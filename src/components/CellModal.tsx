@@ -479,7 +479,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
               </CardContent>
             </Card>
 
-            {/* QR Codes Section - RESTAURADO CONFORME ORIGINAL */}
+            {/* QR Codes Section - Corrigida */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* QR Code para Líder */}
               <Card>
@@ -493,21 +493,21 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                   </p>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
-                  <div className="flex justify-center">
+                  <div className="flex justify-center bg-white p-4 rounded-lg">
                     <QRCode
                       value={cellAttendanceUrl}
-                      size={180}
+                      size={160}
                       level="M"
                       includeMargin={true}
+                      fgColor="#1e40af"
+                      bgColor="#ffffff"
                     />
-                  </div>
-                  <div className="text-xs text-gray-500 break-all">
-                    {cellAttendanceUrl}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => window.open(cellAttendanceUrl, '_blank')}
+                    className="w-full"
                   >
                     <QrCode className="w-4 h-4 mr-2" />
                     Abrir Controle
@@ -523,31 +523,31 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                     QR Code - Presença dos Membros
                   </CardTitle>
                   <p className="text-sm text-gray-600">
-                    QR code único da célula para membros marcarem presença com código pessoal
+                    Membros acessam esta página para marcar presença com código pessoal
                   </p>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
-                  <div className="flex justify-center">
+                  <div className="flex justify-center bg-white p-4 rounded-lg">
                     <QRCode
                       value={memberAttendanceUrl}
-                      size={180}
+                      size={160}
                       level="M"
                       includeMargin={true}
+                      fgColor="#059669"
+                      bgColor="#ffffff"
                     />
-                  </div>
-                  <div className="text-xs text-gray-500 break-all">
-                    {memberAttendanceUrl}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => window.open(memberAttendanceUrl, '_blank')}
+                    className="w-full"
                   >
                     <Users className="w-4 h-4 mr-2" />
                     Testar Página
                   </Button>
-                  <div className="text-xs text-blue-600 mt-2">
-                    ⚠️ URL aberta - não requer login
+                  <div className="text-xs text-green-600 font-medium bg-green-50 rounded-lg p-2">
+                    🌐 URL aberta - não requer login
                   </div>
                 </CardContent>
               </Card>

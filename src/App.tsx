@@ -40,6 +40,7 @@ const App = () => (
             <Route path="/cell-attendance/:cellToken" element={<CellAttendancePage />} />
             <Route path="/cells/:cellId/attendance" element={<CellAttendancePage />} />
             <Route path="/qr/:keyword" element={<QRRedirect />} />
+            <Route path="/avisos" element={<NotificationsPage />} />
 
             {/* Rotas protegidas */}
             <Route path="/*" element={
@@ -65,7 +66,6 @@ const App = () => (
                           <Route path="/events" element={<Index />} />
                           <Route path="/users" element={<Index />} />
                           <Route path="/settings" element={<Index />} />
-                          <Route path="/avisos" element={<NotificationsPage />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </div>
