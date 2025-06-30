@@ -22,16 +22,22 @@ export default function MemberAttendancePage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('MemberAttendancePage: cellId recebido:', cellId);
     if (cellId) {
       fetchCellData();
+    } else {
+      setError('ID da célula não fornecido');
+      setInitialLoading(false);
     }
   }, [cellId]);
 
   const fetchCellData = async () => {
     try {
       setInitialLoading(true);
+      setError(null);
       console.log('Buscando dados da célula:', cellId);
       
       const { data: cellData, error: cellError } = await supabase
@@ -42,18 +48,14 @@ export default function MemberAttendancePage() {
 
       if (cellError) {
         console.error('Erro ao buscar célula:', cellError);
-        throw cellError;
+        throw new Error('Célula não encontrada');
       }
       
       console.log('Célula encontrada:', cellData);
       setCell(cellData);
     } catch (error: any) {
       console.error('Erro ao buscar dados da célula:', error);
-      toast({
-        title: "Erro",
-        description: "Célula não encontrada",
-        variant: "destructive"
-      });
+      setError(error.message || 'Erro ao carregar célula');
     } finally {
       setInitialLoading(false);
     }
@@ -64,6 +66,15 @@ export default function MemberAttendancePage() {
       toast({
         title: "Erro",
         description: "Digite seu código de presença",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!cell) {
+      toast({
+        title: "Erro",
+        description: "Dados da célula não carregados",
         variant: "destructive"
       });
       return;
@@ -166,15 +177,36 @@ export default function MemberAttendancePage() {
     }
   };
 
-  if (initialLoading || !cell) {
+  if (initialLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">
-              {initialLoading ? 'Carregando célula...' : 'Célula não encontrada'}
+            <p className="text-gray-600">Carregando célula...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !cell) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="p-8">
+            <div className="text-red-500 mb-4">
+              <UserCheck className="h-12 w-12 mx-auto" />
+            </div>
+            <h3 className="text-lg font-semibold text-red-700 mb-2">
+              Erro ao Carregar
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {error || 'Célula não encontrada'}
             </p>
+            <Button onClick={fetchCellData} variant="outline">
+              Tentar Novamente
+            </Button>
           </CardContent>
         </Card>
       </div>
