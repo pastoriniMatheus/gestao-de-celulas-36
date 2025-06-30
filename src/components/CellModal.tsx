@@ -288,6 +288,9 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
   const visitorsToday = todayAttendances.filter(att => att.visitor && att.present).length;
   const totalMembers = contacts.filter(c => c.status !== 'visitor').length;
 
+  // URLs para QR codes
+  const cellAttendanceUrl = `${window.location.origin}/cells/${cell.id}/attendance`;
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -495,6 +498,92 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                 </div>
               </CardContent>
             </Card>
+
+            {/* QR Codes Section - RESTAURADO */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* QR Code para Líder */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-blue-600" />
+                    QR Code - Controle do Líder
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Use este QR code para acessar o controle de presença da célula
+                  </p>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                  <div className="flex justify-center">
+                    <QRCode
+                      value={cellAttendanceUrl}
+                      size={200}
+                      level="M"
+                      includeMargin={true}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 break-all">
+                    {cellAttendanceUrl}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(cellAttendanceUrl, '_blank')}
+                  >
+                    <QrCode className="w-4 h-4 mr-2" />
+                    Abrir Controle
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* QR Code para Membros */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-green-600" />
+                    QR Codes - Presença Individual
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Cada membro tem seu próprio código para marcar presença
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {contacts.filter(c => c.attendance_code && c.status !== 'visitor').map(contact => (
+                      <div key={contact.id} className="flex items-center justify-between p-2 border rounded">
+                        <div className="flex items-center gap-2">
+                          <ContactAvatar
+                            name={contact.name}
+                            photoUrl={contact.photo_url}
+                            size="xs"
+                          />
+                          <div>
+                            <div className="text-sm font-medium">{contact.name}</div>
+                            <div className="text-xs text-blue-600">
+                              Código: {contact.attendance_code}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const qrUrl = `${window.location.origin}/attendance/${contact.attendance_code}`;
+                            window.open(qrUrl, '_blank');
+                          }}
+                        >
+                          <QrCode className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  {contacts.filter(c => c.attendance_code && c.status !== 'visitor').length === 0 && (
+                    <div className="text-center py-4 text-gray-500">
+                      Nenhum membro com código de presença
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
