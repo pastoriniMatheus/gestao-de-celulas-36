@@ -76,6 +76,11 @@ export const CellDetails = ({ cell }: CellDetailsProps) => {
                   <div>
                     <p className="font-medium text-green-800">{contact.name}</p>
                     <p className="text-sm text-green-600">{contact.whatsapp}</p>
+                    {contact.attendance_code && (
+                      <p className="text-xs text-green-700 font-mono bg-green-100 px-2 py-1 rounded mt-1">
+                        Código: {contact.attendance_code}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -88,11 +93,6 @@ export const CellDetails = ({ cell }: CellDetailsProps) => {
                   {contact.baptized && (
                     <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
                       Batizado
-                    </Badge>
-                  )}
-                  {contact.attendance_code && (
-                    <Badge variant="outline" className="bg-orange-50 border-orange-200 text-orange-800 font-mono text-xs">
-                      {contact.attendance_code}
                     </Badge>
                   )}
                 </div>
@@ -124,6 +124,11 @@ export const CellDetails = ({ cell }: CellDetailsProps) => {
                   <div>
                     <p className="font-medium text-blue-800">{contact.name}</p>
                     <p className="text-sm text-blue-600">{contact.whatsapp}</p>
+                    {contact.attendance_code && (
+                      <p className="text-xs text-blue-700 font-mono bg-blue-100 px-2 py-1 rounded mt-1">
+                        Código: {contact.attendance_code}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -136,11 +141,6 @@ export const CellDetails = ({ cell }: CellDetailsProps) => {
                   {contact.baptized && (
                     <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
                       Batizado
-                    </Badge>
-                  )}
-                  {contact.attendance_code && (
-                    <Badge variant="outline" className="bg-orange-50 border-orange-200 text-orange-800 font-mono text-xs">
-                      {contact.attendance_code}
                     </Badge>
                   )}
                 </div>
