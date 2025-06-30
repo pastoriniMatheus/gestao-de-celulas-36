@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserCheck, Users, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useCellQRCode } from '@/hooks/useCellQRCode';
 
 interface Cell {
   id: string;
@@ -16,7 +16,13 @@ interface Cell {
 }
 
 export default function MemberAttendancePage() {
-  const { cellId } = useParams();
+  const { cellId: paramsCellId } = useParams();
+  const location = useLocation();
+  const { cellId: qrCellId } = useCellQRCode();
+  
+  // Determinar o cellId correto
+  const cellId = qrCellId || paramsCellId;
+  
   const [cell, setCell] = useState<Cell | null>(null);
   const [attendanceCode, setAttendanceCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,20 +31,34 @@ export default function MemberAttendancePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('MemberAttendancePage: cellId recebido:', cellId);
+    console.log('MemberAttendancePage: Parâmetros detectados:', {
+      paramsCellId,
+      qrCellId,
+      finalCellId: cellId,
+      pathname: location.pathname,
+      search: location.search
+    });
+    
     if (cellId) {
       fetchCellData();
     } else {
-      setError('ID da célula não fornecido');
+      console.error('MemberAttendancePage: Nenhum ID de célula encontrado');
+      setError('ID da célula não fornecido. Verifique o link ou QR Code.');
       setInitialLoading(false);
     }
-  }, [cellId]);
+  }, [cellId, location]);
 
   const fetchCellData = async () => {
+    if (!cellId) {
+      setError('ID da célula não fornecido');
+      setInitialLoading(false);
+      return;
+    }
+
     try {
       setInitialLoading(true);
       setError(null);
-      console.log('Buscando dados da célula:', cellId);
+      console.log('MemberAttendancePage: Buscando dados da célula:', cellId);
       
       const { data: cellData, error: cellError } = await supabase
         .from('cells')
@@ -47,7 +67,7 @@ export default function MemberAttendancePage() {
         .single();
 
       if (cellError) {
-        console.error('Erro ao buscar célula:', cellError);
+        console.error('MemberAttendancePage: Erro ao buscar célula:', cellError);
         if (cellError.code === 'PGRST116') {
           throw new Error('Célula não encontrada. Verifique se o ID está correto.');
         }
@@ -58,10 +78,10 @@ export default function MemberAttendancePage() {
         throw new Error('Célula não encontrada');
       }
       
-      console.log('Célula encontrada:', cellData);
+      console.log('MemberAttendancePage: Célula encontrada:', cellData);
       setCell(cellData);
     } catch (error: any) {
-      console.error('Erro ao buscar dados da célula:', error);
+      console.error('MemberAttendancePage: Erro ao buscar dados da célula:', error);
       setError(error.message || 'Erro ao carregar célula');
     } finally {
       setInitialLoading(false);

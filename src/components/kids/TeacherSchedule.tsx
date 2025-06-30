@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,26 +112,34 @@ export function TeacherSchedule() {
     }
   };
 
-  // Obter membros dos ministérios para seleção de professoras
-  const getMinistryMembers = () => {
-    const allMembers: { id: string; name: string; ministry: string }[] = [];
+  // Obter membros APENAS do ministério Kids & Jovens
+  const getKidsMinistryMembers = () => {
+    const kidsMinistry = ministries.find(ministry => 
+      ministry.name.toLowerCase().includes('kids') || 
+      ministry.name.toLowerCase().includes('jovens') ||
+      ministry.name.toLowerCase().includes('infantil') ||
+      ministry.name.toLowerCase().includes('criança')
+    );
     
-    ministries.forEach(ministry => {
-      if (ministry.members) {
-        ministry.members.forEach(member => {
-          allMembers.push({
-            id: member.id,
-            name: member.name,
-            ministry: ministry.name
-          });
-        });
-      }
-    });
+    console.log('Ministérios disponíveis:', ministries);
+    console.log('Ministério Kids encontrado:', kidsMinistry);
     
-    return allMembers;
+    if (!kidsMinistry || !kidsMinistry.members) {
+      console.log('Nenhum ministério Kids encontrado ou sem membros');
+      return [];
+    }
+
+    const members = kidsMinistry.members.map(member => ({
+      id: member.id,
+      name: member.name,
+      ministry: kidsMinistry.name
+    }));
+    
+    console.log('Membros do ministério Kids:', members);
+    return members;
   };
 
-  const ministryMembers = getMinistryMembers();
+  const kidsMinistryMembers = getKidsMinistryMembers();
 
   return (
     <div className="space-y-6">
@@ -140,7 +147,7 @@ export function TeacherSchedule() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-blue-700">
             <Calendar className="w-5 h-5" />
-            Nova Escala de Professoras
+            Nova Escala de Professoras - Kids & Jovens
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -184,11 +191,17 @@ export function TeacherSchedule() {
                     <SelectValue placeholder="Selecione a professora 1..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {ministryMembers.map(member => (
-                      <SelectItem key={`teacher1-${member.id}`} value={member.name}>
-                        {member.name} ({member.ministry})
+                    {kidsMinistryMembers.length > 0 ? (
+                      kidsMinistryMembers.map(member => (
+                        <SelectItem key={`teacher1-${member.id}`} value={member.name}>
+                          {member.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-members" disabled>
+                        Nenhum membro do ministério Kids & Jovens encontrado
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -200,11 +213,17 @@ export function TeacherSchedule() {
                     <SelectValue placeholder="Selecione a professora 2..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {ministryMembers.map(member => (
-                      <SelectItem key={`teacher2-${member.id}`} value={member.name}>
-                        {member.name} ({member.ministry})
+                    {kidsMinistryMembers.length > 0 ? (
+                      kidsMinistryMembers.map(member => (
+                        <SelectItem key={`teacher2-${member.id}`} value={member.name}>
+                          {member.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-members" disabled>
+                        Nenhum membro do ministério Kids & Jovens encontrado
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
               </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -345,7 +344,7 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-founder">Fundador</Label>
             </div>
 
-            {/* Campo Líder Responsável - apenas admin pode editar */}
+            {/* Campo Líder Responsável - APENAS ADMIN pode ver e editar */}
             {isAdmin && (
               <div>
                 <Label htmlFor="edit-leader">Líder Responsável</Label>
@@ -371,7 +370,7 @@ export const EditContactDialog = ({
               </div>
             )}
 
-            {/* Campo Célula - apenas admin pode editar */}
+            {/* Campo Célula - APENAS ADMIN pode ver e editar */}
             {isAdmin && (
               <div>
                 <Label htmlFor="edit-cell">Célula</Label>
