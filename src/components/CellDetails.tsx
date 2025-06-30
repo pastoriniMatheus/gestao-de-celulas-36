@@ -69,7 +69,8 @@ export const CellDetails = ({ cell }: CellDetailsProps) => {
               <div key={contact.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center gap-3">
                   <ContactAvatar 
-                    contact={contact} 
+                    name={contact.name}
+                    photoUrl={contact.photo_url}
                     size="sm" 
                   />
                   <div>
@@ -116,7 +117,8 @@ export const CellDetails = ({ cell }: CellDetailsProps) => {
               <div key={contact.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-3">
                   <ContactAvatar 
-                    contact={contact} 
+                    name={contact.name}
+                    photoUrl={contact.photo_url}
                     size="sm" 
                   />
                   <div>
