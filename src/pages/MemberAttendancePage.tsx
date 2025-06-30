@@ -48,6 +48,13 @@ export default function MemberAttendancePage() {
 
       if (cellError) {
         console.error('Erro ao buscar célula:', cellError);
+        if (cellError.code === 'PGRST116') {
+          throw new Error('Célula não encontrada. Verifique se o ID está correto.');
+        }
+        throw new Error('Erro ao buscar célula: ' + cellError.message);
+      }
+      
+      if (!cellData) {
         throw new Error('Célula não encontrada');
       }
       
@@ -92,8 +99,25 @@ export default function MemberAttendancePage() {
         .eq('attendance_code', attendanceCode.toUpperCase())
         .single();
 
-      if (contactError || !contact) {
-        console.error('Código não encontrado:', contactError);
+      if (contactError) {
+        console.error('Erro ao buscar contato:', contactError);
+        if (contactError.code === 'PGRST116') {
+          toast({
+            title: "Erro",
+            description: "Código de presença não encontrado ou inválido",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Erro",
+            description: "Erro ao buscar código de presença",
+            variant: "destructive"
+          });
+        }
+        return;
+      }
+
+      if (!contact) {
         toast({
           title: "Erro",
           description: "Código de presença não encontrado",
@@ -147,7 +171,12 @@ export default function MemberAttendancePage() {
 
       if (attendanceError) {
         console.error('Erro ao marcar presença:', attendanceError);
-        throw attendanceError;
+        toast({
+          title: "Erro",
+          description: "Erro ao registrar presença",
+          variant: "destructive"
+        });
+        return;
       }
 
       console.log('Presença marcada com sucesso');
