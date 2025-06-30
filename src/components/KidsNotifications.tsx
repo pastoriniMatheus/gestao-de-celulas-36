@@ -49,7 +49,6 @@ export function KidsNotifications() {
     }
   });
 
-  // Configurar atualização em tempo real
   useEffect(() => {
     console.log('Configurando canal de notificações em tempo real...');
     
@@ -64,10 +63,8 @@ export function KidsNotifications() {
         },
         (payload) => {
           console.log('Nova notificação recebida via realtime:', payload);
-          // Marcar como nova notificação por 30 segundos
           setNewNotifications(prev => new Set([...prev, payload.new.id]));
           
-          // Remover o piscar após 30 segundos
           setTimeout(() => {
             setNewNotifications(prev => {
               const newSet = new Set(prev);
@@ -76,7 +73,6 @@ export function KidsNotifications() {
             });
           }, 30000);
           
-          // Atualizar as notificações automaticamente
           queryClient.invalidateQueries({ queryKey: ['child-notifications'] });
         }
       )
@@ -92,7 +88,6 @@ export function KidsNotifications() {
 
   const handleNotificationClick = (notification: Notification) => {
     setSelectedNotification(notification);
-    // Remover da lista de novas notificações ao clicar
     setNewNotifications(prev => {
       const newSet = new Set(prev);
       newSet.delete(notification.id);
@@ -106,7 +101,7 @@ export function KidsNotifications() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
           <span className="text-2xl font-semibold text-gray-700">Carregando avisos...</span>
@@ -205,44 +200,42 @@ export function KidsNotifications() {
           </div>
         )}
 
-        {/* Modal melhorado para datashow */}
         <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
-          <DialogContent className="max-w-3xl max-h-[80vh] bg-gradient-to-br from-white via-blue-50 to-purple-50 border-4 border-blue-300 shadow-2xl rounded-2xl">
-            <DialogHeader className="pb-6 border-b-2 border-blue-300 bg-gradient-to-r from-blue-100 to-purple-100 rounded-t-xl -m-6 mb-6 p-6">
-              <DialogTitle className="flex items-center justify-between text-3xl font-bold text-blue-800">
-                <div className="flex items-center gap-4">
-                  <Bell className="w-8 h-8 text-blue-600" />
+          <DialogContent className="max-w-2xl max-h-[85vh] bg-white border-4 border-blue-300 shadow-2xl rounded-2xl">
+            <DialogHeader className="pb-4 border-b-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-xl -m-6 mb-6 p-6">
+              <DialogTitle className="flex items-center justify-between text-2xl font-bold text-blue-800">
+                <div className="flex items-center gap-3">
+                  <Bell className="w-7 h-7 text-blue-600" />
                   <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     Aviso Importante
                   </span>
                 </div>
                 <Button
                   variant="ghost"
-                  size="lg"
+                  size="sm"
                   onClick={() => setSelectedNotification(null)}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-red-100 rounded-full"
+                  className="text-gray-500 hover:text-gray-700 hover:bg-red-100 rounded-full p-2"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </Button>
               </DialogTitle>
             </DialogHeader>
             
             {selectedNotification && (
               <div className="space-y-6 p-2">
-                {/* Cabeçalho com categoria e data */}
-                <div className="flex items-center justify-between bg-gradient-to-r from-white via-blue-50 to-white rounded-xl p-4 border-2 border-blue-300 shadow-lg">
+                <div className="flex items-center justify-between bg-gradient-to-r from-white via-blue-50 to-white rounded-xl p-4 border-2 border-blue-200 shadow-md">
                   <Badge 
                     variant="secondary" 
-                    className={`text-xl px-6 py-2 font-bold rounded-lg shadow-lg ${
+                    className={`text-lg px-5 py-2 font-bold rounded-lg shadow-md ${
                       selectedNotification.category === 'Kids' 
-                        ? "bg-gradient-to-r from-pink-300 to-pink-400 text-pink-900 border-2 border-pink-500" 
-                        : "bg-gradient-to-r from-blue-300 to-blue-400 text-blue-900 border-2 border-blue-500"
+                        ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border-2 border-pink-400" 
+                        : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border-2 border-blue-400"
                     }`}
                   >
                     {selectedNotification.category}
                   </Badge>
-                  <div className="text-xl text-gray-700 font-bold flex items-center gap-3 bg-white rounded-lg px-4 py-2 shadow-md border border-gray-200">
-                    <Calendar className="w-6 h-6 text-blue-600" />
+                  <div className="text-lg text-gray-700 font-bold flex items-center gap-2 bg-white rounded-lg px-4 py-2 shadow-md border border-gray-200">
+                    <Calendar className="w-5 h-5 text-blue-600" />
                     {new Date(selectedNotification.created_at).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'long',
@@ -253,34 +246,31 @@ export function KidsNotifications() {
                   </div>
                 </div>
                 
-                {/* Nome da criança e classe */}
-                <div className="text-center py-8 bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 rounded-2xl border-3 border-purple-400 shadow-xl">
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <Users className="w-10 h-10 text-blue-700" />
-                    <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+                <div className="text-center py-6 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 rounded-2xl border-2 border-purple-300 shadow-lg">
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    <Users className="w-8 h-8 text-blue-700" />
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
                       {selectedNotification.child_name}
                     </h2>
-                    <Users className="w-10 h-10 text-pink-700" />
+                    <Users className="w-8 h-8 text-pink-700" />
                   </div>
-                  <p className="text-2xl text-gray-800 font-bold bg-white rounded-xl py-3 px-6 inline-block border-2 border-purple-300 shadow-lg">
+                  <p className="text-xl text-gray-800 font-bold bg-white rounded-xl py-2 px-5 inline-block border-2 border-purple-300 shadow-md">
                     {selectedNotification.child_class}
                   </p>
                 </div>
                 
-                {/* Mensagem principal */}
-                <div className="bg-gradient-to-r from-yellow-100 via-orange-100 to-yellow-100 p-6 rounded-2xl border-l-4 border-orange-500 shadow-xl">
-                  <div className="flex items-start gap-4">
-                    <Bell className="w-8 h-8 text-orange-600 flex-shrink-0 mt-1" />
-                    <p className="text-2xl leading-relaxed text-gray-800 font-semibold">
+                <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 p-6 rounded-2xl border-l-4 border-orange-400 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <Bell className="w-7 h-7 text-orange-600 flex-shrink-0 mt-1" />
+                    <p className="text-xl leading-relaxed text-gray-800 font-semibold">
                       {selectedNotification.message}
                     </p>
                   </div>
                 </div>
 
-                {/* Rodapé */}
-                <div className="text-center pt-4 border-t-2 border-gray-300">
-                  <div className="bg-gradient-to-r from-gray-100 via-white to-gray-100 rounded-xl py-3 px-6 inline-block shadow-md border border-gray-200">
-                    <p className="text-lg text-gray-600 font-medium">
+                <div className="text-center pt-4 border-t-2 border-gray-200">
+                  <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-xl py-2 px-5 inline-block shadow-sm border border-gray-200">
+                    <p className="text-base text-gray-600 font-medium">
                       ✨ Aviso gerado automaticamente pelo sistema ✨
                     </p>
                   </div>

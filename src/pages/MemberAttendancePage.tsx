@@ -21,6 +21,7 @@ export default function MemberAttendancePage() {
   const [attendanceCode, setAttendanceCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     if (cellId) {
@@ -30,13 +31,21 @@ export default function MemberAttendancePage() {
 
   const fetchCellData = async () => {
     try {
+      setInitialLoading(true);
+      console.log('Buscando dados da célula:', cellId);
+      
       const { data: cellData, error: cellError } = await supabase
         .from('cells')
         .select('id, name, address')
         .eq('id', cellId)
         .single();
 
-      if (cellError) throw cellError;
+      if (cellError) {
+        console.error('Erro ao buscar célula:', cellError);
+        throw cellError;
+      }
+      
+      console.log('Célula encontrada:', cellData);
       setCell(cellData);
     } catch (error: any) {
       console.error('Erro ao buscar dados da célula:', error);
@@ -45,6 +54,8 @@ export default function MemberAttendancePage() {
         description: "Célula não encontrada",
         variant: "destructive"
       });
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -61,6 +72,8 @@ export default function MemberAttendancePage() {
     setLoading(true);
 
     try {
+      console.log('Buscando contato com código:', attendanceCode);
+      
       // Buscar contato pelo código
       const { data: contact, error: contactError } = await supabase
         .from('contacts')
@@ -69,6 +82,7 @@ export default function MemberAttendancePage() {
         .single();
 
       if (contactError || !contact) {
+        console.error('Código não encontrado:', contactError);
         toast({
           title: "Erro",
           description: "Código de presença não encontrado",
@@ -76,6 +90,8 @@ export default function MemberAttendancePage() {
         });
         return;
       }
+
+      console.log('Contato encontrado:', contact);
 
       // Verificar se o contato pertence à célula
       if (contact.cell_id !== cellId) {
@@ -118,8 +134,13 @@ export default function MemberAttendancePage() {
           visitor: false
         });
 
-      if (attendanceError) throw attendanceError;
+      if (attendanceError) {
+        console.error('Erro ao marcar presença:', attendanceError);
+        throw attendanceError;
+      }
 
+      console.log('Presença marcada com sucesso');
+      
       toast({
         title: "Sucesso",
         description: `Presença registrada para ${contact.name}!`,
@@ -145,13 +166,15 @@ export default function MemberAttendancePage() {
     }
   };
 
-  if (!cell) {
+  if (initialLoading || !cell) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando...</p>
+            <p className="text-gray-600">
+              {initialLoading ? 'Carregando célula...' : 'Célula não encontrada'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -212,7 +235,7 @@ export default function MemberAttendancePage() {
                       value={attendanceCode}
                       onChange={(e) => setAttendanceCode(e.target.value.toUpperCase())}
                       onKeyPress={handleKeyPress}
-                      placeholder="Ex: AB1234C"
+                      placeholder="Ex: AB1234"
                       className="text-center text-lg font-mono"
                       maxLength={10}
                     />
