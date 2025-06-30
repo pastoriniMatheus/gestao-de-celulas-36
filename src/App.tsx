@@ -38,6 +38,7 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/attendance/:attendanceCode" element={<MemberAttendancePage />} />
             <Route path="/cell-attendance/:cellToken" element={<CellAttendancePage />} />
+            <Route path="/cells/:cellId/attendance" element={<CellAttendancePage />} />
             <Route path="/qr/:keyword" element={<QRRedirect />} />
 
             {/* Rotas protegidas */}

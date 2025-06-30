@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,8 +26,10 @@ export const MinistriesManager = () => {
     description: ''
   });
 
-  // Filtrar apenas contatos que são membros de alguma célula
-  const cellMembers = contacts.filter(contact => contact.cell_id && contact.status === 'member');
+  // Filtrar apenas contatos que são membros de alguma célula - usando useCallback para evitar recriações
+  const cellMembers = useCallback(() => {
+    return contacts.filter(contact => contact.cell_id && contact.status === 'member');
+  }, [contacts]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +70,7 @@ export const MinistriesManager = () => {
     }
   };
 
-  const openEditDialog = (ministry: any) => {
+  const openEditDialog = useCallback((ministry: any) => {
     setSelectedMinistry(ministry);
     setFormData({
       name: ministry.name,
@@ -76,16 +78,23 @@ export const MinistriesManager = () => {
       description: ministry.description || ''
     });
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const openMembersDialog = (ministry: any) => {
+  const openMembersDialog = useCallback((ministry: any) => {
     setSelectedMinistry(ministry);
     setIsMembersDialogOpen(true);
-  };
+  }, []);
+
+  const closeMembersDialog = useCallback(() => {
+    setIsMembersDialogOpen(false);
+    setSelectedMinistry(null);
+  }, []);
 
   if (loading) {
     return <div className="flex items-center justify-center p-8">Carregando ministérios...</div>;
   }
+
+  const membersData = cellMembers();
 
   return (
     <div className="space-y-6">
@@ -126,7 +135,7 @@ export const MinistriesManager = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Nenhum líder</SelectItem>
-                    {cellMembers.map(contact => (
+                    {membersData.map(contact => (
                       <SelectItem key={contact.id} value={contact.id}>
                         {contact.name}
                       </SelectItem>
@@ -256,7 +265,7 @@ export const MinistriesManager = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhum líder</SelectItem>
-                  {cellMembers.map(contact => (
+                  {membersData.map(contact => (
                     <SelectItem key={contact.id} value={contact.id}>
                       {contact.name}
                     </SelectItem>
@@ -290,10 +299,7 @@ export const MinistriesManager = () => {
       <MinistryMembersDialog
         ministry={selectedMinistry}
         isOpen={isMembersDialogOpen}
-        onClose={() => {
-          setIsMembersDialogOpen(false);
-          setSelectedMinistry(null);
-        }}
+        onClose={closeMembersDialog}
       />
     </div>
   );

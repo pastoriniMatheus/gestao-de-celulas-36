@@ -11,7 +11,7 @@ export function CellQrCode({ cellId }: CellQrCodeProps) {
   // Link único para presença usando o domínio atual dinamicamente
   const cellUrl = useMemo(() => {
     const currentOrigin = window.location.origin;
-    const url = `${currentOrigin}/cells/${cellId}/attendance`;
+    const url = `${currentOrigin}/cell-attendance/${cellId}`;
     console.log('CellQrCode: URL gerada:', url);
     return url;
   }, [cellId]);
