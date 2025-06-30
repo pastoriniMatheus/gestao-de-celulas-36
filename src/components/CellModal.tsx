@@ -302,6 +302,33 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
     setNotesDialogOpen(true);
   };
 
+  const CellVisitorActions = ({ visitor, cellId, onUpdate }) => {
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            onUpdate();
+            toast({ title: "Dados atualizados!" });
+          }}
+        >
+          <Edit className="h-4 w-4 text-gray-500" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            navigator.clipboard.writeText(`${window.location.origin}/cells/${cellId}/attendance`);
+            toast({ title: "Link copiado!" });
+          }}
+        >
+          <QrCode className="h-4 w-4 text-blue-500" />
+        </Button>
+      </div>
+    );
+  };
+
   useEffect(() => {
     if (cell && isOpen) {
       mountedRef.current = true;
@@ -537,6 +564,11 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
+                              <CellVisitorActions
+                                visitor={visitor}
+                                cellId={cell.id}
+                                onUpdate={fetchCellData}
+                              />
                               <Button
                                 variant="ghost"
                                 size="sm"

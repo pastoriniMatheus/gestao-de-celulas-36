@@ -225,7 +225,7 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-city">Cidade</Label>
               <Select 
-                value={formData.city_id || 'no-city'} 
+                value={formData.city_id ? formData.city_id : 'no-city'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   city_id: value === 'no-city' ? '' : value,
@@ -249,7 +249,7 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-neighborhood">Bairro *</Label>
               <Select 
-                value={formData.neighborhood || 'no-neighborhood'} 
+                value={formData.neighborhood ? formData.neighborhood : 'no-neighborhood'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   neighborhood: value === 'no-neighborhood' ? '' : value 
@@ -310,7 +310,7 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-leader">Líder Responsável</Label>
               <Select 
-                value={formData.leader_id || 'no-leader'} 
+                value={formData.leader_id ? formData.leader_id : 'no-leader'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   leader_id: value === 'no-leader' ? '' : value 
@@ -333,7 +333,7 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-cell">Célula</Label>
               <Select 
-                value={formData.cell_id || 'no-cell'} 
+                value={formData.cell_id ? formData.cell_id : 'no-cell'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   cell_id: value === 'no-cell' ? '' : value 
@@ -356,7 +356,7 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-referred">Indicado por</Label>
               <Select 
-                value={formData.referred_by || 'no-referral'} 
+                value={formData.referred_by ? formData.referred_by : 'no-referral'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   referred_by: value === 'no-referral' ? '' : value 
@@ -384,7 +384,7 @@ export const EditContactDialog = ({
             <div>
               <Label htmlFor="edit-pipeline">Estágio Discípulo</Label>
               <Select 
-                value={formData.pipeline_stage_id || 'no-stage'} 
+                value={formData.pipeline_stage_id ? formData.pipeline_stage_id : 'no-stage'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   pipeline_stage_id: value === 'no-stage' ? '' : value 

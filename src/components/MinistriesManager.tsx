@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,10 +26,8 @@ export const MinistriesManager = () => {
     description: ''
   });
 
-  // Filtrar apenas contatos que são membros de alguma célula - usando useCallback para evitar recriações
-  const cellMembers = useCallback(() => {
-    return contacts.filter(contact => contact.cell_id && contact.status === 'member');
-  }, [contacts]);
+  // Filtrar apenas contatos que são membros de alguma célula
+  const cellMembers = contacts.filter(contact => contact.cell_id && contact.status === 'member');
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +68,7 @@ export const MinistriesManager = () => {
     }
   };
 
-  const openEditDialog = useCallback((ministry: any) => {
+  const openEditDialog = (ministry: any) => {
     setSelectedMinistry(ministry);
     setFormData({
       name: ministry.name,
@@ -78,23 +76,21 @@ export const MinistriesManager = () => {
       description: ministry.description || ''
     });
     setIsEditDialogOpen(true);
-  }, []);
+  };
 
-  const openMembersDialog = useCallback((ministry: any) => {
+  const openMembersDialog = (ministry: any) => {
     setSelectedMinistry(ministry);
     setIsMembersDialogOpen(true);
-  }, []);
+  };
 
-  const closeMembersDialog = useCallback(() => {
+  const closeMembersDialog = () => {
     setIsMembersDialogOpen(false);
     setSelectedMinistry(null);
-  }, []);
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center p-8">Carregando ministérios...</div>;
   }
-
-  const membersData = cellMembers();
 
   return (
     <div className="space-y-6">
@@ -134,8 +130,8 @@ export const MinistriesManager = () => {
                     <SelectValue placeholder="Selecione um líder..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Nenhum líder</SelectItem>
-                    {membersData.map(contact => (
+                    <SelectItem value="">Nenhum líder</SelectItem>
+                    {cellMembers.map(contact => (
                       <SelectItem key={contact.id} value={contact.id}>
                         {contact.name}
                       </SelectItem>
@@ -264,8 +260,8 @@ export const MinistriesManager = () => {
                   <SelectValue placeholder="Selecione um líder..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhum líder</SelectItem>
-                  {membersData.map(contact => (
+                  <SelectItem value="">Nenhum líder</SelectItem>
+                  {cellMembers.map(contact => (
                     <SelectItem key={contact.id} value={contact.id}>
                       {contact.name}
                     </SelectItem>
