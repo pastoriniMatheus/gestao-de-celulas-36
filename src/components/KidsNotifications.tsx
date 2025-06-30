@@ -102,8 +102,8 @@ export function KidsNotifications() {
   return (
     <div className="space-y-6 p-4">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Central de Notificações</h1>
-        <p className="text-gray-600">Acompanhe todas as notificações do sistema</p>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Centro de Avisos</h1>
+        <p className="text-gray-600">Notificações e avisos importantes</p>
       </div>
 
       {notifications.length === 0 ? (
@@ -167,46 +167,69 @@ export function KidsNotifications() {
         </div>
       )}
 
-      {/* Modal de detalhes da notificação */}
+      {/* Modal otimizado para datashow */}
       <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Detalhes da Notificação</span>
+        <DialogContent className="max-w-4xl max-h-[80vh] bg-white">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="flex items-center justify-between text-2xl font-bold">
+              <span>Aviso Importante</span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedNotification(null)}
+                className="text-gray-500 hover:text-gray-700"
               >
-                <X className="w-4 h-4" />
+                <X className="w-6 h-6" />
               </Button>
             </DialogTitle>
           </DialogHeader>
           
           {selectedNotification && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
+            <div className="space-y-6 p-6">
+              {/* Cabeçalho com categoria e data */}
+              <div className="flex items-center justify-between border-b pb-4">
                 <Badge 
                   variant="secondary" 
-                  className={
+                  className={`text-lg px-4 py-2 ${
                     selectedNotification.category === 'Kids' 
                       ? "bg-pink-100 text-pink-700" 
                       : "bg-blue-100 text-blue-700"
-                  }
+                  }`}
                 >
                   {selectedNotification.category}
                 </Badge>
-                <span className="text-sm text-gray-500">
-                  {new Date(selectedNotification.created_at).toLocaleString('pt-BR')}
-                </span>
+                <div className="text-lg text-gray-600 font-medium">
+                  {new Date(selectedNotification.created_at).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
               </div>
               
-              <div>
-                <h4 className="font-semibold text-gray-800 mb-2">
-                  {selectedNotification.child_name} - {selectedNotification.child_class}
-                </h4>
-                <p className="text-gray-700 leading-relaxed">
+              {/* Nome da criança e classe - destaque principal */}
+              <div className="text-center py-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
+                <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                  {selectedNotification.child_name}
+                </h2>
+                <p className="text-xl text-gray-600 font-medium">
+                  {selectedNotification.child_class}
+                </p>
+              </div>
+              
+              {/* Mensagem principal */}
+              <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-500">
+                <p className="text-lg leading-relaxed text-gray-800 font-medium">
                   {selectedNotification.message}
+                </p>
+              </div>
+
+              {/* Rodapé com informações adicionais */}
+              <div className="text-center pt-4 border-t">
+                <p className="text-gray-500 text-sm">
+                  Este aviso foi gerado automaticamente pelo sistema
                 </p>
               </div>
             </div>

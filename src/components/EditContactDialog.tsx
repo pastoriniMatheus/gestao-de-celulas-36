@@ -12,6 +12,7 @@ import { useCities } from '@/hooks/useCities';
 import { useContacts } from '@/hooks/useContacts';
 import { useMinistries } from '@/hooks/useMinistries';
 import { useNeighborhoodsByCity } from '@/hooks/useNeighborhoodsByCity';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoUpload } from './PhotoUpload';
@@ -34,6 +35,7 @@ export const EditContactDialog = ({
   const { contacts, updateContact } = useContacts();
   const { ministries } = useMinistries();
   const { toast } = useToast();
+  const { isAdmin } = useUserPermissions();
 
   // Buscar líderes (profiles) para o campo "Indicado por"
   const { data: profiles = [] } = useQuery({
@@ -157,6 +159,12 @@ export const EditContactDialog = ({
         referred_by: formData.referred_by === 'no-referral' || !formData.referred_by ? null : formData.referred_by,
         leader_id: formData.leader_id === 'no-leader' || !formData.leader_id ? null : formData.leader_id,
       };
+
+      // Se não for admin, manter os valores originais para célula e líder
+      if (!isAdmin) {
+        dataToUpdate.cell_id = contact.cell_id;
+        dataToUpdate.leader_id = contact.leader_id;
+      }
 
       const updatedContact = await updateContact(contact.id, dataToUpdate);
       if (onUpdate) {
@@ -307,14 +315,19 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-founder">Fundador</Label>
             </div>
 
+            {/* Campo Líder Responsável - apenas admin pode editar */}
             <div>
-              <Label htmlFor="edit-leader">Líder Responsável</Label>
+              <Label htmlFor="edit-leader">
+                Líder Responsável
+                {!isAdmin && <span className="text-xs text-gray-500 ml-2">(Apenas admin pode editar)</span>}
+              </Label>
               <Select 
                 value={formData.leader_id ? formData.leader_id : 'no-leader'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   leader_id: value === 'no-leader' ? '' : value 
                 }))}
+                disabled={!isAdmin}
               >
                 <SelectTrigger id="edit-leader">
                   <SelectValue placeholder="Selecione um líder" />
@@ -330,14 +343,19 @@ export const EditContactDialog = ({
               </Select>
             </div>
 
+            {/* Campo Célula - apenas admin pode editar */}
             <div>
-              <Label htmlFor="edit-cell">Célula</Label>
+              <Label htmlFor="edit-cell">
+                Célula
+                {!isAdmin && <span className="text-xs text-gray-500 ml-2">(Apenas admin pode editar)</span>}
+              </Label>
               <Select 
                 value={formData.cell_id ? formData.cell_id : 'no-cell'} 
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   cell_id: value === 'no-cell' ? '' : value 
                 }))}
+                disabled={!isAdmin}
               >
                 <SelectTrigger id="edit-cell">
                   <SelectValue placeholder="Selecione uma célula" />

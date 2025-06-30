@@ -644,7 +644,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                 <CardContent className="text-center space-y-4">
                   <div className="inline-block p-4 bg-white rounded-lg border">
                     <QRCode 
-                      value={`${window.location.origin}/attendance/${cell.id}`}
+                      value={`${window.location.origin}/member-attendance/${cell.id}`}
                       size={180}
                       fgColor="#2563EB"
                     />
@@ -653,7 +653,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                     <Button 
                       variant="outline" 
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/attendance/${cell.id}`);
+                        navigator.clipboard.writeText(`${window.location.origin}/member-attendance/${cell.id}`);
                         toast({ title: "Link copiado!" });
                       }}
                     >
@@ -661,7 +661,7 @@ export const CellModal = ({ cell, isOpen, onClose, onCellUpdated }: CellModalPro
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 break-all">
-                    {window.location.origin}/attendance/{cell.id}
+                    {window.location.origin}/member-attendance/{cell.id}
                   </p>
                 </CardContent>
               </Card>
