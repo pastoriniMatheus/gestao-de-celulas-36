@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +6,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-
 interface Notification {
   id: string;
   message: string;
@@ -16,29 +14,30 @@ interface Notification {
   child_name: string;
   child_class: string;
 }
-
 export function KidsNotifications() {
   const queryClient = useQueryClient();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [newNotifications, setNewNotifications] = useState<Set<string>>(new Set());
   const [blinkingNotifications, setBlinkingNotifications] = useState<Set<string>>(new Set());
-
-  const { data: notifications = [], isLoading } = useQuery({
+  const {
+    data: notifications = [],
+    isLoading
+  } = useQuery({
     queryKey: ['child-notifications'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('child_notifications')
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from('child_notifications').select(`
           id,
           message,
           category,
           created_at,
           children!child_notifications_child_id_fkey(name, class)
-        `)
-        .order('created_at', { ascending: false });
-
+        `).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
-
       return data.map(item => ({
         id: item.id,
         message: item.message,
@@ -49,94 +48,77 @@ export function KidsNotifications() {
       }));
     }
   });
-
   useEffect(() => {
     console.log('Configurando canal de notificações em tempo real...');
-    
-    const channel = supabase
-      .channel('notifications_realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'child_notifications'
-        },
-        (payload) => {
-          console.log('Nova notificação recebida via realtime:', payload);
-          const notificationId = payload.new.id;
-          
-          // Adicionar à lista de novas notificações
-          setNewNotifications(prev => new Set([...prev, notificationId]));
-          
-          // Adicionar à lista de notificações piscando
-          setBlinkingNotifications(prev => new Set([...prev, notificationId]));
-          
-          // Remover de novas após 30 segundos
-          setTimeout(() => {
-            setNewNotifications(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(notificationId);
-              return newSet;
-            });
-          }, 30000);
-          
-          // Remover piscar após 30 segundos
-          setTimeout(() => {
-            setBlinkingNotifications(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(notificationId);
-              return newSet;
-            });
-          }, 30000);
-          
-          queryClient.invalidateQueries({ queryKey: ['child-notifications'] });
-        }
-      )
-      .subscribe((status) => {
-        console.log('Status da inscrição do canal:', status);
-      });
+    const channel = supabase.channel('notifications_realtime').on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'child_notifications'
+    }, payload => {
+      console.log('Nova notificação recebida via realtime:', payload);
+      const notificationId = payload.new.id;
 
+      // Adicionar à lista de novas notificações
+      setNewNotifications(prev => new Set([...prev, notificationId]));
+
+      // Adicionar à lista de notificações piscando
+      setBlinkingNotifications(prev => new Set([...prev, notificationId]));
+
+      // Remover de novas após 30 segundos
+      setTimeout(() => {
+        setNewNotifications(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationId);
+          return newSet;
+        });
+      }, 30000);
+
+      // Remover piscar após 30 segundos
+      setTimeout(() => {
+        setBlinkingNotifications(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationId);
+          return newSet;
+        });
+      }, 30000);
+      queryClient.invalidateQueries({
+        queryKey: ['child-notifications']
+      });
+    }).subscribe(status => {
+      console.log('Status da inscrição do canal:', status);
+    });
     return () => {
       console.log('Removendo canal de notificações...');
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
-
   const handleNotificationClick = (notification: Notification) => {
     setSelectedNotification(notification);
-    
+
     // Parar de piscar quando clicado
     setBlinkingNotifications(prev => {
       const newSet = new Set(prev);
       newSet.delete(notification.id);
       return newSet;
     });
-    
     setNewNotifications(prev => {
       const newSet = new Set(prev);
       newSet.delete(notification.id);
       return newSet;
     });
   };
-
   const isNotificationBlinking = (notificationId: string) => {
     return blinkingNotifications.has(notificationId);
   };
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
+    return <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
           <span className="text-2xl font-semibold text-gray-700">Carregando avisos...</span>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
+  return <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -149,8 +131,7 @@ export function KidsNotifications() {
           <p className="text-xl text-gray-700 font-medium">Informações importantes para toda comunidade</p>
         </div>
 
-        {notifications.length === 0 ? (
-          <Card className="max-w-2xl mx-auto shadow-xl border-2 border-blue-200">
+        {notifications.length === 0 ? <Card className="max-w-2xl mx-auto shadow-xl border-2 border-blue-200">
             <CardContent className="text-center py-12">
               <div className="flex items-center justify-center gap-4 mb-6">
                 <Bell className="w-20 h-20 text-gray-300" />
@@ -161,34 +142,13 @@ export function KidsNotifications() {
                 Quando houver informações importantes, elas aparecerão aqui.
               </p>
             </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {notifications.map(notification => (
-              <Card 
-                key={notification.id} 
-                className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl transform border-2 ${
-                  isNotificationBlinking(notification.id)
-                    ? 'ring-4 ring-yellow-400 animate-[pulse_1s_ease-in-out_infinite] bg-gradient-to-br from-yellow-100 via-orange-100 to-red-100 shadow-2xl border-orange-400 scale-105' 
-                    : 'bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 shadow-lg border-blue-200'
-                }`}
-                onClick={() => handleNotificationClick(notification)}
-                style={{
-                  animation: isNotificationBlinking(notification.id) 
-                    ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' 
-                    : undefined
-                }}
-              >
+          </Card> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {notifications.map(notification => <Card key={notification.id} className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl transform border-2 ${isNotificationBlinking(notification.id) ? 'ring-4 ring-yellow-400 animate-[pulse_1s_ease-in-out_infinite] bg-gradient-to-br from-yellow-100 via-orange-100 to-red-100 shadow-2xl border-orange-400 scale-105' : 'bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 shadow-lg border-blue-200'}`} onClick={() => handleNotificationClick(notification)} style={{
+          animation: isNotificationBlinking(notification.id) ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' : undefined
+        }}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-sm px-3 py-1 font-bold ${
-                        notification.category === 'Kids' 
-                          ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border border-pink-400" 
-                          : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border border-blue-400"
-                      }`}
-                    >
+                    <Badge variant="secondary" className={`text-sm px-3 py-1 font-bold ${notification.category === 'Kids' ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border border-pink-400" : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border border-blue-400"}`}>
                       {notification.category}
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-600 font-medium">
@@ -212,18 +172,14 @@ export function KidsNotifications() {
                     </p>
                   </div>
 
-                  {isNotificationBlinking(notification.id) && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-orange-800 font-bold text-sm bg-gradient-to-r from-yellow-200 to-orange-200 rounded-lg py-2 border-2 border-orange-400">
+                  {isNotificationBlinking(notification.id) && <div className="mt-4 flex items-center justify-center gap-2 text-orange-800 font-bold text-sm bg-gradient-to-r from-yellow-200 to-orange-200 rounded-lg py-2 border-2 border-orange-400">
                       <Sparkles className="w-4 h-4 animate-spin" />
                       NOVO AVISO
                       <Sparkles className="w-4 h-4 animate-spin" />
-                    </div>
-                  )}
+                    </div>}
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+              </Card>)}
+          </div>}
 
         <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
           <DialogContent className="max-w-xl max-h-[80vh] bg-white border-2 border-blue-300 shadow-2xl rounded-xl">
@@ -235,39 +191,24 @@ export function KidsNotifications() {
                     Aviso Importante
                   </span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedNotification(null)}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-red-100 rounded-full p-1"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                
               </DialogTitle>
             </DialogHeader>
             
-            {selectedNotification && (
-              <div className="space-y-4 p-1">
+            {selectedNotification && <div className="space-y-4 p-1">
                 <div className="flex items-center justify-between bg-gradient-to-r from-white via-blue-50 to-white rounded-lg p-3 border border-blue-200">
-                  <Badge 
-                    variant="secondary" 
-                    className={`text-sm px-3 py-1 font-bold rounded-lg ${
-                      selectedNotification.category === 'Kids' 
-                        ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border border-pink-400" 
-                        : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border border-blue-400"
-                    }`}
-                  >
+                  <Badge variant="secondary" className={`text-sm px-3 py-1 font-bold rounded-lg ${selectedNotification.category === 'Kids' ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border border-pink-400" : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border border-blue-400"}`}>
                     {selectedNotification.category}
                   </Badge>
                   <div className="text-sm text-gray-700 font-bold flex items-center gap-1 bg-white rounded-lg px-3 py-1 border border-gray-200">
                     <Calendar className="w-4 h-4 text-blue-600" />
                     {new Date(selectedNotification.created_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
                   </div>
                 </div>
                 
@@ -300,11 +241,9 @@ export function KidsNotifications() {
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
           </DialogContent>
         </Dialog>
       </div>
-    </div>
-  );
+    </div>;
 }
