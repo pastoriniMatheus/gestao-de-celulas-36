@@ -1,11 +1,15 @@
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Users, Calendar, X, Sparkles, Heart } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bell, Users, X, Sparkles, Heart, Trash2 } from 'lucide-react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+
 interface Notification {
   id: string;
   message: string;
@@ -14,11 +18,14 @@ interface Notification {
   child_name: string;
   child_class: string;
 }
+
 export function KidsNotifications() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [newNotifications, setNewNotifications] = useState<Set<string>>(new Set());
   const [blinkingNotifications, setBlinkingNotifications] = useState<Set<string>>(new Set());
+
   const {
     data: notifications = [],
     isLoading
@@ -48,6 +55,33 @@ export function KidsNotifications() {
       }));
     }
   });
+
+  const clearNotificationsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('child_notifications')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['child-notifications'] });
+      toast({
+        title: "Avisos limpos",
+        description: "Todos os avisos foram removidos com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao limpar avisos",
+        description: "Ocorreu um erro ao tentar limpar os avisos.",
+        variant: "destructive",
+      });
+      console.error('Erro ao limpar avisos:', error);
+    }
+  });
+
   useEffect(() => {
     console.log('Configurando canal de notificações em tempo real...');
     const channel = supabase.channel('notifications_realtime').on('postgres_changes', {
@@ -92,6 +126,7 @@ export function KidsNotifications() {
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
+
   const handleNotificationClick = (notification: Notification) => {
     setSelectedNotification(notification);
 
@@ -107,9 +142,11 @@ export function KidsNotifications() {
       return newSet;
     });
   };
+
   const isNotificationBlinking = (notificationId: string) => {
     return blinkingNotifications.has(notificationId);
   };
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
         <div className="text-center">
@@ -118,6 +155,7 @@ export function KidsNotifications() {
         </div>
       </div>;
   }
+
   return <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
@@ -129,6 +167,36 @@ export function KidsNotifications() {
             <Bell className="w-10 h-10 text-pink-600 animate-pulse" />
           </div>
           <p className="text-xl text-gray-700 font-medium">Informações importantes para toda comunidade</p>
+          
+          {notifications.length > 0 && (
+            <div className="mt-6">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    Limpar Todos os Avisos
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar limpeza</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação irá remover todos os avisos permanentemente. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => clearNotificationsMutation.mutate()}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Limpar Avisos
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
 
         {notifications.length === 0 ? <Card className="max-w-2xl mx-auto shadow-xl border-2 border-blue-200">
@@ -151,10 +219,6 @@ export function KidsNotifications() {
                     <Badge variant="secondary" className={`text-sm px-3 py-1 font-bold ${notification.category === 'Kids' ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border border-pink-400" : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border border-blue-400"}`}>
                       {notification.category}
                     </Badge>
-                    <div className="flex items-center gap-1 text-sm text-gray-600 font-medium">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(notification.created_at).toLocaleDateString('pt-BR')}
-                    </div>
                   </div>
                   
                   <div className="space-y-3">
@@ -182,62 +246,52 @@ export function KidsNotifications() {
           </div>}
 
         <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
-          <DialogContent className="max-w-xl max-h-[80vh] bg-white border-2 border-blue-300 shadow-2xl rounded-xl">
-            <DialogHeader className="pb-3 border-b border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg -m-6 mb-4 p-4">
-              <DialogTitle className="flex items-center justify-between text-lg font-bold text-blue-800">
-                <div className="flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-blue-600" />
-                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-white via-blue-50 to-purple-50 border-4 border-blue-400 shadow-2xl rounded-2xl overflow-hidden">
+            <DialogHeader className="pb-6 border-b-2 border-blue-300 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 -m-6 mb-6 p-8">
+              <DialogTitle className="flex items-center justify-center text-2xl font-bold text-white">
+                <div className="flex items-center gap-3">
+                  <Bell className="w-8 h-8 text-yellow-300 animate-pulse" />
+                  <span className="text-3xl drop-shadow-lg">
                     Aviso Importante
                   </span>
+                  <Bell className="w-8 h-8 text-yellow-300 animate-pulse" />
                 </div>
-                
               </DialogTitle>
             </DialogHeader>
             
-            {selectedNotification && <div className="space-y-4 p-1">
-                <div className="flex items-center justify-between bg-gradient-to-r from-white via-blue-50 to-white rounded-lg p-3 border border-blue-200">
-                  <Badge variant="secondary" className={`text-sm px-3 py-1 font-bold rounded-lg ${selectedNotification.category === 'Kids' ? "bg-gradient-to-r from-pink-200 to-pink-300 text-pink-800 border border-pink-400" : "bg-gradient-to-r from-blue-200 to-blue-300 text-blue-800 border border-blue-400"}`}>
-                    {selectedNotification.category}
-                  </Badge>
-                  <div className="text-sm text-gray-700 font-bold flex items-center gap-1 bg-white rounded-lg px-3 py-1 border border-gray-200">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                    {new Date(selectedNotification.created_at).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-                  </div>
-                </div>
-                
-                <div className="text-center py-4 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 rounded-xl border border-purple-300">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Users className="w-6 h-6 text-blue-700" />
-                    <h2 className="text-xl font-bold bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+            {selectedNotification && <div className="space-y-6 p-2">
+                <div className="text-center py-6 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 rounded-2xl border-2 border-purple-300 shadow-lg">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <Users className="w-8 h-8 text-blue-700" />
+                    <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
                       {selectedNotification.child_name}
                     </h2>
-                    <Users className="w-6 h-6 text-pink-700" />
+                    <Users className="w-8 h-8 text-pink-700" />
                   </div>
-                  <p className="text-lg text-gray-800 font-bold bg-white rounded-lg py-1 px-4 inline-block border border-purple-300">
+                  <p className="text-2xl text-gray-800 font-bold bg-white rounded-xl py-3 px-6 inline-block border-2 border-purple-400 shadow-md">
                     {selectedNotification.child_class}
                   </p>
                 </div>
+
+                <div className="flex justify-center mb-6">
+                  <Badge variant="secondary" className={`text-lg px-6 py-3 font-bold rounded-xl shadow-lg ${selectedNotification.category === 'Kids' ? "bg-gradient-to-r from-pink-300 to-pink-400 text-pink-900 border-2 border-pink-500" : "bg-gradient-to-r from-blue-300 to-blue-400 text-blue-900 border-2 border-blue-500"}`}>
+                    {selectedNotification.category}
+                  </Badge>
+                </div>
                 
-                <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 p-4 rounded-xl border-l-4 border-orange-400">
-                  <div className="flex items-start gap-2">
-                    <Bell className="w-5 h-5 text-orange-600 flex-shrink-0 mt-1" />
-                    <p className="text-lg leading-relaxed text-gray-800 font-medium">
+                <div className="bg-gradient-to-r from-yellow-100 via-orange-100 to-yellow-100 p-8 rounded-2xl border-l-8 border-orange-500 shadow-xl">
+                  <div className="flex items-start gap-4">
+                    <Bell className="w-8 h-8 text-orange-600 flex-shrink-0 mt-2 animate-bounce" />
+                    <p className="text-2xl leading-relaxed text-gray-900 font-semibold text-center">
                       {selectedNotification.message}
                     </p>
                   </div>
                 </div>
 
-                <div className="text-center pt-3 border-t border-gray-200">
-                  <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg py-1 px-4 inline-block border border-gray-200">
-                    <p className="text-sm text-gray-600 font-medium">
-                      ✨ Aviso gerado automaticamente pelo sistema ✨
+                <div className="text-center pt-4 border-t-2 border-gray-300">
+                  <div className="bg-gradient-to-r from-gray-100 via-white to-gray-100 rounded-xl py-3 px-6 inline-block border-2 border-gray-300 shadow-md">
+                    <p className="text-lg text-gray-700 font-semibold">
+                      ✨ Sistema de Avisos Kids & Jovens ✨
                     </p>
                   </div>
                 </div>
