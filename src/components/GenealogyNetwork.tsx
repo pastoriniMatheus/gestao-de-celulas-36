@@ -347,8 +347,14 @@ const HierarchicalTreeView: React.FC<HierarchicalTreeViewProps> = ({
   );
 };
 
-// Funções auxiliares
-function calculateMemberLevel(memberId: string, members: MemberNode[], mode: GenealogyMode): number {
+// Funções auxiliares com proteção contra loops infinitos
+function calculateMemberLevel(memberId: string, members: MemberNode[], mode: GenealogyMode, visited = new Set<string>()): number {
+  // Proteção contra loops infinitos
+  if (visited.has(memberId)) {
+    console.warn(`Circular reference detected for member ${memberId}`);
+    return 0;
+  }
+  
   const member = members.find(m => m.id === memberId);
   if (!member) return 0;
   
@@ -356,20 +362,41 @@ function calculateMemberLevel(memberId: string, members: MemberNode[], mode: Gen
   const parentId = member[connectionField];
   
   if (!parentId || member.founder) return 0;
-  return 1 + calculateMemberLevel(parentId, members, mode);
+  
+  // Adicionar este membro ao conjunto de visitados
+  visited.add(memberId);
+  
+  const level = 1 + calculateMemberLevel(parentId, members, mode, visited);
+  
+  // Remover este membro do conjunto de visitados ao retornar
+  visited.delete(memberId);
+  
+  return level;
 }
 
-function calculateTotalDescendants(memberId: string, members: MemberNode[], mode: GenealogyMode): number {
+function calculateTotalDescendants(memberId: string, members: MemberNode[], mode: GenealogyMode, visited = new Set<string>()): number {
+  // Proteção contra loops infinitos
+  if (visited.has(memberId)) {
+    console.warn(`Circular reference detected for member ${memberId}`);
+    return 0;
+  }
+  
   const member = members.find(m => m.id === memberId);
   if (!member) return 0;
   
   const connectionField = mode === 'evangelism' ? 'referredBy' : 'leader_id';
   const children = members.filter(m => m[connectionField] === memberId);
   
+  // Adicionar este membro ao conjunto de visitados
+  visited.add(memberId);
+  
   let total = children.length;
   children.forEach(child => {
-    total += calculateTotalDescendants(child.id, members, mode);
+    total += calculateTotalDescendants(child.id, members, mode, visited);
   });
+  
+  // Remover este membro do conjunto de visitados ao retornar
+  visited.delete(memberId);
   
   return total;
 }
