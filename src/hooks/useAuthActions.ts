@@ -65,10 +65,35 @@ export const useAuthActions = () => {
   const signOut = async () => {
     setLoading(true);
     try {
+      console.log('useAuthActions: Fazendo logout...');
+      
+      // Fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('useAuthActions: Erro no logout:', error);
+      }
+      
+      // Limpar storage independente do erro
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (storageError) {
+        console.warn('useAuthActions: Erro ao limpar storage:', storageError);
+      }
+      
       return { error };
     } catch (error) {
       console.error('Erro no signOut:', error);
+      
+      // Mesmo com erro, tentar limpar storage
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (storageError) {
+        console.warn('useAuthActions: Erro ao limpar storage:', storageError);
+      }
+      
       return { error: { message: 'Erro inesperado' } };
     } finally {
       setLoading(false);

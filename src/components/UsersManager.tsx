@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthProvider';
 import { AddUserDialog } from './AddUserDialog';
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface UserProfile {
   id: string;
@@ -226,138 +227,140 @@ export const UsersManager = () => {
   const leaderUsers = users.filter(user => user.role === 'leader').length;
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <UserCog className="h-5 w-5 text-blue-600" />
-                Gerenciamento de Usuários
-              </CardTitle>
-              <CardDescription>
-                Gerencie usuários, papéis e permissões do sistema
-              </CardDescription>
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCog className="h-5 w-5 text-blue-600" />
+                  Gerenciamento de Usuários
+                </CardTitle>
+                <CardDescription>
+                  Gerencie usuários, papéis e permissões do sistema
+                </CardDescription>
+              </div>
+              <AddUserDialog />
             </div>
-            <AddUserDialog />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-800">Total de Usuários</h3>
-              <p className="text-2xl font-bold text-blue-600">{users.length}</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-800">Total de Usuários</h3>
+                <p className="text-2xl font-bold text-blue-600">{users.length}</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-800">Usuários Ativos</h3>
+                <p className="text-2xl font-bold text-green-600">{activeUsers}</p>
+              </div>
+              <div className="bg-red-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-red-800">Administradores</h3>
+                <p className="text-2xl font-bold text-red-600">{adminUsers}</p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-purple-800">Líderes</h3>
+                <p className="text-2xl font-bold text-purple-600">{leaderUsers}</p>
+              </div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-green-800">Usuários Ativos</h3>
-              <p className="text-2xl font-bold text-green-600">{activeUsers}</p>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-red-800">Administradores</h3>
-              <p className="text-2xl font-bold text-red-600">{adminUsers}</p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-purple-800">Líderes</h3>
-              <p className="text-2xl font-bold text-purple-600">{leaderUsers}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Usuários</CardTitle>
-          <CardDescription>
-            Visualize e gerencie todos os usuários do sistema
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Papel</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data de Criação</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        {user.name}
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={user.role || "user"}
-                        onValueChange={(newRole) => updateUserRole(user.id, newRole)}
-                        disabled={user.user_id === userProfile?.user_id}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">Usuário</SelectItem>
-                          <SelectItem value="leader">Líder</SelectItem>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.active ? "default" : "secondary"}>
-                        {user.active ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(user.created_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleUserStatus(user.id, user.active)}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Usuários</CardTitle>
+            <CardDescription>
+              Visualize e gerencie todos os usuários do sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Papel</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data de Criação</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-500" />
+                          {user.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.role || "user"}
+                          onValueChange={(newRole) => updateUserRole(user.id, newRole)}
                           disabled={user.user_id === userProfile?.user_id}
                         >
-                          {user.active ? 'Desativar' : 'Ativar'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteUser(user.id, user.name)}
-                          disabled={user.user_id === userProfile?.user_id || deletingUserId === user.id}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          {deletingUserId === user.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {users.length === 0 && (
-            <div className="text-center py-8">
-              <UserCog className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum usuário encontrado</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Os usuários aparecerão aqui quando se registrarem no sistema.
-              </p>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">Usuário</SelectItem>
+                            <SelectItem value="leader">Líder</SelectItem>
+                            <SelectItem value="admin">Administrador</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.active ? "default" : "secondary"}>
+                          {user.active ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(user.created_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => toggleUserStatus(user.id, user.active)}
+                            disabled={user.user_id === userProfile?.user_id}
+                          >
+                            {user.active ? 'Desativar' : 'Ativar'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => deleteUser(user.id, user.name)}
+                            disabled={user.user_id === userProfile?.user_id || deletingUserId === user.id}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            {deletingUserId === user.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+            {users.length === 0 && (
+              <div className="text-center py-8">
+                <UserCog className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum usuário encontrado</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Os usuários aparecerão aqui quando se registrarem no sistema.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </ErrorBoundary>
   );
 };

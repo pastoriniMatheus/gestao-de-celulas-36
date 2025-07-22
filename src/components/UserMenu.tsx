@@ -17,12 +17,34 @@ import { EditProfileDialog } from './EditProfileDialog';
 export const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
+    if (isSigningOut) return; // Evitar múltiplos cliques
+    
+    setIsSigningOut(true);
     try {
+      console.log('UserMenu: Iniciando logout...');
       await signOut();
+      console.log('UserMenu: Logout realizado com sucesso');
+      
+      // Forçar reload da página para limpar completamente o estado
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+      
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+      console.error('UserMenu: Erro ao fazer logout:', error);
+      setIsSigningOut(false);
+      
+      // Em caso de erro, tentar forçar limpeza e redirect
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/';
+      } catch (clearError) {
+        console.error('UserMenu: Erro ao limpar storage:', clearError);
+      }
     }
   };
 
@@ -110,9 +132,9 @@ export const UserMenu = () => {
             <span>Configurações</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut}>
+          <DropdownMenuItem onClick={handleSignOut} disabled={isSigningOut}>
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Sair</span>
+            <span>{isSigningOut ? 'Saindo...' : 'Sair'}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
