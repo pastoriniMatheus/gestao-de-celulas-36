@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,13 +53,24 @@ export const ContactsList = () => {
 
   const formatBirthDate = (birthDate: string) => {
     if (!birthDate) return null;
-    return new Date(birthDate).toLocaleDateString('pt-BR');
+    // Fix: Create date without timezone issues by using local date
+    const dateParts = birthDate.split('-');
+    const year = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+    const day = parseInt(dateParts[2]);
+    const localDate = new Date(year, month, day);
+    return localDate.toLocaleDateString('pt-BR');
   };
 
   const calculateAge = (birthDate: string) => {
     if (!birthDate) return null;
+    // Fix: Create date without timezone issues
+    const dateParts = birthDate.split('-');
+    const year = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+    const day = parseInt(dateParts[2]);
+    const birth = new Date(year, month, day);
     const today = new Date();
-    const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {

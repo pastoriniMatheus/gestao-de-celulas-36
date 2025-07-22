@@ -85,18 +85,44 @@ export const EditContactDialog = ({
   // Hook para buscar bairros baseado na cidade selecionada
   const { neighborhoods } = useNeighborhoodsByCity(formData.city_id);
 
+  // Função para buscar bairros de uma cidade específica
+  const { data: allNeighborhoods = [] } = useQuery({
+    queryKey: ['all-neighborhoods'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Função para encontrar a cidade de um bairro
+  const findCityByNeighborhood = (neighborhoodName: string) => {
+    const neighborhood = allNeighborhoods.find(n => n.name === neighborhoodName);
+    return neighborhood ? neighborhood.city_id : '';
+  };
+
   // Carregar dados do contato quando o diálogo abrir
   useEffect(() => {
     if (contact && isOpen) {
       console.log('=== EditContactDialog: CARREGANDO DADOS DO CONTATO ===');
       console.log('EditContactDialog: Contato completo:', contact);
       
+      // Determinar city_id baseado no bairro se não tiver city_id
+      let cityId = contact.city_id || '';
+      if (!cityId && contact.neighborhood) {
+        cityId = findCityByNeighborhood(contact.neighborhood);
+      }
+      
       // Garantir que TODOS os campos sejam preenchidos com os dados do contato
       const loadedData = {
         name: contact.name || '',
         whatsapp: contact.whatsapp || '',
         neighborhood: contact.neighborhood || '',
-        city_id: contact.city_id || '',
+        city_id: cityId,
         cell_id: contact.cell_id || '',
         ministry_id: contact.ministry_id || '',
         status: contact.status || 'pending',
@@ -114,7 +140,7 @@ export const EditContactDialog = ({
       console.log('EditContactDialog: Dados carregados no formulário:', loadedData);
       setFormData(loadedData);
     }
-  }, [contact, isOpen]);
+  }, [contact, isOpen, allNeighborhoods]);
 
   // Resetar formulário quando fechar
   useEffect(() => {
@@ -267,7 +293,7 @@ export const EditContactDialog = ({
                 onValueChange={(value) => setFormData(prev => ({ 
                   ...prev, 
                   city_id: value === 'no-city' ? '' : value,
-                  neighborhood: '' // Resetar bairro quando cidade muda
+                  neighborhood: value !== prev.city_id ? '' : prev.neighborhood // Reset neighborhood only if city changes
                 }))}
               >
                 <SelectTrigger id="edit-city">
@@ -286,25 +312,35 @@ export const EditContactDialog = ({
 
             <div>
               <Label htmlFor="edit-neighborhood">Bairro *</Label>
-              <Select 
-                value={formData.neighborhood || 'no-neighborhood'} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  neighborhood: value === 'no-neighborhood' ? '' : value 
-                }))}
-              >
-                <SelectTrigger id="edit-neighborhood">
-                  <SelectValue placeholder="Selecione um bairro" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-neighborhood">Nenhum bairro</SelectItem>
-                  {neighborhoods.map(neighborhood => (
-                    <SelectItem key={neighborhood.id} value={neighborhood.name}>
-                      {neighborhood.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {formData.city_id && formData.city_id !== 'no-city' ? (
+                <Select 
+                  value={formData.neighborhood || 'no-neighborhood'} 
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    neighborhood: value === 'no-neighborhood' ? '' : value 
+                  }))}
+                >
+                  <SelectTrigger id="edit-neighborhood">
+                    <SelectValue placeholder="Selecione um bairro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-neighborhood">Nenhum bairro</SelectItem>
+                    {neighborhoods.map(neighborhood => (
+                      <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                        {neighborhood.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="edit-neighborhood"
+                  value={formData.neighborhood}
+                  onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
+                  placeholder="Digite o nome do bairro"
+                  required
+                />
+              )}
             </div>
 
             <div>
