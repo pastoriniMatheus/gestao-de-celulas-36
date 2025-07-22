@@ -8,6 +8,7 @@ import { CellsManager } from '@/components/CellsManager';
 import { Pipeline } from '@/components/Pipeline';
 import { Settings } from '@/components/Settings';
 import { UsersManager } from '@/components/UsersManager';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const Index = () => {
   const location = useLocation();
@@ -37,22 +38,54 @@ const Index = () => {
     console.log('Renderizando conteúdo para seção:', activeSection);
     switch (activeSection) {
       case 'dashboard':
-        return <Dashboard />;
+        return (
+          <ErrorBoundary>
+            <Dashboard />
+          </ErrorBoundary>
+        );
       case 'events':
-        return <EventsManager />;
+        return (
+          <ErrorBoundary>
+            <EventsManager />
+          </ErrorBoundary>
+        );
       case 'contacts':
-        return <ContactsManager />;
+        return (
+          <ErrorBoundary>
+            <ContactsManager />
+          </ErrorBoundary>
+        );
       case 'cells':
-        return <CellsManager />;
+        return (
+          <ErrorBoundary>
+            <CellsManager />
+          </ErrorBoundary>
+        );
       case 'pipeline':
-        return <Pipeline />;
+        return (
+          <ErrorBoundary>
+            <Pipeline />
+          </ErrorBoundary>
+        );
       case 'settings':
-        return <Settings />;
+        return (
+          <ErrorBoundary>
+            <Settings />
+          </ErrorBoundary>
+        );
       case 'users':
-        return <UsersManager />;
+        return (
+          <ErrorBoundary>
+            <UsersManager />
+          </ErrorBoundary>
+        );
       default:
         console.log('Seção não encontrada, retornando Dashboard');
-        return <Dashboard />;
+        return (
+          <ErrorBoundary>
+            <Dashboard />
+          </ErrorBoundary>
+        );
     }
   };
 
