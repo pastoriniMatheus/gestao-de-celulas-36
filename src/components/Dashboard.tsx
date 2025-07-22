@@ -21,7 +21,7 @@ import {
   Zap,
   Waves
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardCharts } from "./DashboardCharts";
 import { DashboardPipelineMetrics } from './DashboardPipelineMetrics';
@@ -36,64 +36,29 @@ export const Dashboard = () => {
   const [attendances, setAttendances] = useState([]);
   const [topNeighborhoods, setTopNeighborhoods] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchStats();
-    
-    // Configurar real-time updates
-    const channel = supabase
-      .channel('dashboard-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contacts'
-        },
-        () => {
-          fetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cells'
-        },
-        () => {
-          fetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'attendances'
-        },
-        () => {
-          fetchStats();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchStats = async () => {
-    setLoading(true);
+  const fetchStats = useCallback(async () => {
     try {
-      // Buscar todos os dados em paralelo
-      const [contactsData, cellsData, neighborhoodsData, citiesData, attendancesData, profilesData] = await Promise.all([
-        supabase.from('contacts').select('*'),
-        supabase.from('cells').select('*'),
-        supabase.from('neighborhoods').select('*, cities(name)'),
-        supabase.from('cities').select('*'),
-        supabase.from('attendances').select('*'),
-        supabase.from('profiles').select('id, role, active')
+      setLoading(true);
+      setError(null);
+      
+      // Buscar todos os dados em paralelo com timeout
+      const fetchWithTimeout = (promise, timeout = 10000) => {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), timeout)
+          )
+        ]);
+      };
+
+      const [contactsData, cellsData, neighborhoodsData, citiesData, attendancesData] = await Promise.all([
+        fetchWithTimeout(supabase.from('contacts').select('*')),
+        fetchWithTimeout(supabase.from('cells').select('*')),
+        fetchWithTimeout(supabase.from('neighborhoods').select('*, cities(name)')),
+        fetchWithTimeout(supabase.from('cities').select('*')),
+        fetchWithTimeout(supabase.from('attendances').select('*'))
       ]);
 
       console.log('Dashboard: Dados dos contatos:', contactsData.data?.length);
@@ -142,8 +107,6 @@ export const Dashboard = () => {
             total_leaders: totalLeaders,
             total_people: totalContacts
           });
-
-          console.log(`Dashboard: Bairro ${neighborhoodName} - Contatos: ${totalContacts}, Células: ${totalCells}, Líderes: ${totalLeaders}`);
         });
       }
 
@@ -162,10 +125,220 @@ export const Dashboard = () => {
       setTopNeighborhoods(sortedStats);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
+      setError(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+    
+    // Configurar real-time updates com cleanup melhorado
+    let channel;
+    
+    try {
+      channel = supabase
+        .channel(`dashboard-updates-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'contacts'
+          },
+          () => {
+            console.log('Dashboard: Real-time update - contacts');
+            fetchStats();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cells'
+          },
+          () => {
+            console.log('Dashboard: Real-time update - cells');
+            fetchStats();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'attendances'
+          },
+          () => {
+            console.log('Dashboard: Real-time update - attendances');
+            fetchStats();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Dashboard: Subscription status:', status);
+        });
+    } catch (error) {
+      console.error('Dashboard: Erro ao configurar real-time:', error);
+    }
+
+    return () => {
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (error) {
+          console.error('Dashboard: Erro ao limpar canal:', error);
+        }
+      }
+    };
+  }, [fetchStats]);
+
+  // Memoizar cálculos para evitar recálculos desnecessários
+  const stats = useMemo(() => {
+    if (!contacts.length) return [];
+
+    const totalMembers = contacts.filter(c => c.status === 'member').length;
+    const totalVisitors = contacts.filter(c => c.status === 'visitor').length;
+    const totalPending = contacts.filter(c => c.status === 'pending').length;
+    const totalEncounter = contacts.filter(c => c.encounter_with_god).length;
+    const totalBaptized = contacts.filter(c => c.baptized).length;
+    const activeCells = cells.filter(c => c.active).length;
+    const totalLeaders = cells.filter(c => c.leader_id).length;
+
+    return [
+      {
+        title: "Total de Discípulos",
+        value: contacts.length,
+        icon: Users,
+        gradient: "from-blue-600 to-blue-700",
+        bgGradient: "from-blue-50 to-blue-100",
+        description: `${totalMembers} membros, ${totalVisitors} visitantes`,
+        trend: "+12% este mês"
+      },
+      {
+        title: "Encontro com Deus",
+        value: totalEncounter,
+        icon: CircleCheck,
+        gradient: "from-green-600 to-green-700",
+        bgGradient: "from-green-50 to-green-100",
+        description: `${Math.round((totalEncounter / contacts.length) * 100)}% dos discípulos`,
+        trend: "+8% este mês"
+      },
+      {
+        title: "Batizados",
+        value: totalBaptized,
+        icon: Waves,
+        gradient: "from-cyan-600 to-cyan-700",
+        bgGradient: "from-cyan-50 to-cyan-100",
+        description: `${Math.round((totalBaptized / contacts.length) * 100)}% dos discípulos`,
+        trend: "+5% este mês"
+      },
+      {
+        title: "Células Ativas",
+        value: activeCells,
+        icon: Home,
+        gradient: "from-purple-600 to-purple-700",
+        bgGradient: "from-purple-50 to-purple-100",
+        description: `${totalLeaders} com líderes definidos`,
+        trend: "+2 novas este mês"
+      }
+    ];
+  }, [contacts, cells]);
+
+  const secondaryStats = useMemo(() => {
+    if (!contacts.length) return [];
+
+    const totalMembers = contacts.filter(c => c.status === 'member').length;
+    const totalVisitors = contacts.filter(c => c.status === 'visitor').length;
+    const totalPending = contacts.filter(c => c.status === 'pending').length;
+    const totalLeaders = cells.filter(c => c.leader_id).length;
+
+    // Calcular média de idade
+    const contactsWithBirthDate = contacts.filter(c => c.birth_date);
+    const averageAge = contactsWithBirthDate.length > 0 
+      ? Math.round(contactsWithBirthDate.reduce((sum, c) => {
+          const birthDate = new Date(c.birth_date);
+          const today = new Date();
+          const age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          
+          const finalAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+            ? age - 1 
+            : age;
+          
+          return sum + finalAge;
+        }, 0) / contactsWithBirthDate.length)
+      : 0;
+
+    // Taxa de conversão
+    const conversionRate = totalVisitors > 0 ? Math.round((totalMembers / (totalMembers + totalVisitors)) * 100) : 0;
+
+    return [
+      {
+        title: "Cidades Atendidas",
+        value: cities.length,
+        icon: MapPin,
+        color: "text-indigo-600",
+        bg: "bg-indigo-50"
+      },
+      {
+        title: "Bairros Cadastrados", 
+        value: neighborhoods.length,
+        icon: ChartBar,
+        color: "text-pink-600",
+        bg: "bg-pink-50"
+      },
+      {
+        title: "Idade Média",
+        value: averageAge > 0 ? `${averageAge} anos` : "N/A",
+        icon: CalendarDays,
+        color: "text-cyan-600",
+        bg: "bg-cyan-50"
+      },
+      {
+        title: "Taxa de Conversão",
+        value: `${conversionRate}%`,
+        icon: Target,
+        color: "text-emerald-600",
+        bg: "bg-emerald-50"
+      },
+      {
+        title: "Pendentes",
+        value: totalPending,
+        icon: Activity,
+        color: "text-amber-600",
+        bg: "bg-amber-50"
+      },
+      {
+        title: "Líderes Ativos",
+        value: totalLeaders,
+        icon: Crown,
+        color: "text-violet-600",
+        bg: "bg-violet-50"
+      }
+    ];
+  }, [contacts, cells, cities, neighborhoods]);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 font-medium mb-4">Erro ao carregar dados do dashboard</p>
+          <button
+            onClick={() => {
+              setError(null);
+              fetchStats();
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -177,133 +350,6 @@ export const Dashboard = () => {
       </div>
     );
   }
-
-  // Cálculos de estatísticas
-  const totalMembers = contacts.filter(c => c.status === 'member').length;
-  const totalVisitors = contacts.filter(c => c.status === 'visitor').length;
-  const totalPending = contacts.filter(c => c.status === 'pending').length;
-  const totalEncounter = contacts.filter(c => c.encounter_with_god).length;
-  const totalBaptized = contacts.filter(c => c.baptized).length;
-  const activeCells = cells.filter(c => c.active).length;
-  const totalLeaders = cells.filter(c => c.leader_id).length;
-  
-  // Calcular média de idade corrigida - usando birth_date
-  const contactsWithBirthDate = contacts.filter(c => c.birth_date);
-  const averageAge = contactsWithBirthDate.length > 0 
-    ? Math.round(contactsWithBirthDate.reduce((sum, c) => {
-        const birthDate = new Date(c.birth_date);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        
-        // Ajustar se ainda não fez aniversário este ano
-        const finalAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
-          ? age - 1 
-          : age;
-        
-        return sum + finalAge;
-      }, 0) / contactsWithBirthDate.length)
-    : 0;
-
-  console.log('Dashboard: Contatos com data de nascimento:', contactsWithBirthDate.length);
-  console.log('Dashboard: Idade média calculada:', averageAge);
-
-  // Calcular estatísticas de presença (últimos 30 dias)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentAttendances = attendances.filter(a => 
-    new Date(a.attendance_date) >= thirtyDaysAgo && a.present
-  );
-  
-  const uniqueContactsPresent = new Set(recentAttendances.map(a => a.contact_id)).size;
-  const attendanceRate = totalMembers > 0 ? Math.round((uniqueContactsPresent / totalMembers) * 100) : 0;
-
-  // Taxa de conversão (visitantes que viraram membros)
-  const conversionRate = totalVisitors > 0 ? Math.round((totalMembers / (totalMembers + totalVisitors)) * 100) : 0;
-
-  const stats = [
-    {
-      title: "Total de Discípulos",
-      value: contacts.length,
-      icon: Users,
-      gradient: "from-blue-600 to-blue-700",
-      bgGradient: "from-blue-50 to-blue-100",
-      description: `${totalMembers} membros, ${totalVisitors} visitantes`,
-      trend: "+12% este mês"
-    },
-    {
-      title: "Encontro com Deus",
-      value: totalEncounter,
-      icon: CircleCheck,
-      gradient: "from-green-600 to-green-700",
-      bgGradient: "from-green-50 to-green-100",
-      description: `${Math.round((totalEncounter / contacts.length) * 100)}% dos discípulos`,
-      trend: "+8% este mês"
-    },
-    {
-      title: "Batizados",
-      value: totalBaptized,
-      icon: Waves,
-      gradient: "from-cyan-600 to-cyan-700",
-      bgGradient: "from-cyan-50 to-cyan-100",
-      description: `${Math.round((totalBaptized / contacts.length) * 100)}% dos discípulos`,
-      trend: "+5% este mês"
-    },
-    {
-      title: "Células Ativas",
-      value: activeCells,
-      icon: Home,
-      gradient: "from-purple-600 to-purple-700",
-      bgGradient: "from-purple-50 to-purple-100",
-      description: `${totalLeaders} com líderes definidos`,
-      trend: "+2 novas este mês"
-    }
-  ];
-
-  const secondaryStats = [
-    {
-      title: "Cidades Atendidas",
-      value: cities.length,
-      icon: MapPin,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50"
-    },
-    {
-      title: "Bairros Cadastrados", 
-      value: neighborhoods.length,
-      icon: ChartBar,
-      color: "text-pink-600",
-      bg: "bg-pink-50"
-    },
-    {
-      title: "Idade Média",
-      value: averageAge > 0 ? `${averageAge} anos` : "N/A",
-      icon: CalendarDays,
-      color: "text-cyan-600",
-      bg: "bg-cyan-50"
-    },
-    {
-      title: "Taxa de Conversão",
-      value: `${conversionRate}%`,
-      icon: Target,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50"
-    },
-    {
-      title: "Pendentes",
-      value: totalPending,
-      icon: Activity,
-      color: "text-amber-600",
-      bg: "bg-amber-50"
-    },
-    {
-      title: "Líderes Ativos",
-      value: totalLeaders,
-      icon: Crown,
-      color: "text-violet-600",
-      bg: "bg-violet-50"
-    }
-  ];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto py-4 px-4">

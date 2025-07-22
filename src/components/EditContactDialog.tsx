@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,6 +78,7 @@ export const EditContactDialog = ({
     }
   });
 
+  // Estado do formulário com valores padrão
   const [formData, setFormData] = useState({
     name: '',
     whatsapp: '',
@@ -101,89 +102,106 @@ export const EditContactDialog = ({
   const { neighborhoods } = useNeighborhoodsByCity(formData.city_id);
 
   // Função para encontrar a cidade de um bairro
-  const findCityByNeighborhood = (neighborhoodName: string) => {
+  const findCityByNeighborhood = useCallback((neighborhoodName: string) => {
     const neighborhood = allNeighborhoods.find(n => n.name === neighborhoodName);
     return neighborhood ? neighborhood.city_id : '';
-  };
+  }, [allNeighborhoods]);
 
-  // Carregar dados do contato SEMPRE que o dialog abrir com um novo contato
-  useEffect(() => {
-    console.log('=== EditContactDialog: EFFECT PRINCIPAL ===');
-    console.log('EditContactDialog: isOpen:', isOpen);
-    console.log('EditContactDialog: contact?.id:', contact?.id);
-    console.log('EditContactDialog: allNeighborhoods.length:', allNeighborhoods.length);
+  // Resetar formulário quando o dialog for fechado
+  const resetForm = useCallback(() => {
+    console.log('EditContactDialog: Resetando formulário');
+    setFormData({
+      name: '',
+      whatsapp: '',
+      neighborhood: '',
+      city_id: '',
+      cell_id: '',
+      ministry_id: '',
+      status: 'pending',
+      encounter_with_god: false,
+      baptized: false,
+      pipeline_stage_id: '',
+      age: null,
+      birth_date: '',
+      referred_by: '',
+      photo_url: '',
+      founder: false,
+      leader_id: ''
+    });
+  }, []);
+
+  // Carregar dados do contato sempre que o dialog abrir com um novo contato
+  const loadContactData = useCallback(() => {
+    if (!contact || !isOpen) {
+      console.log('EditContactDialog: Não há contato ou dialog está fechado');
+      return;
+    }
+
+    console.log('EditContactDialog: Carregando dados do contato', contact.id, contact.name);
     
-    if (!isOpen || !contact) {
-      console.log('EditContactDialog: Dialog fechado ou sem contato, limpando formulário');
-      setFormData({
-        name: '',
-        whatsapp: '',
-        neighborhood: '',
-        city_id: '',
-        cell_id: '',
-        ministry_id: '',
-        status: 'pending',
-        encounter_with_god: false,
-        baptized: false,
-        pipeline_stage_id: '',
-        age: null,
-        birth_date: '',
-        referred_by: '',
-        photo_url: '',
-        founder: false,
-        leader_id: ''
-      });
+    // Determinar city_id - primeiro tenta usar o city_id do contato, senão mapeia pelo bairro
+    let cityId = contact.city_id || '';
+    if (!cityId && contact.neighborhood && allNeighborhoods.length > 0) {
+      cityId = findCityByNeighborhood(contact.neighborhood);
+      console.log('EditContactDialog: Cidade mapeada pelo bairro:', { neighborhood: contact.neighborhood, cityId });
+    }
+    
+    // Carregar TODOS os dados do contato
+    const newFormData = {
+      name: contact.name || '',
+      whatsapp: contact.whatsapp || '',
+      neighborhood: contact.neighborhood || '',
+      city_id: cityId,
+      cell_id: contact.cell_id || '',
+      ministry_id: contact.ministry_id || '',
+      status: contact.status || 'pending',
+      encounter_with_god: Boolean(contact.encounter_with_god),
+      baptized: Boolean(contact.baptized),
+      pipeline_stage_id: contact.pipeline_stage_id || '',
+      age: contact.age || null,
+      birth_date: contact.birth_date || '',
+      referred_by: contact.referred_by || '',
+      photo_url: contact.photo_url || '',
+      founder: Boolean(contact.founder),
+      leader_id: contact.leader_id || ''
+    };
+
+    console.log('EditContactDialog: Carregando dados:', newFormData);
+    setFormData(newFormData);
+  }, [contact, isOpen, allNeighborhoods, findCityByNeighborhood]);
+
+  // Effect para gerenciar abertura/fechamento do dialog
+  useEffect(() => {
+    console.log('EditContactDialog: Effect principal - isOpen:', isOpen, 'contactId:', contact?.id);
+    
+    if (!isOpen) {
+      // Dialog fechado - resetar formulário
+      resetForm();
+      return;
+    }
+
+    if (!contact) {
+      console.log('EditContactDialog: Sem contato para carregar');
+      return;
+    }
+
+    // Dialog aberto com contato - aguardar dados necessários carregarem
+    if (allNeighborhoods.length === 0) {
+      console.log('EditContactDialog: Aguardando neighborhoods carregarem...');
       return;
     }
 
     // Carregar dados do contato
-    const loadContactData = () => {
-      console.log('EditContactDialog: CARREGANDO DADOS DO CONTATO');
-      console.log('EditContactDialog: Contact completo:', contact);
-      
-      // Determinar city_id - primeiro tenta usar o city_id do contato, senão mapeia pelo bairro
-      let cityId = contact.city_id || '';
-      if (!cityId && contact.neighborhood && allNeighborhoods.length > 0) {
-        cityId = findCityByNeighborhood(contact.neighborhood);
-        console.log('EditContactDialog: Cidade mapeada pelo bairro:', { neighborhood: contact.neighborhood, cityId });
-      }
-      
-      // Carregar TODOS os dados do contato
-      const loadedData = {
-        name: contact.name || '',
-        whatsapp: contact.whatsapp || '',
-        neighborhood: contact.neighborhood || '',
-        city_id: cityId,
-        cell_id: contact.cell_id || '',
-        ministry_id: contact.ministry_id || '',
-        status: contact.status || 'pending',
-        encounter_with_god: Boolean(contact.encounter_with_god),
-        baptized: Boolean(contact.baptized),
-        pipeline_stage_id: contact.pipeline_stage_id || '',
-        age: contact.age || null,
-        birth_date: contact.birth_date || '',
-        referred_by: contact.referred_by || '',
-        photo_url: contact.photo_url || '',
-        founder: Boolean(contact.founder),
-        leader_id: contact.leader_id || ''
-      };
+    loadContactData();
+  }, [isOpen, contact, allNeighborhoods.length, loadContactData, resetForm]);
 
-      console.log('EditContactDialog: Dados carregados no formulário:', loadedData);
-      setFormData(loadedData);
-    };
-
-    // Carregar dados imediatamente se neighborhoods já estão carregados
-    if (allNeighborhoods.length > 0) {
+  // Effect adicional para garantir que os dados sejam carregados quando neighborhoods chegarem
+  useEffect(() => {
+    if (isOpen && contact && allNeighborhoods.length > 0) {
+      console.log('EditContactDialog: Neighborhoods carregados, recarregando dados do contato');
       loadContactData();
-    } else {
-      // Se neighborhoods ainda não carregaram, aguardar um pouco
-      console.log('EditContactDialog: Aguardando neighborhoods carregarem...');
-      const timeout = setTimeout(() => {
-        loadContactData();
-      }, 200);
-      return () => clearTimeout(timeout);
     }
-  }, [contact, isOpen, allNeighborhoods]); // Dependências importantes para recarregar
+  }, [allNeighborhoods.length, isOpen, contact, loadContactData]);
 
   const handlePhotoChange = (photoUrl: string | null) => {
     setFormData(prev => ({ ...prev, photo_url: photoUrl || '' }));
@@ -221,8 +239,7 @@ export const EditContactDialog = ({
     }
 
     try {
-      console.log('=== EditContactDialog: ENVIANDO DADOS PARA ATUALIZAÇÃO ===');
-      console.log('EditContactDialog: Dados do formulário:', formData);
+      console.log('EditContactDialog: Enviando dados para atualização:', formData);
       
       // Preparar dados para envio, convertendo valores especiais para null
       const dataToUpdate = {
@@ -314,7 +331,7 @@ export const EditContactDialog = ({
                   setFormData(prev => ({ 
                     ...prev, 
                     city_id: value === 'no-city' ? '' : value,
-                    neighborhood: value !== prev.city_id ? '' : prev.neighborhood // Reset neighborhood only if city changes
+                    neighborhood: value !== prev.city_id ? '' : prev.neighborhood
                   }));
                 }}
               >
