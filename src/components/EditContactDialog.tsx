@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +64,20 @@ export const EditContactDialog = ({
     }
   });
 
+  // Buscar todos os bairros para mapear cidade
+  const { data: allNeighborhoods = [] } = useQuery({
+    queryKey: ['all-neighborhoods'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('neighborhoods')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     whatsapp: '',
@@ -85,20 +100,6 @@ export const EditContactDialog = ({
   // Hook para buscar bairros baseado na cidade selecionada
   const { neighborhoods } = useNeighborhoodsByCity(formData.city_id);
 
-  // Função para buscar bairros de uma cidade específica
-  const { data: allNeighborhoods = [] } = useQuery({
-    queryKey: ['all-neighborhoods'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('neighborhoods')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      if (error) throw error;
-      return data;
-    }
-  });
-
   // Função para encontrar a cidade de um bairro
   const findCityByNeighborhood = (neighborhoodName: string) => {
     const neighborhood = allNeighborhoods.find(n => n.name === neighborhoodName);
@@ -107,17 +108,18 @@ export const EditContactDialog = ({
 
   // Carregar dados do contato quando o diálogo abrir
   useEffect(() => {
-    if (contact && isOpen) {
+    if (contact && isOpen && allNeighborhoods.length > 0) {
       console.log('=== EditContactDialog: CARREGANDO DADOS DO CONTATO ===');
       console.log('EditContactDialog: Contato completo:', contact);
       
-      // Determinar city_id baseado no bairro se não tiver city_id
+      // Determinar city_id - primeiro tenta usar o city_id do contato, senão mapeia pelo bairro
       let cityId = contact.city_id || '';
       if (!cityId && contact.neighborhood) {
         cityId = findCityByNeighborhood(contact.neighborhood);
+        console.log('EditContactDialog: Cidade mapeada pelo bairro:', { neighborhood: contact.neighborhood, cityId });
       }
       
-      // Garantir que TODOS os campos sejam preenchidos com os dados do contato
+      // Carregar TODOS os dados do contato
       const loadedData = {
         name: contact.name || '',
         whatsapp: contact.whatsapp || '',
@@ -290,11 +292,14 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-city">Cidade</Label>
               <Select 
                 value={formData.city_id || 'no-city'} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  city_id: value === 'no-city' ? '' : value,
-                  neighborhood: value !== prev.city_id ? '' : prev.neighborhood // Reset neighborhood only if city changes
-                }))}
+                onValueChange={(value) => {
+                  console.log('EditContactDialog: Mudando cidade para:', value);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    city_id: value === 'no-city' ? '' : value,
+                    neighborhood: value !== prev.city_id ? '' : prev.neighborhood // Reset neighborhood only if city changes
+                  }));
+                }}
               >
                 <SelectTrigger id="edit-city">
                   <SelectValue placeholder="Selecione uma cidade" />
@@ -315,10 +320,13 @@ export const EditContactDialog = ({
               {formData.city_id && formData.city_id !== 'no-city' ? (
                 <Select 
                   value={formData.neighborhood || 'no-neighborhood'} 
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    neighborhood: value === 'no-neighborhood' ? '' : value 
-                  }))}
+                  onValueChange={(value) => {
+                    console.log('EditContactDialog: Mudando bairro para:', value);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      neighborhood: value === 'no-neighborhood' ? '' : value 
+                    }));
+                  }}
                 >
                   <SelectTrigger id="edit-neighborhood">
                     <SelectValue placeholder="Selecione um bairro" />
@@ -336,7 +344,10 @@ export const EditContactDialog = ({
                 <Input
                   id="edit-neighborhood"
                   value={formData.neighborhood}
-                  onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
+                  onChange={(e) => {
+                    console.log('EditContactDialog: Digitando bairro:', e.target.value);
+                    setFormData(prev => ({ ...prev, neighborhood: e.target.value }));
+                  }}
                   placeholder="Digite o nome do bairro"
                   required
                 />
@@ -386,10 +397,13 @@ export const EditContactDialog = ({
                 <Label htmlFor="edit-leader">Líder Responsável</Label>
                 <Select 
                   value={formData.leader_id || 'no-leader'} 
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    leader_id: value === 'no-leader' ? '' : value 
-                  }))}
+                  onValueChange={(value) => {
+                    console.log('EditContactDialog: Mudando líder para:', value);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      leader_id: value === 'no-leader' ? '' : value 
+                    }));
+                  }}
                 >
                   <SelectTrigger id="edit-leader">
                     <SelectValue placeholder="Selecione um líder" />
@@ -412,10 +426,13 @@ export const EditContactDialog = ({
                 <Label htmlFor="edit-cell">Célula</Label>
                 <Select 
                   value={formData.cell_id || 'no-cell'} 
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    cell_id: value === 'no-cell' ? '' : value 
-                  }))}
+                  onValueChange={(value) => {
+                    console.log('EditContactDialog: Mudando célula para:', value);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      cell_id: value === 'no-cell' ? '' : value 
+                    }));
+                  }}
                 >
                   <SelectTrigger id="edit-cell">
                     <SelectValue placeholder="Selecione uma célula" />
@@ -436,10 +453,13 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-referred">Indicado por</Label>
               <Select 
                 value={formData.referred_by || 'no-referral'} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  referred_by: value === 'no-referral' ? '' : value 
-                }))}
+                onValueChange={(value) => {
+                  console.log('EditContactDialog: Mudando indicação para:', value);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    referred_by: value === 'no-referral' ? '' : value 
+                  }));
+                }}
               >
                 <SelectTrigger id="edit-referred">
                   <SelectValue placeholder="Selecione quem indicou" />
@@ -464,10 +484,13 @@ export const EditContactDialog = ({
               <Label htmlFor="edit-pipeline">Estágio Discípulo</Label>
               <Select 
                 value={formData.pipeline_stage_id || 'no-stage'} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  pipeline_stage_id: value === 'no-stage' ? '' : value 
-                }))}
+                onValueChange={(value) => {
+                  console.log('EditContactDialog: Mudando estágio para:', value);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    pipeline_stage_id: value === 'no-stage' ? '' : value 
+                  }));
+                }}
               >
                 <SelectTrigger id="edit-pipeline">
                   <SelectValue placeholder="Selecione uma etapa" />
@@ -489,7 +512,7 @@ export const EditContactDialog = ({
               Cancelar
             </Button>
             <Button type="submit">Salvar</Button>
-          </div>
+            </div>
         </form>
       </DialogContent>
     </Dialog>
